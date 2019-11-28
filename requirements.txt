@@ -1,0 +1,6 @@
+python-box
+requests
+tqdm
+xmltodict
+python-dotenv
+attrs

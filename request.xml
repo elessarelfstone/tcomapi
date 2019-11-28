@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    <sign:Request xmlns:sign="http://xmlns.kztc-cits/sign" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <sign:IIN_BIN>{}</sign:IIN_BIN>
+        <sign:BeginDate>{}</sign:BeginDate>
+        <sign:EndDate>{}</sign:EndDate>
+    </sign:Request>
