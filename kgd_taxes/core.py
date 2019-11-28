@@ -53,10 +53,12 @@ def main():
                 parser.process(bn, **p, reporthook=pbar.update_to(fname, bn, parser.fails))
 
             except NetworkError:
+                # we need break if it's too many fails
                 fails_percent = parser.fails * 100 / len(bins)
                 if fails_percent > 90:
                     return ExitStatus.ERROR
             else:
+                # successfully processed BINs will be excluded next time
                 append_file(processed_bins_fpath(p.fpath), bn)
 
     return ExitStatus.SUCCESS

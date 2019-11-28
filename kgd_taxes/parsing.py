@@ -12,6 +12,7 @@ from validators import strip_converter, date_converter
 
 
 def is_bin_processed(bn, processed_fpath):
+    """ Check if BIN has been already processed """
     r = run_command(['grep', bn, processed_fpath])
     if r:
         return True
@@ -20,6 +21,7 @@ def is_bin_processed(bn, processed_fpath):
 
 
 def processed_bins_fpath(fpath):
+    """ Return path to file with processed BINs"""
     return os.path.join(os.path.dirname(fpath),
                         os.path.basename(fpath) + '.prsd')
 
@@ -43,7 +45,7 @@ class PaymentData:
 
 
 class TaxPaymentParser:
-    """"""
+
     request_template = read_file(
         os.path.join(os.path.abspath(
             os.path.join(os.path.dirname(__file__), os.pardir)), 'request.xml'
@@ -73,6 +75,10 @@ class TaxPaymentParser:
         return self._curr_output_file()
 
     def _add_output_files(self, fpath, fsize):
+        """
+        Gather all existed output files paths and
+        if it's needed add new
+        """
         self._output_files = []
         base = os.path.join(os.path.dirname(fpath),
                             os.path.splitext(os.path.basename(fpath))[0])
@@ -99,9 +105,6 @@ class TaxPaymentParser:
             values = []
             dct = {k.lower(): v.lower() for k, v in p_dict.items()}
             payment_data = PaymentData(**dct)
-
-            # for v in attr.asdict(payment_data).values():
-            #     values.append(v)
             return attr.astuple(payment_data)
 
         if os.path.getsize(self._curr_output_file()) >= fsize:
@@ -122,18 +125,28 @@ class TaxPaymentParser:
             raise NetworkError("Failed to process BIN")
 
         r_dict = {}
+
+        # convert xml to dict with oop features
         if response:
             r_dict = Box(xmltodict.parse(response.text)).answer
 
+        # check if we got some logical errors in response
         if 'err' in r_dict:
             return
 
-        rows = []
+        # it might be just one payment
         payments = r_dict.payment if isinstance(r_dict.payment, list) else [r_dict.payment]
+
+        rows = []
+
+        # get only values and put them to list
+        # according order how fields going in PaymentData class
+        # build csv rows and write them to current output file
         for p in payments:
             p.bin = bn
-            rows.append(csv_payment_row(p))
+            append_file(self.output_file, ';'.join(csv_payment_row(p)))
 
-        if payments:
-            for row in rows:
-                append_file(self.output_file, ';'.join(row))
+        # we need
+        # if payments:
+        #     for row in rows:
+        #         append_file(self.output_file, ';'.join(row))
