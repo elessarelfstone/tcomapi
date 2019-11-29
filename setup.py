@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(name='kgd',
       version='0.1.0',
-      description='Rapid SSH Proxy',
+      description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/kgd',
       author='Dauren Sdykov',
       author_email='elessarelfstone@mail.ru',
