@@ -5,10 +5,10 @@ import requests
 import xmltodict
 from box import Box
 
-from exceptions import NetworkError
-from utils import (read_file, requests_retry_session,
+from kgd.exceptions import NetworkError
+from kgd.utils import (read_file, requests_retry_session,
                    run_command, append_file)
-from validators import common_corrector, date_corrector
+from kgd.validators import common_corrector, date_corrector
 
 
 def is_bin_processed(bn, processed_fpath):

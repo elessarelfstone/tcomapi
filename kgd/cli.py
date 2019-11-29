@@ -1,6 +1,6 @@
 import argparse
 
-import validators
+import kgd.validators as validators
 
 
 def parse_args():

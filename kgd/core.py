@@ -4,12 +4,12 @@ import sys
 from box import Box
 from tqdm import tqdm
 
-from exceptions import NetworkError
-from cli import parse_args
-from constants import (PROCESSED_EXISTS_MESSAGE, PROCESSED_NOT_EXISTS_MESSAGE,
+from kgd.exceptions import NetworkError
+from kgd.cli import parse_args
+from kgd.constants import (PROCESSED_EXISTS_MESSAGE, PROCESSED_NOT_EXISTS_MESSAGE,
                        ExitStatus)
-from parsing import TaxPaymentParser, processed_bins_fpath
-from utils import load_lines, append_file, is_server_up
+from kgd.parsing import TaxPaymentParser, processed_bins_fpath
+from kgd.utils import load_lines, append_file, is_server_up
 
 
 class TqdmUpTo(tqdm):
