@@ -1,3 +1,4 @@
+import socket
 import subprocess as subp
 from urllib3 import Retry
 
@@ -29,7 +30,7 @@ def append_file(fpath, data):
 
 def requests_retry_session(retries, backoff,
                            status_forcelist, session=None):
-    """ Make request with timeout. """
+    """ Make request with timeout and retries """
     session = session or requests.Session()
     retry = Retry(total=retries,read=retries, connect=retries,
                   backoff_factor=backoff, status_forcelist=status_forcelist,
@@ -55,3 +56,11 @@ def run_command(args, encoding="utf-8", **kwargs):
     return None
 
 
+def is_server_up(ip, port):
+    is_up = True
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((ip, int(port)))
+    if result != 0:
+        is_up = False
+
+    return is_up

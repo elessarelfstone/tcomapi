@@ -1,6 +1,4 @@
 import argparse
-import os
-import sys
 
 import validators
 
@@ -8,14 +6,14 @@ import validators
 def parse_args():
     """ Parse CLI arguments and return validated values """
     parser = argparse.ArgumentParser(
-        description="Tool for retrieving taxes payments data of KZ companies",
+        description="Tool for retrieving information on tax payments by Kazakhstan companies",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("address_port", type=str,
-                        help="target host and port")
+    parser.add_argument("address_port", type=validators.check_ip_port,
+                        help="KGD API target host and port")
 
     parser.add_argument("token", type=str,
-                        help="secret token")
+                        help="KGD API secret token")
 
     parser.add_argument("fpath", type=validators.check_fpath,
                         help="input file with BINs")

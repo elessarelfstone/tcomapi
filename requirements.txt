@@ -1,6 +1,7 @@
-python-box
-requests
-tqdm
-xmltodict
-python-dotenv
-attrs
+attrs>=19.3.0
+python-box>=3.4.5
+requests>=2.22.0
+six>=1.12.0
+tqdm>=4.38.0
+xmltodict>=0.12.0
+python-dotenv>=0.10.3

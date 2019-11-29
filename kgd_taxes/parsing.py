@@ -8,7 +8,7 @@ from box import Box
 from exceptions import NetworkError
 from utils import (read_file, requests_retry_session,
                    run_command, append_file)
-from validators import strip_converter, date_converter
+from validators import common_corrector, date_corrector
 
 
 def is_bin_processed(bn, processed_fpath):
@@ -21,7 +21,7 @@ def is_bin_processed(bn, processed_fpath):
 
 
 def processed_bins_fpath(fpath):
-    """ Return path to file with processed BINs"""
+    """ Return path to file with processed BINs """
     return os.path.join(os.path.dirname(fpath),
                         os.path.basename(fpath) + '.prsd')
 
@@ -30,18 +30,18 @@ def processed_bins_fpath(fpath):
 class PaymentData:
     """ Wrap dict and validate/convert values of each field"""
     bin = attr.ib(default='')
-    taxorgcode = attr.ib(converter=strip_converter, default='')
-    nametaxru = attr.ib(converter=strip_converter, default='')
-    nametaxkz = attr.ib(converter=strip_converter, default='')
-    kbk = attr.ib(converter=strip_converter, default='')
-    kbknameru = attr.ib(converter=strip_converter, default='')
-    kbknamekz = attr.ib(converter=strip_converter, default='')
-    paynum = attr.ib(converter=strip_converter, default='')
-    paytype = attr.ib(converter=strip_converter, default='')
-    entrytype = attr.ib(converter=strip_converter, default='')
-    receiptdate = attr.ib(converter=date_converter, default='')
-    writeoffdate = attr.ib(converter=date_converter, default='')
-    summa = attr.ib(converter=strip_converter, default='')
+    taxorgcode = attr.ib(converter=common_corrector, default='')
+    nametaxru = attr.ib(converter=common_corrector, default='')
+    nametaxkz = attr.ib(converter=common_corrector, default='')
+    kbk = attr.ib(converter=common_corrector, default='')
+    kbknameru = attr.ib(converter=common_corrector, default='')
+    kbknamekz = attr.ib(converter=common_corrector, default='')
+    paynum = attr.ib(converter=common_corrector, default='')
+    paytype = attr.ib(converter=common_corrector, default='')
+    entrytype = attr.ib(converter=common_corrector, default='')
+    receiptdate = attr.ib(converter=date_corrector, default='')
+    writeoffdate = attr.ib(converter=date_corrector, default='')
+    summa = attr.ib(converter=common_corrector, default='')
 
 
 class TaxPaymentParser:
@@ -85,7 +85,6 @@ class TaxPaymentParser:
 
         output_path = f'{base}_out.csv'
 
-        # output_path = f'{base}_out_{suffix}.csv' if self._output_files else f'{base}_out.csv'
         suffix = 2
         while os.path.exists(output_path):
             self._output_files.append(output_path)
@@ -103,10 +102,12 @@ class TaxPaymentParser:
                 reporthook=None):
         def csv_payment_row(p_dict):
             values = []
+            #
             dct = {k.lower(): v.lower() for k, v in p_dict.items()}
             payment_data = PaymentData(**dct)
             return attr.astuple(payment_data)
 
+        # size limit for output csv file
         if os.path.getsize(self._curr_output_file()) >= fsize:
             self._add_output_files(fpath)
 
@@ -124,18 +125,19 @@ class TaxPaymentParser:
             self._failed_bins_count += 1
             raise NetworkError("Failed to process BIN")
 
-        r_dict = {}
+        # Box for payments
+        d = None
 
-        # convert xml to dict with oop features
+        # convert xml to json with OOP features
         if response:
-            r_dict = Box(xmltodict.parse(response.text)).answer
+            d = Box(xmltodict.parse(response.text)).answer
 
         # check if we got some logical errors in response
-        if 'err' in r_dict:
+        if 'err' in d:
             return
 
         # it might be just one payment
-        payments = r_dict.payment if isinstance(r_dict.payment, list) else [r_dict.payment]
+        payments = d.payment if isinstance(d.payment, list) else [d.payment]
 
         rows = []
 
@@ -145,8 +147,3 @@ class TaxPaymentParser:
         for p in payments:
             p.bin = bn
             append_file(self.output_file, ';'.join(csv_payment_row(p)))
-
-        # we need
-        # if payments:
-        #     for row in rows:
-        #         append_file(self.output_file, ';'.join(row))

@@ -10,6 +10,8 @@ def main():
             print(cnst.NO_BINS)
         elif exit_status == 3:
             print(cnst.TOO_MANY_FAILS)
+        elif exit_status == 4:
+            print(cnst.SRV_IS_DOWN)
     except KeyboardInterrupt:
         from constants import ExitStatus
         exit_status = ExitStatus.ERROR_CTRL_C

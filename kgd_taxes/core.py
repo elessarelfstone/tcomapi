@@ -9,7 +9,7 @@ from cli import parse_args
 from constants import (PROCESSED_EXISTS_MESSAGE, PROCESSED_NOT_EXISTS_MESSAGE,
                        ExitStatus)
 from parsing import TaxPaymentParser, processed_bins_fpath
-from utils import load_lines, append_file
+from utils import load_lines, append_file, is_server_up
 
 
 class TqdmUpTo(tqdm):
@@ -24,6 +24,9 @@ def main():
     p = Box(vars(args))
     prsd_bins = []
 
+    if not is_server_up(*p.address_port.split(':')):
+        return ExitStatus.ERROR_SERVER_IS_DOWN
+
     if not os.path.exists(processed_bins_fpath(p.fpath)):
         print(PROCESSED_NOT_EXISTS_MESSAGE)
         open(processed_bins_fpath(p.fpath), 'a').close()
@@ -33,6 +36,7 @@ def main():
 
     src_bins = load_lines(p.fpath)
     if prsd_bins:
+        # TODO use s.difference_update(t)
         bins = [x for x in src_bins if x not in prsd_bins]
     else:
         bins = src_bins
@@ -45,15 +49,11 @@ def main():
         for bn in bins:
             # p.bn = bn
             try:
-                # tax_parser.process(p.address_port, p.token, bn, p.fpath, p.fsize,
-                #                    p.date_range, p.retries, p.backoff, p.timeout,
-                #                    reporthook=pbar.update_to(os.path.basename(tax_parser.output_file),
-                #                                              bn, tax_parser.fails))
                 fname = os.path.basename(parser.output_file)
                 parser.process(bn, **p, reporthook=pbar.update_to(fname, bn, parser.fails))
 
             except NetworkError:
-                # we need break if it's too many fails
+                # exit if it's too many fails
                 fails_percent = parser.fails * 100 / len(bins)
                 if fails_percent > 90:
                     return ExitStatus.ERROR
