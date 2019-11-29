@@ -54,6 +54,7 @@ class TaxPaymentParser:
 
     url_template = "http://{}/cits/api/v1/public/payments?token={}"
     headers = {'content-type': 'text/xml'}
+    # 429 - too many requests
     status_forcelist = (429, 500, 502, 504)
 
     def __init__(self, fpath, fsize):

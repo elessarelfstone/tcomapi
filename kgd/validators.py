@@ -2,7 +2,6 @@ import argparse
 import datetime
 import ipaddress
 import os
-import socket
 
 
 def check_fpath(value):
