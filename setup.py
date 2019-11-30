@@ -6,13 +6,14 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='kgd',
-      version='0.1.3',
+      version='0.1.4',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/kgd',
       author='Dauren Sdykov',
       author_email='elessarelfstone@mail.ru',
       license='MIT',
       packages=['kgd'],
+      include_package_data=True,
       python_requires='>=3.6.1',
       setup_requires=[
           'wheel',
