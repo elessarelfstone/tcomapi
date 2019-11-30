@@ -1,12 +1,14 @@
 from setuptools import setup
 
+from kgd.utils import load_lines
+
 from os import path
 this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='kgd',
-      version='0.1.4',
+      version='0.1.5',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/kgd',
       author='Dauren Sdykov',
@@ -18,10 +20,7 @@ setup(name='kgd',
       setup_requires=[
           'wheel',
       ],
-      install_requires=[
-          'sdnotify>=0.3.2',
-          'asyncssh>=1.16.0',
-      ],
+      install_requires=load_lines('requirements.txt'),
       extras_require={
           'dev': [
               'setuptools>=38.6.0',
