@@ -37,9 +37,12 @@ def main():
     src_bins = load_lines(p.fpath)
     if prsd_bins:
         # TODO use s.difference_update(t)
-        bins = [x for x in src_bins if x not in prsd_bins]
+        # bins = [x for x in src_bins if x not in prsd_bins]
+        s = set(src_bins)
+        s.difference_update(set(prsd_bins))
+        bins = tuple(s)
     else:
-        bins = src_bins
+        bins = tuple(src_bins)
 
     if not bins:
         return ExitStatus.ERROR_NO_BINS

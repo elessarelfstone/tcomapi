@@ -45,10 +45,10 @@ class PaymentData:
 
 
 class TaxPaymentParser:
-
+    # TODO request.xml moved into kgd folder
     request_template = read_file(
         os.path.join(os.path.abspath(
-            os.path.join(os.path.dirname(__file__), os.pardir)), 'request.xml'
+            os.path.join(os.path.dirname(__file__))), 'request.xml'
         )
     )
 
