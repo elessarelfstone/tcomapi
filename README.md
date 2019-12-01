@@ -39,8 +39,11 @@ optional arguments:
 #### Usage examples
 
 ```
-kgd 212.154.167.151:9980 sdfgggw5gsdg4g4g4435dg /home/user/bins.txt -w 6 --backoff 2 2018-01-01:2019-01-01 -f 500000000 
+kgd 113.234.167.155:9910 sdfgggw5gsdg4g4g4435dg /home/user/bins.txt -w 6 --backoff 2 2018-01-01:2019-01-01 -f 500000000 
 ```
+
+Note: In this example address:port and secret token are fake. To run command successfully 
+you need get them from KGD government agency.
 
 ## Installation
 
