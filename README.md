@@ -14,7 +14,7 @@ Tool for retrieving information on tax payments by Kazakhstan companies.
 
 ```
 $ kgd --help
-usage: __main__.py [-h] [-B BACKOFF] [-w TIMEOUT] [-r RETRIES] [-f FSIZE]
+usage: kgd [-h] [-B BACKOFF] [-w TIMEOUT] [-r RETRIES] [-f FSIZE]
                    address_port token fpath date_range
 
 

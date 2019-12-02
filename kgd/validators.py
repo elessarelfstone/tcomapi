@@ -7,7 +7,7 @@ import os
 def check_fpath(value):
     if not os.path.exists(value):
         raise argparse.ArgumentTypeError(
-            "{value} doesn't exists")
+            f"{value} doesn't exists")
     return value
 
 
@@ -31,7 +31,7 @@ def check_ip_port(value):
 def check_positive_float(value):
     def fail():
         raise argparse.ArgumentTypeError(
-            "%s is not a valid value" % value)
+            f"{value} is not a valid value")
     try:
         fvalue = float(value)
     except ValueError:
@@ -44,7 +44,7 @@ def check_positive_float(value):
 def check_positive_int(value):
     def fail():
         raise argparse.ArgumentTypeError(
-            "%s is not a valid value" % value)
+            f"{value} is not a valid value")
     try:
         fvalue = int(value)
     except ValueError:
@@ -57,7 +57,7 @@ def check_positive_int(value):
 def check_date_range(value):
     def fail():
         raise argparse.ArgumentTypeError(
-            "%s is not a valid date range" % value)
+            f"{value} is not a valid date range")
     try:
         date_range = value.split(':')
         if len(date_range) != 2:
