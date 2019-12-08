@@ -89,7 +89,7 @@ class TaxPaymentParser:
         suffix = 2
         while os.path.exists(output_path):
             self._output_files.append(output_path)
-            if os.path.getsize(fpath) < fsize:
+            if os.path.getsize(output_path) < fsize:
                 return
             output_path = f'{base}_out_{suffix}.csv'
             suffix += 1
@@ -110,7 +110,7 @@ class TaxPaymentParser:
 
         # size limit for output csv file
         if os.path.getsize(self._curr_output_file()) >= fsize:
-            self._add_output_files(fpath)
+            self._add_output_files(fpath, fsize)
 
         payments = []
         request = self.request_template.format(bn, *date_range)
