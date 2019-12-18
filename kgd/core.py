@@ -96,7 +96,7 @@ def main():
             except NetworkError:
                 is_fail = True
                 # exit if it's too many fails
-                fails_percent = parser.fails * 100 / len(bins)
+                fails_percent = len(parser.fails) * 100 / len(bins)
                 if fails_percent > 90:
                     return ExitStatus.ERROR
             else:
