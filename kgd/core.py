@@ -65,9 +65,9 @@ def main():
     failed_bins = deque()
     bins = deque(bins)
 
+    total = len(bins)
     parser = TaxPaymentParser(p.fpath, p.fsize)
-    with TqdmUpTo(total=len(bins)) as pbar:
-        # bn = bins.popleft()
+    with TqdmUpTo(total=total) as pbar:
         is_fail = False
         while bins:
             try:
@@ -96,15 +96,10 @@ def main():
             except NetworkError:
                 is_fail = True
                 # exit if it's too many fails
-                fails_percent = len(parser.fails) * 100 / len(bins)
+                fails_percent = len(parser.fails) * 100 / total
                 if fails_percent > 90:
                     return ExitStatus.ERROR
             else:
-                # if parser.fails:
-                #     bn = parser.pop_fail()
-                # else:
-                #     bn = bins.popleft()
-
                 is_fail = False
 
                 # successfully processed BINs will be excluded next time
