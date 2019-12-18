@@ -1,4 +1,5 @@
 import os
+from collections import deque
 
 import attr
 import requests
@@ -7,7 +8,7 @@ from box import Box
 
 from kgd.exceptions import NetworkError
 from kgd.utils import (read_file, requests_retry_session,
-                   run_command, append_file)
+                       run_command, append_file)
 from kgd.validators import common_corrector, date_corrector
 
 
@@ -60,6 +61,7 @@ class TaxPaymentParser:
     def __init__(self, fpath, fsize):
         self._output_files = []
         self._add_output_files(fpath, fsize)
+        self._failed_bins = deque([])
         self._failed_bins_count = 0
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -69,7 +71,13 @@ class TaxPaymentParser:
 
     @property
     def fails(self):
-        return self._failed_bins_count
+        return self._failed_bins
+
+    def add_fail(self, bn):
+        self._failed_bins.append(bn)
+
+    def pop_failed(self):
+        self._failed_bins.popleft()
 
     @property
     def output_file(self):
@@ -100,7 +108,7 @@ class TaxPaymentParser:
     def process(self, bn, address_port=None, token=None,
                 fpath=None, fsize=None, date_range=None,
                 retries=None, backoff=None, timeout=None,
-                reporthook=None):
+                hook=None):
         def csv_payment_row(p_dict):
             values = []
             #
@@ -123,7 +131,7 @@ class TaxPaymentParser:
                                     data=request,
                                     timeout=timeout)
         except Exception:
-            self._failed_bins_count += 1
+            self._failed_bins.append(bn)
             raise NetworkError("Failed to process BIN")
 
         # Box for payments
@@ -148,3 +156,5 @@ class TaxPaymentParser:
         for p in payments:
             p.bin = bn
             append_file(self.output_file, ';'.join(csv_payment_row(p)))
+
+
