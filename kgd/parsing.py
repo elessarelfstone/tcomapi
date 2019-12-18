@@ -23,9 +23,7 @@ def is_bin_processed(bn, processed_fpath):
 
 def processed_bins_fpath(fpath):
     """ Return path to file with processed BINs """
-    return os.path.join(os.path.dirname(fpath),
-                        os.path.basename(fpath) + '.prsd')
-
+    return os.path.splitext(fpath)[0] + '.prsd'
 
 @attr.s
 class PaymentData:
