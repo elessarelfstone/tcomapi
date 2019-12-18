@@ -77,7 +77,7 @@ class TaxPaymentParser:
         self._failed_bins.append(bn)
 
     def pop_failed(self):
-        self._failed_bins.popleft()
+        return self._failed_bins.popleft()
 
     @property
     def output_file(self):
