@@ -2,15 +2,17 @@ import os
 import sys
 from collections import deque, namedtuple
 from enum import Enum
+from time import sleep
 from typing import NamedTuple
 
 from box import Box
+from requests import HTTPError, ConnectionError
 from tqdm import tqdm
 
-from kgd.exceptions import NetworkError
+from kgd.exceptions import KgdTooManyRequests
 from kgd.cli import parse_args
 from kgd.constants import (PROCESSED_EXISTS_MESSAGE,
-                           PROCESSED_NOT_EXISTS_MESSAGE, ExitStatus)
+                           PROCESSED_NOT_EXISTS_MESSAGE, ExitStatus, HOST)
 from kgd.parsing import TaxPaymentParser, processed_bins_fpath
 from kgd.utils import load_lines, append_file, is_server_up
 
@@ -34,7 +36,10 @@ def main():
     p = Box(vars(args))
     prsd_bins = []
 
-    if not is_server_up(*p.address_port.split(':')):
+    timeout = p.timeout
+    del p["timeout"]
+
+    if not is_server_up(HOST):
         return ExitStatus.ERROR_SERVER_IS_DOWN
 
     # if file with parsed BINS exists
@@ -87,18 +92,25 @@ def main():
                         reproc = False
 
                 fname = os.path.basename(parser.output_file)
+
                 parser.process(bn, **p,
                                hook=pbar.update_to(fname,
                                                    bn,
                                                    len(parser.fails),
                                                    reproc=reproc))
+            except (HTTPError, ConnectionError) as e:
+                print(e)
+                return ExitStatus.ERROR
 
-            except NetworkError:
+            except KgdTooManyRequests:
+                parser.put_failed(bn)
                 is_fail = True
                 # exit if it's too many fails
                 fails_percent = len(parser.fails) * 100 / total
                 if fails_percent > 90:
                     return ExitStatus.ERROR
+                sleep(timeout)
+
             else:
                 is_fail = False
 

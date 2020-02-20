@@ -6,7 +6,8 @@ import requests
 import xmltodict
 from box import Box
 
-from kgd.exceptions import NetworkError
+from kgd.constants import HOST
+from kgd.exceptions import KgdTooManyRequests
 from kgd.utils import (read_file, requests_retry_session,
                        run_command, append_file)
 from kgd.validators import common_corrector, date_corrector
@@ -24,6 +25,7 @@ def is_bin_processed(bn, processed_fpath):
 def processed_bins_fpath(fpath):
     """ Return path to file with processed BINs """
     return os.path.splitext(fpath)[0] + '.prsd'
+
 
 @attr.s
 class PaymentData:
@@ -51,8 +53,9 @@ class TaxPaymentParser:
         )
     )
 
-    url_template = "http://{}/cits/api/v1/public/payments?token={}"
-    headers = {'content-type': 'text/xml'}
+    url_template = "https://{}/proxy2/culs_payments?token={}"
+    headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
+               'content-type': 'text/xml'}
     # 429 - too many requests
     status_forcelist = (429, 500, 502, 504)
 
@@ -76,6 +79,9 @@ class TaxPaymentParser:
 
     def pop_failed(self):
         return self._failed_bins.popleft()
+
+    def put_failed(self, bn):
+        self._failed_bins.append(bn)
 
     @property
     def output_file(self):
@@ -103,10 +109,8 @@ class TaxPaymentParser:
         open(output_path, 'a').close()
         self._output_files.append(output_path)
 
-    def process(self, bn, address_port=None, token=None,
-                fpath=None, fsize=None, date_range=None,
-                retries=None, backoff=None, timeout=None,
-                hook=None):
+    def process(self, bn, token=None,
+                fpath=None, fsize=None, date_range=None, hook=None):
         def csv_payment_row(p_dict):
             values = []
             #
@@ -119,25 +123,24 @@ class TaxPaymentParser:
             self._add_output_files(fpath, fsize)
 
         payments = []
-        request = self.request_template.format(bn, *date_range)
-        try:
-            session = requests_retry_session(retries, backoff,
-                                             status_forcelist=self.status_forcelist,
-                                             session=self.session)
-            response = session.post(self.url_template.format(address_port,
-                                                             token),
-                                    data=request,
-                                    timeout=timeout)
-        except Exception:
-            self._failed_bins.append(bn)
-            raise NetworkError("Failed to process BIN")
 
         # Box for payments
         d = None
 
-        # convert xml to json with OOP features
-        if response:
+        request = self.request_template.format(bn, *date_range)
+
+        url = self.url_template.format(HOST, token)
+        response = requests.post(url, request, headers=self.headers)
+
+        if response.status_code != 200:
+            response.raise_for_status()
+
+        if response.text:
+            # convert xml to json with OOP features
             d = Box(xmltodict.parse(response.text)).answer
+
+        else:
+            raise KgdTooManyRequests("Failed to process {}".format(bn))
 
         # check if we got some logical errors in response
         if 'err' in d:

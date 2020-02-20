@@ -56,11 +56,13 @@ def run_command(args, encoding="utf-8", **kwargs):
     return None
 
 
-def is_server_up(ip, port):
+def is_server_up(address, port=443):
     is_up = True
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    result = sock.connect_ex((ip, int(port)))
-    if result != 0:
+
+    try:
+        result = sock.connect_ex((address, int(port)))
+    except Exception:
         is_up = False
 
     return is_up

@@ -1,5 +1,6 @@
 from enum import IntEnum
 
+HOST = "data.egov.kz"
 
 class ExitStatus(IntEnum):
     """Program exit code constants."""
