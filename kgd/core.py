@@ -102,12 +102,18 @@ def main():
                                                    len(parser.fails),
                                                    reproc=reproc))
             except (HTTPError, ConnectionError) as e:
-                fatal_cnt += 1
-                big_timeout += timeout
-                if fatal_cnt > 30:
+                sleep(timeout)
+                if is_server_up(HOST):
+                    parser.put_failed(bn)
+                else:
                     print(e)
                     return ExitStatus.ERROR
-                sleep(big_timeout)
+                # fatal_cnt += 1
+                # big_timeout += timeout
+                # if fatal_cnt > 30:
+                #     print(e)
+                #     return ExitStatus.ERROR
+                # sleep(big_timeout)
 
             except KgdTooManyRequests:
                 parser.put_failed(bn)
