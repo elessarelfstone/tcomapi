@@ -70,6 +70,9 @@ def main():
     failed_bins = deque()
     bins = deque(bins)
 
+    fatal_cnt = 0
+    big_timeout = timeout
+
     total = len(bins)
     parser = TaxPaymentParser(p.fpath, p.fsize)
     with TqdmUpTo(total=total) as pbar:
@@ -99,8 +102,12 @@ def main():
                                                    len(parser.fails),
                                                    reproc=reproc))
             except (HTTPError, ConnectionError) as e:
-                print(e)
-                return ExitStatus.ERROR
+                fatal_cnt += 1
+                big_timeout += timeout
+                if fatal_cnt > 30:
+                    print(e)
+                    return ExitStatus.ERROR
+                sleep(big_timeout)
 
             except KgdTooManyRequests:
                 parser.put_failed(bn)

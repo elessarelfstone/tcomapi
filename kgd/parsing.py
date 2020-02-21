@@ -130,7 +130,7 @@ class TaxPaymentParser:
         request = self.request_template.format(bn, *date_range)
 
         url = self.url_template.format(HOST, token)
-        response = requests.post(url, request, headers=self.headers)
+        response = requests.post(url, request, headers=self.headers, verify=False)
 
         if response.status_code != 200:
             response.raise_for_status()
