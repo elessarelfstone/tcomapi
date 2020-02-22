@@ -2,12 +2,12 @@ import os
 from collections import deque
 import urllib3
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import attr
 import requests
 import xmltodict
 from box import Box
+from xml.parsers.expat import ExpatError
 
 from kgd.constants import HOST
 from kgd.exceptions import KgdTooManyRequests
@@ -15,6 +15,8 @@ from kgd.utils import (read_file, requests_retry_session,
                        run_command, append_file)
 from kgd.validators import common_corrector, date_corrector
 
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def is_bin_processed(bn, processed_fpath):
     """ Check if BIN has been already processed """
@@ -139,8 +141,12 @@ class TaxPaymentParser:
             response.raise_for_status()
 
         if response.text:
-            # convert xml to json with OOP features
-            d = Box(xmltodict.parse(response.text)).answer
+            try:
+                # convert xml to json with OOP features
+                d = Box(xmltodict.parse(response.text)).answer
+            except ExpatError as e:
+                print(response.text)
+                return
 
         else:
             raise KgdTooManyRequests("Failed to process {}".format(bn))
