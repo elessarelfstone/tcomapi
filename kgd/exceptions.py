@@ -4,3 +4,5 @@ class NetworkError(Exception):
 
 class KgdTooManyRequests(Exception):
     pass
+
+

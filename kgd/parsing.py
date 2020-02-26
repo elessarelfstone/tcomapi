@@ -18,6 +18,7 @@ from kgd.validators import common_corrector, date_corrector
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+
 def is_bin_processed(bn, processed_fpath):
     """ Check if BIN has been already processed """
     r = run_command(['grep', bn, processed_fpath])

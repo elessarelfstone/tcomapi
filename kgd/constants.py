@@ -2,6 +2,7 @@ from enum import IntEnum
 
 HOST = "data.egov.kz"
 
+
 class ExitStatus(IntEnum):
     """Program exit code constants."""
     SUCCESS = 0
@@ -22,3 +23,4 @@ PROCESSED_EXISTS_MESSAGE = 'There are processed BINs.'+'\n' +\
 NO_BINS = 'No BINs to parse'
 TOO_MANY_FAILS = 'Too many fails. Exiting...'
 SRV_IS_DOWN = 'Address is unreachable. Exiting...'
+SERVER_IS_DOWN = 'Address is unreachable. Exiting...'

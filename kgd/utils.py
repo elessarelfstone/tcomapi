@@ -1,3 +1,4 @@
+import os
 import socket
 import subprocess as subp
 from urllib3 import Retry
@@ -8,6 +9,7 @@ from requests.adapters import HTTPAdapter
 
 def load_lines(fpath):
     """ Return rows of file as list"""
+
     with open(fpath, "r", encoding="utf-8") as f:
         lines = [b.rstrip() for b in f.readlines()]
 
@@ -26,6 +28,12 @@ def append_file(fpath, data):
     """ Add new line to file"""
     with open(fpath, 'a+', encoding="utf8") as f:
         f.write(data + '\n')
+
+
+def get_base_fpath(fpath):
+    _dir = os.path.dirname(fpath)
+    _basename = os.path.splitext(os.path.basename(fpath))[0]
+    return os.path.join(_dir, _basename)
 
 
 def requests_retry_session(retries, backoff,

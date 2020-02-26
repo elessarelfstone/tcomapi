@@ -9,6 +9,7 @@ from box import Box
 from requests import HTTPError, ConnectionError
 from tqdm import tqdm
 
+
 from kgd.exceptions import KgdTooManyRequests
 from kgd.cli import parse_args
 from kgd.constants import (PROCESSED_EXISTS_MESSAGE,
