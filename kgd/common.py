@@ -80,7 +80,13 @@ class ParseFilesManager:
         return self._output_fpaths[-1]
 
     @property
+    def size(self):
+        return os.path.getsize(self.curr_file)
+
+    @property
     def curr_file(self):
+        if os.path.getsize(self._curr().fpath) >= self._limit_fsize:
+            return self.update2()
         return self._curr().fpath
 
     @property
@@ -95,7 +101,24 @@ class ParseFilesManager:
     def prs_ids(self):
         return load_lines(self.parsed_file)
 
-    def update(self, size):
+    def update(self):
+
+        # increase number suffix for filename
+        num = self._curr().num + 1
+
+        # build filename
+        _new_fpath = f'{self._fpath_base}_out_{num}.{self._ext}'
+
+        # create empty out file
+        open(_new_fpath, 'a').close()
+
+        # initialization info for new out file
+        f_info = FileInfo(fpath=_new_fpath, size=0, num=num)
+        self._output_fpaths.append(f_info)
+
+        return self._curr().fpath
+
+    def update2(self, size):
         # TODO this method is never used. use it
         curr = self._curr()
 

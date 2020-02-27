@@ -5,8 +5,6 @@ from os.path import basename
 from box import Box
 from tqdm import tqdm
 
-import kgd.constants as cnst
-
 from kgd.cli import parse_args
 from kgd.common import ParseFilesManager
 from kgd.constants import SERVER_IS_DOWN, PROLOGUE, STATUS_EXPLANATION
@@ -22,7 +20,7 @@ def main():
         print(SERVER_IS_DOWN)
         sys.exit(-1)
 
-    fm = ParseFilesManager(p.fpath)
+    fm = ParseFilesManager(p.fpath, limit_fsize=p.fsize)
     pr = KgdTaxPaymentParser(p.token, p.timeout)
 
     print(PROLOGUE)
@@ -34,6 +32,9 @@ def main():
         pbar.update(fm.prs_count)
 
         while bins:
+            # if we are over file size limit
+            # fm.check_size()
+
             incr = 1
             r = False
             if pr.failed:
