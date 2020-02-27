@@ -86,7 +86,7 @@ class ParseFilesManager:
     @property
     def curr_file(self):
         if os.path.getsize(self._curr().fpath) >= self._limit_fsize:
-            return self.update2()
+            return self.update()
         return self._curr().fpath
 
     @property
