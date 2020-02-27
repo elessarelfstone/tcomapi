@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='kgd',
-      version='0.1.26',
+      version='0.1.27',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/kgd',
       author='Dauren Sdykov',
