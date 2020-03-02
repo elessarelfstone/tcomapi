@@ -12,9 +12,15 @@ from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
 # from common import ParseFilesManager
-from kgd.utils import is_server_up, append_file, read_file
+from common.utils import is_server_up, append_file, read_file, prepare
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+SEP = ';'
+
+
+class KgdClientError(Exception):
+    pass
 
 
 class KgdResponseError(Exception):
@@ -28,8 +34,12 @@ class KgdRequestError(Exception):
     pass
 
 
-def str_corrector(value):
+def basic_corrector(value):
     return value.rstrip().replace('"', "'").replace('\n', '')
+
+
+def sep_clean(value):
+    return value.replace(SEP, '')
 
 
 def date_corrector(value):
@@ -37,36 +47,27 @@ def date_corrector(value):
     return value.split('+')[0]
 
 
+def num_corrector(value):
+    return sep_clean(basic_corrector(value))
+
+
 @attr.s
 class PaymentData:
     """ Wrap structure provides convenient way to handle payment data.
       Such as validating, converting etc"""
     bin = attr.ib(default='')
-    taxorgcode = attr.ib(converter=str_corrector, default='')
-    nametaxru = attr.ib(converter=str_corrector, default='')
-    nametaxkz = attr.ib(converter=str_corrector, default='')
-    kbk = attr.ib(converter=str_corrector, default='')
-    kbknameru = attr.ib(converter=str_corrector, default='')
-    kbknamekz = attr.ib(converter=str_corrector, default='')
-    paynum = attr.ib(converter=str_corrector, default='')
-    paytype = attr.ib(converter=str_corrector, default='')
-    entrytype = attr.ib(converter=str_corrector, default='')
+    taxorgcode = attr.ib(converter=basic_corrector, default='')
+    nametaxru = attr.ib(converter=basic_corrector, default='')
+    nametaxkz = attr.ib(converter=basic_corrector, default='')
+    kbk = attr.ib(converter=basic_corrector, default='')
+    kbknameru = attr.ib(converter=basic_corrector, default='')
+    kbknamekz = attr.ib(converter=basic_corrector, default='')
+    paynum = attr.ib(converter=num_corrector, default='')
+    paytype = attr.ib(converter=basic_corrector, default='')
+    entrytype = attr.ib(converter=basic_corrector, default='')
     receiptdate = attr.ib(converter=date_corrector, default='')
     writeoffdate = attr.ib(converter=date_corrector, default='')
-    summa = attr.ib(converter=str_corrector, default='')
-
-
-def prepare(row, struct):
-    """ Convert dict into tuple using
-    given structure(attr class, dataclass)."""
-
-    # cast all fields name of struct in lowercase
-    _p_dict = {k.lower(): v for k, v in row.items() if k.lower()}
-
-    # wrap in struct
-    data = struct(**_p_dict)
-
-    return attr.astuple(data)
+    summa = attr.ib(converter=num_corrector, default='')
 
 
 class KgdTaxPaymentParser:
@@ -94,9 +95,6 @@ class KgdTaxPaymentParser:
     def failed(self):
         return self._failed_bins
 
-    def put_fail(self, _bin):
-        self._failed_bins.append(_bin)
-
     def load(self, _bin, date_range):
         request = self.request_template.format(_bin, *date_range)
         url = self.url_template.format(self.host, self.token)
@@ -108,8 +106,7 @@ class KgdTaxPaymentParser:
         if status_code != 200:
             # we are doing something wrong
             if 400 <= status_code <= 499:
-                print(f'{status_code} Client error : {responses[status_code]}')
-                exit()
+                raise KgdClientError(f'{status_code} Client error : {responses[status_code]}')
             else:
                 r.raise_for_status()
 
@@ -146,7 +143,7 @@ class KgdTaxPaymentParser:
 
         return [prepare(p, PaymentData) for p in payments]
 
-    def process_id(self, _bin, date_range, out_fpath, prs_fpath):
+    def process_bin(self, _bin, date_range, out_fpath, prs_fpath):
 
         try:
             payments = self.load(_bin, date_range)
@@ -174,7 +171,7 @@ class KgdTaxPaymentParser:
         else:
             # write payments to output file
             for p in payments:
-                append_file(out_fpath, ';'.join(p))
+                append_file(out_fpath, SEP.join(p))
             # write bin to prs file
             append_file(prs_fpath, _bin)
             self.stat['s'] += 1

@@ -6,10 +6,10 @@ from box import Box
 from tqdm import tqdm
 
 from kgd.cli import parse_args
-from kgd.common import ParseFilesManager
-from kgd.constants import SERVER_IS_DOWN, PROLOGUE, STATUS_EXPLANATION
+from common.data_file_helper import DataFileHelper
+from common.constants import SERVER_IS_DOWN, PROLOGUE, KGD_STATUS_EXPLANATION
 from kgd.api import KgdTaxPaymentParser
-from kgd.utils import is_server_up
+from common.utils import is_server_up
 
 
 def main():
@@ -20,23 +20,20 @@ def main():
         print(SERVER_IS_DOWN)
         sys.exit(-1)
 
-    fm = ParseFilesManager(p.fpath, limit_fsize=p.fsize)
+    fm = DataFileHelper(p.fpath, limit_fsize=p.fsize)
     pr = KgdTaxPaymentParser(p.token, p.timeout)
 
     print(PROLOGUE)
     bins = deque(fm.load_ids())
 
-    # print_status_map()
-    print(STATUS_EXPLANATION)
+    print(KGD_STATUS_EXPLANATION)
     with tqdm(total=fm.all_count) as pbar:
         pbar.update(fm.prs_count)
 
         while bins:
-            # if we are over file size limit
-            # fm.check_size()
-
             incr = 1
             r = False
+
             if pr.failed:
                 _bin = pr.failed.popleft()
                 # inform tqdm about reprocessing
@@ -50,19 +47,19 @@ def main():
             status = pr.status(pr.stat, _bin, fname, r)
             pbar.set_description(status)
             try:
-                r = pr.process_id(_bin, p.date_range, fm.curr_file, fm.parsed_file)
+                r = pr.process_bin(_bin, p.date_range, fm.curr_file, fm.parsed_file)
+
                 if r < 0:
                     print(SERVER_IS_DOWN)
                     exit()
 
+                pbar.update(incr)
             except KeyboardInterrupt:
                 sys.exit(1)
 
             except Exception as e:
                 print(e)
                 sys.exit(-1)
-
-            pbar.update(incr)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from kgd.utils import load_lines, get_base_fpath, append_file
+from common.utils import load_lines, get_base_fpath
 
 
 @dataclass
@@ -18,16 +18,15 @@ def check_id(_id):
         return all([c.isdigit() for c in _id])
 
 
-class ParseFilesManager:
+class DataFileHelper:
 
     """ Helper for handling all
         input and output files manipulations
     """
     def __init__(self, ids_fpath, limit_fsize=100, ext='csv'):
-
-        # TODO limit_fsize must be in MB
         self._output_fpaths = []
         self._ids_fpath = ids_fpath
+        # in Megabytes
         self._limit_fsize = limit_fsize
         self._ext = ext
         self._all_cnt = 0
@@ -39,6 +38,7 @@ class ParseFilesManager:
         # file path for logging parsed ids
         self._parsed_fpath = f'{self._fpath_base}.prs'
 
+        # gather all existsing out files
         self._prepare()
 
     @property
@@ -85,7 +85,8 @@ class ParseFilesManager:
 
     @property
     def curr_file(self):
-        if os.path.getsize(self._curr().fpath) >= self._limit_fsize:
+        size = os.path.getsize(self._curr().fpath)
+        if size >= self._limit_fsize:
             return self.update()
         return self._curr().fpath
 

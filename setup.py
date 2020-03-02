@@ -6,14 +6,14 @@ this_directory = path.abspath(path.dirname(__file__))
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
-setup(name='kgd',
+setup(name='tcomapi',
       version='0.1.27',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
-      url='https://github.com/elessarelfstone/kgd',
+      url='https://github.com/elessarelfstone/tcomapi',
       author='Dauren Sdykov',
       author_email='elessarelfstone@mail.ru',
       license='MIT',
-      packages=['kgd'],
+      packages=['kgd', 'sgov'],
       include_package_data=True,
       python_requires='>=3.6.1',
       setup_requires=[

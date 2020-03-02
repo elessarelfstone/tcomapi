@@ -6,7 +6,7 @@ PROLOGUE = """
 There could be parsed BINs.
 It may take some time. Building list ..."""
 
-STATUS_EXPLANATION = """
+KGD_STATUS_EXPLANATION = """
 > rqe - count of BINs we got KGD API error with. Those BINs are not supposed to be reprocessed.
 > rse - count of occurrences when we got bad response(KGD requests count limitation, 
 html(from proxy e.g. squid) or some other trash not xml formatted). Those BINs are supposed to be reprocessed.
