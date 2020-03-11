@@ -12,11 +12,15 @@ from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
 # from common import ParseFilesManager
+from common.constants import SEP
+from common.correctors import basic_corrector, date_corrector, num_corrector
 from common.utils import is_server_up, append_file, read_file, prepare
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-SEP = ';'
+
+class KgdServerNotAvailableError(Exception):
+    pass
 
 
 class KgdClientError(Exception):
@@ -32,23 +36,6 @@ class KgdRequestError(Exception):
     """ KGD requests count limitation,
     html or some other trash not xml formatted"""
     pass
-
-
-def basic_corrector(value):
-    return value.rstrip().replace('"', "'").replace('\n', '')
-
-
-def sep_clean(value):
-    return value.replace(SEP, '')
-
-
-def date_corrector(value):
-    # return common_corrector(value).split('+')[0]
-    return value.split('+')[0]
-
-
-def num_corrector(value):
-    return sep_clean(basic_corrector(value))
 
 
 @attr.s
@@ -145,6 +132,8 @@ class KgdTaxPaymentParser:
 
     def process_bin(self, _bin, date_range, out_fpath, prs_fpath):
 
+        payments = []
+
         try:
             payments = self.load(_bin, date_range)
 
@@ -166,7 +155,7 @@ class KgdTaxPaymentParser:
             if is_server_up(self.host):
                 self._failed_bins.append(_bin)
             else:
-                return -1
+                raise KgdServerNotAvailableError('Kgd is not available')
 
         else:
             # write payments to output file
@@ -176,7 +165,7 @@ class KgdTaxPaymentParser:
             append_file(prs_fpath, _bin)
             self.stat['s'] += 1
 
-        return 1
+        return payments
 
     @staticmethod
     def status(c, _bin, fname, reprocess):

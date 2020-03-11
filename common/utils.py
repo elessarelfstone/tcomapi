@@ -59,7 +59,7 @@ def is_server_up(address, port=443):
 
 def prepare(row, struct):
     """ Convert dict into tuple using
-    given structure(attr class, dataclass)."""
+    given structure(attr class)."""
 
     # cast all fields name of struct in lowercase
     _p_dict = {k.lower(): v for k, v in row.items() if k.lower()}

@@ -75,9 +75,7 @@ def check_date_range(value):
     return fvalue
 
 
-def common_corrector(value):
-    return value.rstrip().replace('"', "'").replace('\n', '')
+def validate_id(value):
+    pass
 
 
-def date_corrector(value):
-    return common_corrector(value).split('+')[0]

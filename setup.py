@@ -7,19 +7,20 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='tcomapi',
-      version='0.1.27',
+      version='0.1.4',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/tcomapi',
       author='Dauren Sdykov',
       author_email='elessarelfstone@mail.ru',
       license='MIT',
-      packages=['kgd', 'sgov'],
+      packages=['kgd', 'sgov', 'common'],
       include_package_data=True,
       python_requires='>=3.6.1',
       setup_requires=[
           'wheel',
       ],
       install_requires=[
+          'aiohttp',
           'attrs>=19.3.0',
           'python-box>=3.4.5',
           'requests>=2.22.0',
@@ -36,6 +37,7 @@ setup(name='tcomapi',
       entry_points={
           'console_scripts': [
               'kgd=kgd.__main__:main',
+              'sgov=sgov.__main__:main'
           ],
       },
       classifiers=[

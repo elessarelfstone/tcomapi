@@ -9,16 +9,9 @@ import attr
 from box import Box
 from aiohttp.http_exceptions import HttpProcessingError
 
+from common.correctors import common_corrector, bool_corrector
 from common.ratelimit import Ratelimit
 from common.utils import append_file, prepare
-
-
-def common_corrector(value):
-    return '' if value is None else value
-
-
-def bool_corrector(value):
-    return str(value) if isinstance(value, bool) else value
 
 
 class SgovClientError(Exception):

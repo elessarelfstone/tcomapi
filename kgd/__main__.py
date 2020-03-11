@@ -8,7 +8,7 @@ from tqdm import tqdm
 from kgd.cli import parse_args
 from common.data_file_helper import DataFileHelper
 from common.constants import SERVER_IS_DOWN, PROLOGUE, KGD_STATUS_EXPLANATION
-from kgd.api import KgdTaxPaymentParser
+from kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 from common.utils import is_server_up
 
 
@@ -48,18 +48,18 @@ def main():
             pbar.set_description(status)
             try:
                 r = pr.process_bin(_bin, p.date_range, fm.curr_file, fm.parsed_file)
-
-                if r < 0:
-                    print(SERVER_IS_DOWN)
-                    exit()
-
                 pbar.update(incr)
+
+            except KgdServerNotAvailableError:
+                print(SERVER_IS_DOWN)
+                exit()
+
             except KeyboardInterrupt:
                 sys.exit(1)
 
             except Exception as e:
                 print(e)
-                sys.exit(-1)
+                # sys.exit(-1)
 
 
 if __name__ == "__main__":
