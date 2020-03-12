@@ -1,4 +1,4 @@
-from common.constants import SEP
+from tcomapi.common.constants import CSV_SEP
 
 
 def basic_corrector(value):
@@ -6,7 +6,7 @@ def basic_corrector(value):
 
 
 def sep_clean(value):
-    return value.replace(SEP, '')
+    return value.replace(CSV_SEP, '')
 
 
 def date_corrector(value):

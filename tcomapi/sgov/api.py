@@ -1,5 +1,4 @@
 import asyncio
-import json
 from collections import Counter
 from os.path import basename
 from http.client import responses
@@ -9,9 +8,9 @@ import attr
 from box import Box
 from aiohttp.http_exceptions import HttpProcessingError
 
-from common.correctors import common_corrector, bool_corrector
-from common.ratelimit import Ratelimit
-from common.utils import append_file, prepare
+from tcomapi.common.correctors import common_corrector, bool_corrector
+from tcomapi.common.ratelimit import Ratelimit
+from tcomapi.common.utils import append_file, prepare
 
 
 class SgovClientError(Exception):

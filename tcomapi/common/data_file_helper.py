@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from common.utils import load_lines, get_base_fpath
+from tcomapi.common.utils import load_lines, get_base_fpath
 
 
 @dataclass

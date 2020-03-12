@@ -1,4 +1,4 @@
-SEP = ';'
+CSV_SEP = ';'
 
 SERVER_IS_DOWN = 'Address is unreachable. Exiting...'
 

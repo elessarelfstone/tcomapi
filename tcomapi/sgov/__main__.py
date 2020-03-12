@@ -1,15 +1,14 @@
 import sys
 from collections import deque
 
-from sgov.cli import parse_args
-
 from box import Box
 from tqdm import tqdm
 
-from common.constants import SERVER_IS_DOWN, PROLOGUE
-from common.data_file_helper import DataFileHelper
-from common.utils import is_server_up
-from sgov.api import SgovJuridicalsParser
+from tcomapi.common.constants import SERVER_IS_DOWN, PROLOGUE
+from tcomapi.common.data_file_helper import DataFileHelper
+from tcomapi.common.utils import is_server_up
+from tcomapi.sgov.api import SgovJuridicalsParser
+from tcomapi.sgov.cli import parse_args
 
 
 class TComApiTqdm(tqdm):

@@ -1,7 +1,3 @@
-
-from common.correctors import basic_corrector
-
-
 def test_basic_corrector(value):
     pass
 

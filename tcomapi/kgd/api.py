@@ -12,9 +12,9 @@ from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
 # from common import ParseFilesManager
-from common.constants import SEP
-from common.correctors import basic_corrector, date_corrector, num_corrector
-from common.utils import is_server_up, append_file, read_file, prepare
+from tcomapi.common.constants import CSV_SEP
+from tcomapi.common.correctors import basic_corrector, date_corrector, num_corrector
+from tcomapi.common.utils import is_server_up, append_file, read_file, prepare
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -160,7 +160,7 @@ class KgdTaxPaymentParser:
         else:
             # write payments to output file
             for p in payments:
-                append_file(out_fpath, SEP.join(p))
+                append_file(out_fpath, CSV_SEP.join(p))
             # write bin to prs file
             append_file(prs_fpath, _bin)
             self.stat['s'] += 1

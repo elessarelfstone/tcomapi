@@ -1,6 +1,6 @@
 import argparse
 
-import common.validators as validators
+import tcomapi.common.validators as validators
 
 
 def parse_args():

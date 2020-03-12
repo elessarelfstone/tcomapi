@@ -5,11 +5,11 @@ from os.path import basename
 from box import Box
 from tqdm import tqdm
 
-from kgd.cli import parse_args
-from common.data_file_helper import DataFileHelper
-from common.constants import SERVER_IS_DOWN, PROLOGUE, KGD_STATUS_EXPLANATION
-from kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
-from common.utils import is_server_up
+from tcomapi.common.constants import SERVER_IS_DOWN, PROLOGUE, KGD_STATUS_EXPLANATION
+from tcomapi.common.data_file_helper import DataFileHelper
+from tcomapi.common.utils import is_server_up
+from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
+from tcomapi.kgd.cli import parse_args
 
 
 def main():
