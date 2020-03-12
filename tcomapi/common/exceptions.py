@@ -1,0 +1,2 @@
+class ExternalSourceError(Exception):
+    pass
