@@ -1,0 +1,10 @@
+[
+    {"extension": "zip", "mime": "application/zip", "offset": 0, "signature": "50 4B 03 04"},
+    {"extension": "tar", "mime": "application/x-tar", "offset": 257, "signature": "75 73 74 61 72"},
+    {"extension": "gzip", "mime": "application/gzip", "offset": 0, "signature": "1F 8B 08"},
+    {"extension": "7z", "mime": "application/x-7z-compressed", "offset": 0, "signature": "37 7A BC AF 27 1C"},
+    {"extension": "rar", "mime": "application/x-rar-compressed", "offset": 0, "signature": "52 61 72 21 1A 07 01 00"},
+    {"extension": "rar", "mime": "application/rar", "offset": 0, "signature": "52 61 72 21 1A 07 00"},
+    {"extension": "xlsx", "mime": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "offset": 0, "signature": "50 4B 03 04 14 00 06 00"},
+    {"extension": "xls", "mime": "application/vnd.ms-excel", "offset": 0, "signature": "D0 CF 11 E0 A1 B1 1A E1"}
+]
