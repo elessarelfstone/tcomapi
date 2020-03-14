@@ -1,4 +1,4 @@
-KgdTaxes
+Kgd
 ========
 
 Tool for retrieving information on tax payments by Kazakhstan companies.
@@ -24,7 +24,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -w TIMEOUT, --timeout TIMEOUT
-                        server connect timeout (default: 3.0)
+                        server connect and failure timeout (default: 3.0)
   -f FSIZE, --fsize FSIZE
                         size limit for output file (default: 50000000)
 ```
@@ -35,7 +35,7 @@ optional arguments:
 kgd sdfgggw5gsdg4g4g4435dg /home/user/bins.txt -t 3  2018-01-01:2019-01-01 -f 500000000 
 ```
 
-Note: In this example address:port and secret token are fake. To run command successfully 
+Note: In this example secret token is fake. To run command successfully 
 you need get them from KGD government agency.
 
 ## Installation

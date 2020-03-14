@@ -9,6 +9,7 @@ from box import Box
 from aiohttp.http_exceptions import HttpProcessingError
 
 from tcomapi.common.correctors import common_corrector, bool_corrector
+from tcomapi.common.data_file_helper import DataFileHelper
 from tcomapi.common.ratelimit import Ratelimit
 from tcomapi.common.utils import append_file, prepare
 
@@ -44,7 +45,8 @@ class SgovJuridicalsParser:
     host = 'stat.gov.kz'
     url = 'https://{}/api/juridical/?bin={}&lang=ru'
 
-    def __init__(self, fpath, semaphore_limit=20, ratelimit=10):
+    def __init__(self, fm, semaphore_limit=20, ratelimit=10):
+        self.fm = fm
         self._not_success_list = []
         self.stat = Counter()
         for s in ['nse']:
@@ -80,7 +82,7 @@ class SgovJuridicalsParser:
                 else:
                     return d.obj
 
-    async def process_id(self, session, idx, fpath, prs_fpath, semaphore):
+    async def process_id(self, session, idx, semaphore):
 
         row = ()
         try:
@@ -91,24 +93,24 @@ class SgovJuridicalsParser:
         except NotSuccessError as e:
             self.stat['nse'] += 1
             # print('--', idx1)
-            append_file(prs_fpath, idx)
+            append_file(self.fm.parsed_file, idx)
         else:
-            append_file(fpath, row)
-            append_file(prs_fpath, idx)
+            append_file(self.fm.curr_file, row)
+            append_file(self.fm.parsed_file, idx)
 
         return row, idx
 
-    async def _process_coro(self, ids, fpath, prs_fpath, hook=None):
+    async def _process_coro(self, ids, hook=None):
         semaphore = asyncio.Semaphore(self.semaphore_limit)
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-            to_do = [self.process_id(session, _id, fpath, prs_fpath, semaphore) for _id in ids]
+            to_do = [self.process_id(session, _id, semaphore) for _id in ids]
             to_do_iter = asyncio.as_completed(to_do)
 
             for future in to_do_iter:
                 try:
                     _, idx = await future
                     if hook:
-                        hook(1, self._status(idx, basename(fpath)))
+                        hook(1, self._status(idx, basename(self.fm.curr_file)))
 
                 except HttpProcessingError as e:
                     pass
@@ -116,8 +118,8 @@ class SgovJuridicalsParser:
                 except Exception as e:
                     raise
 
-    def process(self, ids, fpath, prs_fpath, hook=None):
+    def process(self, ids, hook=None):
         loop = asyncio.get_event_loop()
-        coro = self._process_coro(ids, fpath, prs_fpath, hook=hook)
+        coro = self._process_coro(ids, hook=hook)
         loop.run_until_complete(coro)
         loop.close()

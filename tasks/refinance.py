@@ -1,7 +1,4 @@
-import json
 import os
-import re
-from datetime import date
 
 import luigi
 import attr
@@ -12,7 +9,6 @@ from tasks.base import ParseJavaScript, GzipToFtp, BaseConfig
 from tcomapi.common.javascript import parse_json_from_js
 from tcomapi.common.utils import save_to_csv
 from settings import CONFIG_DIR
-# from tcomextdata.tasks.base import GzipToFtp, BaseConfig
 
 
 @attr.s
@@ -37,8 +33,9 @@ class RefinanceParse(ParseJavaScript):
 
     def run(self):
         d = parse_json_from_js(self.url, self.pattern)
-        rows = [Row(**_d) for _d in d]
-        save_to_csv(self.output().path, [attr.astuple(_d) for _d in rows])
+        # wrap each row and get tuple
+        rows = [attr.astuple(Row(**_d)) for _d in d]
+        save_to_csv(self.output().path, rows)
 
 
 @requires(RefinanceParse)

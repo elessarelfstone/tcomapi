@@ -12,9 +12,14 @@ from tcomapi.sgov.cli import parse_args
 
 
 class TComApiTqdm(tqdm):
+    # def __init__(self, total, fm):
+    #     super(TComApiTqdm, self).__init__(total=total)
+    #     self.fm = fm
+
     def update_to(self, n, s):
         self.update(n)
         self.set_description(s)
+        # return self.fm.curr_file
 
 
 def main():
@@ -28,12 +33,12 @@ def main():
 
     print(PROLOGUE)
     ids = deque(fm.load_ids())
-    with TComApiTqdm(total=fm.all_count) as pbar:
-        pbar.update(fm.prs_count)
-        pr = SgovJuridicalsParser(p.fpath, semaphore_limit=p.semlimit,
-                                  ratelimit=p.ratelimit)
+    pr = SgovJuridicalsParser(fm, semaphore_limit=p.semlimit,
+                              ratelimit=p.ratelimit)
+    with TComApiTqdm(total=pr.fm.all_count) as pbar:
+        pbar.update(pr.fm.prs_count)
         try:
-            pr.process(ids, fm.curr_file, fm.parsed_file, hook=pbar.update_to)
+            pr.process(ids, hook=pbar.update_to)
         except KeyboardInterrupt:
             sys.exit(1)
 

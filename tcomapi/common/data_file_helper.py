@@ -1,14 +1,22 @@
+import attr
 import os
 from dataclasses import dataclass
 
 from tcomapi.common.utils import load_lines, get_base_fpath
 
 
-@dataclass
+@attr.s
 class FileInfo:
-    fpath: str
-    size: int
-    num: int
+    fpath = attr.ib(default='')
+    size = attr.ib(default='')
+    num = attr.ib(default='')
+
+
+# @dataclass
+# class FileInfo:
+#     fpath: str
+#     size: int
+#     num: int
 
 
 def check_id(_id):
@@ -23,12 +31,14 @@ class DataFileHelper:
     """ Helper for handling all
         input and output files manipulations
     """
-    def __init__(self, ids_fpath, limit_fsize=100, ext='csv'):
+    def __init__(self, ids_fpath, limit_fsize=1000000, ext='csv'):
         self._output_fpaths = []
         self._ids_fpath = ids_fpath
-        # in Megabytes
+
         self._limit_fsize = limit_fsize
         self._ext = ext
+        # self._ids = self.load_ids()
+        # self._all_cnt = len(self._ids)
         self._all_cnt = 0
         self._prs_cnt = 0
 
@@ -40,6 +50,10 @@ class DataFileHelper:
 
         # gather all existsing out files
         self._prepare()
+
+    # @property
+    # def ids(self):
+    #     return self._ids
 
     @property
     def all_count(self):
@@ -119,30 +133,6 @@ class DataFileHelper:
 
         return self._curr().fpath
 
-    def update2(self, size):
-        # TODO this method is never used. use it
-        curr = self._curr()
-
-        # check if size of current out file
-        # more than given limitation
-        if curr.size >= self._limit_fsize:
-            # increase number suffix for filename
-            num = curr.num+1
-
-            # build filename
-            _new_fpath = f'{self._fpath_base}_out_{num}.{self._ext}'
-
-            # create empty out file
-            open(_new_fpath, 'a').close()
-
-            # initialization info for new out file
-            f_info = FileInfo(fpath=_new_fpath, size=size, num=num)
-            self._output_fpaths.append(f_info)
-        else:
-
-            # just increase current file size
-            curr.size += size
-
     def load_ids(self):
         _ids = []
 
@@ -162,7 +152,6 @@ class DataFileHelper:
             return list(s)
         else:
             return ids
-
 
 
 

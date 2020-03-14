@@ -14,11 +14,11 @@ def parse_args():
 
     parser.add_argument("-rl", "--ratelimit", default=10,
                         type=validators.check_positive_int,
-                        help="ratelimit")
+                        help="rate limit(parallelism limit)")
 
     parser.add_argument("-sl", "--semlimit",
                         default=20, type=validators.check_positive_int,
-                        help="semaphore limit")
+                        help="semaphore limit(request frequency limit)")
 
     parser.add_argument("-f", "--fsize",
                         default=100000000, type=validators.check_positive_int,
