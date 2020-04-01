@@ -1,12 +1,16 @@
+import json
 import os
+from datetime import datetime
+
 import luigi
+
 
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
 from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
-                                  gziped_fname, gzip_file,
-                                  identify_webfileformat, download)
+                                  gziped_fname, gzip_file, date_for_fname)
+
 from tcomapi.common.unpacking import unpack
 from settings import TMP_DIR, FTP_PATH, FTP_HOST, FTP_USER, FTP_PASS
 
@@ -64,6 +68,17 @@ class ParseJavaScript(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
 
+class ParseElasticApi(luigi.Task):
+    name = luigi.Parameter(default='')
+    url = luigi.Parameter(default='')
+    url_data_template = luigi.Parameter(default='')
+    url_total = luigi.Parameter(default='')
+    datasets = luigi.Parameter(default='')
+
+    def output(self):
+        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+
+
 @requires(RetrieveWebDataFile)
 class ParseWebExcelFile(luigi.Task):
 
@@ -88,10 +103,11 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
 class GzipToFtp(luigi.Task):
 
-    date = luigi.DateParameter(default=None)
+    date = luigi.Parameter(default=datetime.today())
 
     def output(self):
-        _ftp_path = os.path.join(FTP_PATH, gziped_fname(self.input().path))
+        _ftp_path = os.path.join(FTP_PATH, gziped_fname(self.input().path,
+                                                        suff=date_for_fname(self.date)))
         return RemoteTarget(_ftp_path, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
 

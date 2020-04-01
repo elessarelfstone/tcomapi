@@ -88,7 +88,7 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
         for i, f in enumerate(self.output()):
 
             # set status
-            self.set_status_message(f'Saving {basename(f.path)}')
+            self.set_status_message('Saving {}'.format(basename(f.path)))
 
             # get just filename without extension
             bsname = basename(f.path).split('.')[0]
@@ -143,4 +143,3 @@ class Companies(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.run()
-

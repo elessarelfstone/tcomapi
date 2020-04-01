@@ -73,9 +73,3 @@ def check_date_range(value):
         fail()
 
     return fvalue
-
-
-def validate_id(value):
-    pass
-
-

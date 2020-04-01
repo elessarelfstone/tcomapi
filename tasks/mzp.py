@@ -44,6 +44,7 @@ class GzipMzpToFtp(GzipToFtp):
 
 
 class Mzp(luigi.WrapperTask):
+
     def requires(self):
         return GzipMzpToFtp(url=kgd_mzp().url, name=kgd_mzp().name(),
                             pattern=kgd_mzp().pattern)

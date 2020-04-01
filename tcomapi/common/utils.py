@@ -3,20 +3,36 @@ import gzip
 import hashlib
 import json
 import requests
+import urllib3
 import shutil
 import socket
 import subprocess as subp
 from collections import namedtuple
+from datetime import datetime
 
 import attr
-from requests import ConnectionError, HTTPError
+from requests import ConnectionError, HTTPError, Timeout
 
+from settings import REQUEST_TIMEOUT, FILE_SUFF_DATE_FORMAT
 from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.exceptions import ExternalSourceError
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # handy working with formats
 Formats = namedtuple('Formats', ['extension', 'mime', 'offset', 'signature'])
+
+
+def date_for_fname(dt):
+    return dt.strftime(FILE_SUFF_DATE_FORMAT)
+
+
+def curr_date():
+    return datetime.today().strftime('%Y-%m-%d')
+
+
+def curr_date_time():
+    return datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
 
 
 def load_lines(fpath):
@@ -40,6 +56,10 @@ def append_file(fpath, data):
     """ Add new line to file"""
     with open(fpath, 'a+', encoding="utf8") as f:
         f.write(data + '\n')
+
+
+def get_basename(fpath):
+    return os.path.splitext(os.path.basename(fpath))[0]
 
 
 def get_base_fpath(fpath):
@@ -96,8 +116,15 @@ def save_to_csv(fpath, recs, sep=None):
             f.write(row + '\n')
 
 
-def gziped_fname(fpath):
-    return os.path.basename(fpath) + '.gzip'
+def gziped_fname(fpath, suff=None):
+    ext = os.path.basename(fpath).split('.')[1]
+
+    if suff:
+        result = '{}_{}.{}.gzip'.format(get_basename(fpath), suff, ext)
+    else:
+        result = '{}.gzip'.format(get_basename(fpath))
+
+    return result
 
 
 def gzip_file(fpath):
@@ -113,14 +140,14 @@ def gzip_file(fpath):
     return _fpath
 
 
-def load_html(url):
+def load_html(url, headers=None):
     """ Just simply load html"""
     try:
-        with requests.get(url, verify=False) as r:
+        with requests.get(url, verify=False, timeout=REQUEST_TIMEOUT, headers=headers) as r:
             r.raise_for_status()
 
         return r.text
-    except (ConnectionError, HTTPError) as e:
+    except (ConnectionError, HTTPError, Timeout) as e:
         raise ExternalSourceError('Could not load html.' + e.message)
 
 

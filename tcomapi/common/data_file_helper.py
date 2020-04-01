@@ -51,10 +51,6 @@ class DataFileHelper:
         # gather all existsing out files
         self._prepare()
 
-    # @property
-    # def ids(self):
-    #     return self._ids
-
     @property
     def all_count(self):
         return self._all_cnt
@@ -152,12 +148,3 @@ class DataFileHelper:
             return list(s)
         else:
             return ids
-
-
-
-
-
-
-
-
-
