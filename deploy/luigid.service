@@ -1,0 +1,11 @@
+[Unit]
+Description=Luigi Daemon
+After=multi-user.target
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+ExecStart=/home/dataeng/tcomapi/venv/bin/luigid --port 8088 --pidfile /var/run/luigi/luigi.pid --logdir /var/log/luigi --state-path /var/lib/luigi/luigi.state StandardInput=tty-force
+
+[Install]
+WantedBy=multi-user.target

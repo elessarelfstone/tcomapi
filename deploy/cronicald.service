@@ -1,0 +1,11 @@
+[Unit]
+Description=Cronicle Daemon
+After=multi-user.target
+Conflicts=getty@tty1.service
+
+[Service]
+Type=simple
+ExecStart=/opt/cronicle/bin/control.sh start
+
+[Install]
+WantedBy=multi-user.target
