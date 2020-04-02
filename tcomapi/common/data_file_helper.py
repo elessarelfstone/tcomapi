@@ -1,6 +1,5 @@
 import attr
 import os
-from dataclasses import dataclass
 
 from tcomapi.common.utils import load_lines, get_base_fpath
 

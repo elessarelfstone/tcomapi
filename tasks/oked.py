@@ -1,5 +1,4 @@
 import os
-from dataclasses import dataclass, astuple
 
 import luigi
 import attr

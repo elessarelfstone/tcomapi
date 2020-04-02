@@ -2,7 +2,6 @@ import re
 import os
 import urllib3
 from os.path import basename
-from dataclasses import dataclass, astuple
 from shutil import move
 
 import attr
