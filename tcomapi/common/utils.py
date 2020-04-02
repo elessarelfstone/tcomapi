@@ -13,7 +13,6 @@ from datetime import datetime
 import attr
 from requests import ConnectionError, HTTPError, Timeout
 
-from settings import REQUEST_TIMEOUT, FILE_SUFF_DATE_FORMAT
 from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.exceptions import ExternalSourceError
 
@@ -21,6 +20,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # handy working with formats
 Formats = namedtuple('Formats', ['extension', 'mime', 'offset', 'signature'])
+
+REQUEST_TIMEOUT = 10
+FILE_SUFF_DATE_FORMAT = '%Y%m%d'
 
 
 def date_for_fname(dt):

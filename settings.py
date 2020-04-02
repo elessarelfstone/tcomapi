@@ -16,9 +16,6 @@ EVENTS_DB_PATH = os.path.join(os.path.expanduser('~'), 'data', 'events.db')
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.join(WORK_DIR, 'tasks', 'config')
 
-REQUEST_TIMEOUT = 10
-FILE_SUFF_DATE_FORMAT = '%Y%m%d'
-
 
 FTP_PATH = '/external_sources/http_test2/'
 FTP_HOST = '10.8.36.51'
