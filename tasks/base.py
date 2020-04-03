@@ -103,7 +103,7 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
 class GzipToFtp(luigi.Task):
 
-    date = luigi.Parameter(default=datetime.today())
+    date = luigi.DateParameter(default=datetime.today())
 
     def output(self):
         _ftp_path = os.path.join(FTP_PATH, gziped_fname(self.input().path,
