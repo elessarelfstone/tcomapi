@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='tcomapi',
-      version='0.1.11',
+      version='0.1.12',
       description='Tool for retrieving information on tax payments by Kazakhstan companies',
       url='https://github.com/elessarelfstone/tcomapi',
       author='Dauren Sdykov',

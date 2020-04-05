@@ -6,6 +6,7 @@ Conflicts=getty@tty1.service
 [Service]
 Type=simple
 ExecStart=/opt/cronicle/bin/control.sh start
+StandardInput=tty-force
 
 [Install]
 WantedBy=multi-user.target
