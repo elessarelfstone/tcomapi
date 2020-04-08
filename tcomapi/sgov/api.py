@@ -1,17 +1,24 @@
 import asyncio
+import json
+
 from collections import Counter
 from os.path import basename
 from http.client import responses
+from time import sleep
 
 import aiohttp
 import attr
-from box import Box
+import requests
 from aiohttp.http_exceptions import HttpProcessingError
+from box import Box
+from requests import ConnectionError, HTTPError, Timeout
+
 
 from tcomapi.common.correctors import common_corrector, bool_corrector
+from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.common.data_file_helper import DataFileHelper
 from tcomapi.common.ratelimit import Ratelimit
-from tcomapi.common.utils import append_file, prepare
+from tcomapi.common.utils import append_file, prepare, download
 
 
 class SgovClientError(Exception):
@@ -20,6 +27,7 @@ class SgovClientError(Exception):
 
 class NotSuccessError(Exception):
     pass
+
 
 
 @attr.s
@@ -39,6 +47,61 @@ class JuridicalInfo:
     krpbfname = attr.ib(converter=common_corrector, default='')
     katoid = attr.ib(converter=common_corrector, default='')
     krpname = attr.ib(converter=common_corrector, default='')
+
+
+class SgovRCutParser:
+    host = 'stat.gov.kz'
+    rcuts_url = 'https://{}/api/rcut/ru'.format(host)
+    request_url_tmpl = 'https://{}/api/sbr/request'.format(host)
+    check_req_url_tmpl = 'https://{}/api/sbr/requestResult/{}/{}'
+    file_download_url_tmpl = 'https://{}/api/sbr/download?bucket=SBR&guid={}'
+
+    # kato_id = 741880
+
+    def __init__(self, conditions, wait_for_request_done=10):
+        self.conditions = conditions
+        self.wait_for_request_done = wait_for_request_done
+        try:
+            r = requests.get(self.rcuts_url, verify=False)
+            if r.status_code != 0:
+                r.raise_for_status()
+            rcuts = json.loads(r.text)
+            self.curr_cut_id = rcuts[0]["id"]
+        except (ConnectionError, HTTPError, Timeout):
+            raise ExternalSourceError('Statgov rcuts not available')
+
+    def file_url(self, kato_ids):
+
+        kato_condition = {"classVersionId": 213, "itemIds": kato_ids}
+        conditions = self.conditions
+        conditions.append(kato_condition)
+        data = {"conditions": conditions, "cutId": self.curr_cut_id}
+
+        r = requests.post(self.request_url_tmpl, json=data, verify=False)
+        if r.status_code != 0:
+            r.raise_for_status()
+
+        rdata = json.loads(r.text)
+        if rdata["success"]:
+            obj_num = rdata["obj"]
+        else:
+            raise NotSuccessError('Request is not success')
+
+        url = self.check_req_url_tmpl.format(self.host, obj_num, 'ru')
+        file_guid = None
+        while not file_guid:
+            sleep(self.wait_for_request_done)
+            r = requests.get(url, verify=False)
+            rdata = r.json()
+            if rdata["success"]:
+                if rdata["description"] == 'Обработан':
+                    file_guid = rdata["fileGuid"]
+            else:
+                raise NotSuccessError('Checking request is not success')
+        return file_guid
+
+    def parse(self):
+        pass
 
 
 class SgovJuridicalsParser:
@@ -123,3 +186,14 @@ class SgovJuridicalsParser:
         coro = self._process_coro(ids, hook=hook)
         loop.run_until_complete(coro)
         loop.close()
+
+
+# conditions = [{"classVerisonId": 2153, "itemIds": [742681]},
+#               {"classVersionId": 1989, "itemIds": [39355]},
+#             {"classVersionId": 213, "itemIds": [741880]}]
+
+conditions = [{"classVerisonId": 2153, "itemIds": [742681]}, {"classVersionId": 1989, "itemIds": [39355]}]
+
+obj = SgovRCutParser(conditions)
+print(obj.file_url([253161]))
+

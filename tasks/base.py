@@ -3,11 +3,10 @@ import os
 from datetime import datetime
 
 import luigi
-
-
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
+from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname)
 
@@ -104,6 +103,7 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 class GzipToFtp(luigi.Task):
 
     date = luigi.DateParameter(default=datetime.today())
+    # fsizelim = luigi.IntParameter(default=0)
 
     def output(self):
         _ftp_path = os.path.join(FTP_PATH, gziped_fname(self.input().path,
@@ -112,5 +112,7 @@ class GzipToFtp(luigi.Task):
                             username=FTP_USER, password=FTP_PASS)
 
     def run(self):
+        if os.path.getsize(self.input().path) == 0:
+            raise ExternalSourceError('No data to put to ftp')
         _fpath = gzip_file(self.input().path)
         self.output().put(_fpath, atomic=False)
