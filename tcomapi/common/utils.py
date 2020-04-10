@@ -124,7 +124,7 @@ def gziped_fname(fpath, suff=None):
     if suff:
         result = '{}_{}.{}.gzip'.format(get_basename(fpath), suff, ext)
     else:
-        result = '{}.gzip'.format(get_basename(fpath))
+        result = '{}.{}.gzip'.format(get_basename(fpath), ext)
 
     return result
 

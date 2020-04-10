@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from datetime import datetime
 
 import luigi
@@ -11,7 +12,7 @@ from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname)
 
 from tcomapi.common.unpacking import unpack
-from settings import TMP_DIR, FTP_PATH, FTP_HOST, FTP_USER, FTP_PASS
+from settings import TMP_DIR, ARCH_DIR, FTP_PATH, FTP_HOST, FTP_USER, FTP_PASS
 
 
 class BaseConfig(luigi.Config):
@@ -113,6 +114,11 @@ class GzipToFtp(luigi.Task):
 
     def run(self):
         if os.path.getsize(self.input().path) == 0:
-            raise ExternalSourceError('No data to put to ftp')
-        _fpath = gzip_file(self.input().path)
-        self.output().put(_fpath, atomic=False)
+            _fpath = os.path.join(ARCH_DIR, gziped_fname(self.input().path))
+            self.output().put(_fpath, atomic=False)
+            # raise ExternalSourceError('No data to put to ftp')
+        else:
+            _fpath = gzip_file(self.input().path)
+            arch_fpath = os.path.join(ARCH_DIR, os.path.basename(_fpath))
+            shutil.copy(_fpath, arch_fpath)
+            self.output().put(_fpath, atomic=False)
