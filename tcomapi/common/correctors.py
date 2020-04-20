@@ -10,7 +10,6 @@ def sep_clean(value):
 
 
 def date_corrector(value):
-    # return common_corrector(value).split('+')[0]
     return value.split('+')[0]
 
 
@@ -24,3 +23,7 @@ def common_corrector(value):
 
 def bool_corrector(value):
     return str(value) if isinstance(value, bool) else value
+
+
+def float_corrector(value):
+    return value.replace(',', '.')
