@@ -54,7 +54,7 @@ class GzipFoodBasketToFtp(GzipToFtp):
     pass
 
 
-class UnemplRate(luigi.WrapperTask):
+class IncomePopul(luigi.WrapperTask):
 
     def requires(self):
         return GzipFoodBasketToFtp(name=dgov_incomepopul().name(),
