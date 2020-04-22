@@ -70,10 +70,9 @@ class ParseJavaScript(luigi.Task):
 
 class ParseElasticApi(luigi.Task):
     name = luigi.Parameter(default='')
-    url = luigi.Parameter(default='')
-    url_data_template = luigi.Parameter(default='')
-    url_total = luigi.Parameter(default='')
-    datasets = luigi.Parameter(default='')
+    # TODO remove url, url_data_temlate, url_total params
+    versions = luigi.Parameter(default='')
+    rep_name = luigi.Parameter(default='')
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))

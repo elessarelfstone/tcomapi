@@ -10,7 +10,7 @@ headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)'}
 BIG_QUERY_SLICE_SIZE = 10000
 
 
-def load_datasets(url):
+def load_versions(url):
     """ load versions of dataset"""
     html = load_html(url, headers=headers)
     soup = BeautifulSoup(html, 'lxml')
@@ -64,26 +64,33 @@ class ElasticApiParser:
         pass
 
     @staticmethod
-    def data_url(rep_name, apikey, version=None, query=None):
+    def report_url(host, rep_name):
+        uri = 'datasets/view?index={}'.format(rep_name)
+        return '{}/{}'.format(host, uri)
+
+    @staticmethod
+    def data_url(host, rep_name, apikey, version=None, query=None):
         _v = ''
         if version:
             _v = version
 
-        uri = '/api/v4/{}/{}?apiKey='.format(rep_name, _v, apikey).replace('//', '/')
+        uri = '/api/v4/{}/{}?apiKey={}'.format(rep_name, _v, apikey).replace('//', '')
         if query:
-            uri = '{}&{}'.format(uri, query)
-        return '{}{}'.format(uri, query)
+            uri = '{}&source={}'.format(uri, query)
+        return '{}{}'.format(host, uri)
 
     @staticmethod
-    def detail_url(rep_name, apikey, version=None, query=None):
-        pass
+    def detail_url(host, rep_name, apikey, version=None, query=None):
+        _v = ''
+        if version:
+            _v = version
 
+        uri = '/api/detailed/{}/{}?apiKey={}'.format(rep_name, _v, apikey).replace('//', '')
+        if query:
+            uri = '{}&source={}'.format(uri, query)
+        return '{}{}'.format(host, uri)
 
     @staticmethod
-    def meta_url(rep_name, apikey, version=None, query=None):
-        pass
-
-
-
-
-
+    def meta_url(host, rep_name, version):
+        uri = '/meta/{}/{}'.format(rep_name, version).replace('//', '')
+        return '{}{}'.format(host, uri)

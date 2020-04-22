@@ -26,25 +26,25 @@ from settings import CONFIG_DIR, DGOV_API_KEY
 
 @attr.s
 class Row:
-    indicator = attr.ib(default='', validator=is_float, converter=float_corrector)
-    oblrus = attr.ib(default='')
-    edizmrus = attr.ib(default='')
+    regionkz = attr.ib(default='')
+    indicator = attr.ib(default='')
     year = attr.ib(default='')
-    оblkaz = attr.ib(default='')
-    edizmkaz = attr.ib(default='')
+    edizmru = attr.ib(default='')
+    edizmkz = attr.ib(default='')
+    regionru = attr.ib(default='')
 
 
-class dgov_foodbasket(BaseConfig):
+class dgov_unemplrate(BaseConfig):
     rep_name = luigi.Parameter(default='')
     url_total = luigi.Parameter(default='')
     versions = luigi.TupleParameter(default=tuple())
 
 
-config_path = os.path.join(CONFIG_DIR, 'foodbasket.conf')
+config_path = os.path.join(CONFIG_DIR, 'unemplrate.conf')
 add_config_path(config_path)
 
 
-class ParseFoodBasket(ParseElasticApi):
+class ParseUnemplRate(ParseElasticApi):
 
     def run(self):
         rep_url = eprs.report_url(eprs.host, self.rep_name)
@@ -57,17 +57,17 @@ class ParseFoodBasket(ParseElasticApi):
             save_to_csv(self.output().path, data)
 
 
-@requires(ParseFoodBasket)
+@requires(ParseUnemplRate)
 class GzipFoodBasketToFtp(GzipToFtp):
     pass
 
 
-class FoodBasket(luigi.WrapperTask):
+class UnemplRate(luigi.WrapperTask):
 
     def requires(self):
-        return GzipFoodBasketToFtp(name=dgov_foodbasket().name(),
-                                   versions=dgov_foodbasket().versions,
-                                   rep_name=dgov_foodbasket().rep_name)
+        return GzipFoodBasketToFtp(name=dgov_unemplrate().name(),
+                                   versions=dgov_unemplrate().versions,
+                                   rep_name=dgov_unemplrate().rep_name)
 
 
 if __name__ == '__main__':
