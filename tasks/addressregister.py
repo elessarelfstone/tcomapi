@@ -8,7 +8,7 @@ from luigi.util import requires
 
 from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi
 from tcomapi.common.utils import save_to_csv, append_file
-from tcomapi.dgov.api import (load_datasets, load_data_as_tuple,
+from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
                               build_query_url, BIG_QUERY_SLICE_SIZE, load_total)
 
 from settings import CONFIG_DIR, DGOV_API_KEY
