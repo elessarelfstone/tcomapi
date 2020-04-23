@@ -38,7 +38,9 @@ def main(fsdir, size, ext=None):
             # if extension is given
             _fns = fnmatch.filter(fns, '*.{}'.format(ext))
 
+        # get path for each file
         fpths = [os.path.join(fsdir, fn) for fn in _fns]
+        # filter only appropriate sized files
         _well_sized = [f for f in fpths if os.path.getsize(f) > int(size)]
 
         src_fpath = None

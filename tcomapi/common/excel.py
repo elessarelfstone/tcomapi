@@ -5,6 +5,8 @@ from collections import namedtuple
 import numpy as np
 import pandas as pd
 
+from tcomapi.common.utils import CSV_SEP
+
 
 def parse(fpath, wrapper, sheets=None,
           skiprows=None, usecols=None):

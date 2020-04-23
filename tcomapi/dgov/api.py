@@ -1,4 +1,6 @@
 import json
+from concurrent import futures
+from datetime import datetime
 
 import attr
 from bs4 import BeautifulSoup
@@ -29,6 +31,25 @@ def load_data_as_tuple(url, struct):
             pass
 
     return _data
+
+
+def load_data_as_dict(url, struct, date=None):
+    def date_from_str(s):
+        pass
+
+    _json = load_html(url, headers=headers)
+    dicts = [{k.lower(): v for k, v in d.items()} for d in json.loads(_json)]
+    # dicts = { for d in json.loads(_json)}
+    _data = []
+    for d in dicts:
+        try:
+            _data.append(attr.astuple(struct(**d)))
+            # _data.append(attr.as(struct(**d)))
+            # _
+        except BadDataType as e:
+            pass
+
+    return _data
     # return [attr.astuple(struct(**_d)) for _d in data]
 
 
@@ -49,19 +70,15 @@ class ElasticApiParser:
 
     host = 'https://data.egov.kz'
 
-    def __init__(self, url_template, struct, slice_size, qfilter=None):
-        self.url_template = url_template
-        self.slice_size = slice_size
-        self.struct = struct
-        self.qfilter = qfilter
+    def __init__(self, name, apikey):
+        self.name = name
+        self.apikey = apikey
+        self.query_tmpl = '{"from": {}, "size": {}}'
 
     @staticmethod
     def build_filter(qfilter=None):
         if not qfilter:
             _filter = ''
-
-    def process_slice(self, query):
-        pass
 
     @staticmethod
     def report_url(host, rep_name):
@@ -85,7 +102,7 @@ class ElasticApiParser:
         if version:
             _v = version
 
-        uri = '/api/detailed/{}/{}?apiKey={}'.format(rep_name, _v, apikey).replace('//', '')
+        uri = '/api/detailed/{}/{}?apiKey={}'.format(rep_name, _v, apikey).replace('/?', '?')
         if query:
             uri = '{}&source={}'.format(uri, query)
         return '{}{}'.format(host, uri)
@@ -94,3 +111,37 @@ class ElasticApiParser:
     def meta_url(host, rep_name, version):
         uri = '/meta/{}/{}'.format(rep_name, version).replace('//', '')
         return '{}{}'.format(host, uri)
+
+    def process_slice(self, rep_name, start, size):
+        url = ElasticApiParser.data_url(self.host, rep_name, self.apikey)
+        query = '{"from": {}, "size": {}'.format(start, size)
+
+        load_html()
+
+
+    def process_rep(self, rep_name, elkfilter=None):
+        def get_range(i, ss):
+            pass
+
+        ss = BIG_QUERY_SLICE_SIZE
+        total = load_total(ElasticApiParser.detail_url(self.host, rep_name, self.apikey))
+        req_cnt, rest = total // ss, total % ss
+        if rest:
+            req_cnt += 1
+
+        to_do_map = [ (d * ss + 1, ss)  for d in range(req_cnt) ]
+
+
+        with futures.ThreadPoolExecutor(max_workers=req_cnt) as executor:
+            for rng in to_do_map:
+                future = executor.submit()
+
+
+
+        query = None
+        if total > BIG_QUERY_SLICE_SIZE:
+            query = self.query_tmpl.format(1, )
+
+
+
+

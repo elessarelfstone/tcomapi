@@ -114,7 +114,8 @@ def save_to_csv(fpath, recs, sep=None):
         _sep = CSV_SEP
     with open(fpath, 'a', encoding="utf-8") as f:
         for rec in recs:
-            row = _sep.join(rec)
+            _rec = [v.replace(_sep, ',') for v in rec]
+            row = _sep.join(_rec)
             f.write(row + '\n')
 
 
@@ -150,7 +151,7 @@ def load_html(url, headers=None):
 
         return r.text
     except (ConnectionError, HTTPError, Timeout) as e:
-        raise ExternalSourceError('Could not load html.' + e.message)
+        raise ExternalSourceError('Could not load html.' + url)
 
 
 def formats():
@@ -290,3 +291,4 @@ def download(url, fpath):
         if os.path.exists(fpath):
             os.remove(fpath)
         raise ExternalSourceError('Could not download file {}'.format(fpath))
+
