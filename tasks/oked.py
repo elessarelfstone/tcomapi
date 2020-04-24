@@ -37,7 +37,10 @@ def update_rows(rows):
     """ Complete each row with levels """
     curr_root = rows[0].code
 
-    for r in rows:
+    for i, r in enumerate(rows):
+        if not r.code:
+            rows.pop(i)
+            continue
         # build new code
         # A, B, C, etc are like roots for a certain code
         if ('.' in r.code) or (r.code.replace('.', '').isdigit()):
@@ -45,6 +48,8 @@ def update_rows(rows):
         else:
             code = r.code
             curr_root = r.code
+
+        r.code = r.code.replace('.', '')
 
         b = code.split('.')
         size = len(b)
@@ -64,6 +69,7 @@ def update_rows(rows):
 class OkedParse(ParseWebExcelFile):
     def run(self):
         rows = parse(self.input().path, Row, skiprows=sgov_oked().skiptop)
+        print(len(rows))
         update_rows(rows)
         save_to_csv(self.output().path, [attr.astuple(r) for r in rows])
 

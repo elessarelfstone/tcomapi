@@ -106,6 +106,12 @@ def prepare(row, struct):
     return attr.astuple(data)
 
 
+def clean(value: str):
+    # we need replace where CSV_SEP occurs
+    # and clean from /n symbol
+    return value.replace(CSV_SEP, ',').strip()
+
+
 def save_to_csv(fpath, recs, sep=None):
     """ Save list of tuples as csv row to file """
     if sep:
@@ -114,7 +120,7 @@ def save_to_csv(fpath, recs, sep=None):
         _sep = CSV_SEP
     with open(fpath, 'a', encoding="utf-8") as f:
         for rec in recs:
-            _rec = [v.replace(_sep, ',') for v in rec]
+            _rec = [clean(v) for v in rec]
             row = _sep.join(_rec)
             f.write(row + '\n')
 
