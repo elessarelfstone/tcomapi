@@ -7,6 +7,7 @@ from luigi.util import requires
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_to_csv
+from tcomapi.common.correctors import basic_corrector
 from settings import CONFIG_DIR
 from tasks.base import (GzipToFtp, BaseConfig, ParseWebExcelFileFromArchive)
 
@@ -22,8 +23,8 @@ class Row:
     ef = attr.ib(default='')
     hij = attr.ib(default='')
     k = attr.ib(default='')
-    name_kaz = attr.ib(default='')
-    name_rus = attr.ib(default='')
+    name_kaz = attr.ib(default='', converter=basic_corrector)
+    name_rus = attr.ib(default='', converter=basic_corrector)
     nn = attr.ib(default='')
 
 
