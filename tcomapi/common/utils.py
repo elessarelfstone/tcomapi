@@ -292,3 +292,8 @@ def download(url, fpath):
             os.remove(fpath)
         raise ExternalSourceError('Could not download file {}'.format(fpath))
 
+
+def swap_elements(values, pos1, pos2):
+    _lst = list(values)
+    _lst[pos1], _lst[pos2] = _lst[pos2], _lst[pos1]
+    return tuple(_lst)

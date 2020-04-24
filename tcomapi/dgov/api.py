@@ -126,6 +126,7 @@ class ElasticApiParser:
         ss = BIG_QUERY_SLICE_SIZE
         total = load_total(ElasticApiParser.detail_url(self.host, rep_name, self.apikey))
         req_cnt, rest = total // ss, total % ss
+        # TODO divmod()
         if rest:
             req_cnt += 1
 

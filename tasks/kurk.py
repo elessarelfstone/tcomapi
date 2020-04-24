@@ -7,7 +7,7 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_to_csv
+from tcomapi.common.utils import save_to_csv, swap_elements as swap
 from settings import CONFIG_DIR
 from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
 
@@ -33,7 +33,7 @@ class sgov_kurk(BaseConfig):
 class KurkParse(ParseWebExcelFile):
     def run(self):
         rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_to_csv(self.output().path, [attr.astuple(r) for r in rows])
+        save_to_csv(self.output().path, [swap(attr.astuple(r), 1, 2) for r in rows])
 
 
 @requires(KurkParse)
