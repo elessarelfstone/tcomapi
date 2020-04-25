@@ -19,11 +19,11 @@ class Row:
     bin = attr.ib(default='')
     rnn = attr.ib(default='')
     taxpayer_organization = attr.ib(converter=basic_corrector, default='')
-    taxpayer_name = attr.ib(default='')
-    owner_name = attr.ib(default='')
+    taxpayer_name = attr.ib(default='', converter=basic_corrector)
+    owner_name = attr.ib(default='', converter=basic_corrector)
     owner_iin = attr.ib(default='')
     owner_rnn = attr.ib(default='')
-    court_decision = attr.ib(default='')
+    court_decision = attr.ib(default='', converter=basic_corrector)
     court_decision_date = attr.ib(default='')
 
 
