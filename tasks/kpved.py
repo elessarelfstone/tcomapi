@@ -15,8 +15,8 @@ from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
 @attr.s
 class Row:
     code = attr.ib(default='')
-    namekz = attr.ib(default='', converter=basic_corrector)
-    nameru = attr.ib(default='', converter=basic_corrector)
+    namekz = attr.ib(default='')
+    nameru = attr.ib(default='')
 
 
 config_path = os.path.join(CONFIG_DIR, 'kpved.conf')

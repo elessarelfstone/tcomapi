@@ -5,7 +5,7 @@ import luigi
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.correctors import basic_corrector
+
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_to_csv
 from settings import CONFIG_DIR
@@ -17,7 +17,7 @@ class Row:
     num = attr.ib(default='')
     bin = attr.ib(default='')
     rnn = attr.ib(default='')
-    taxpayer_organization = attr.ib(converter=basic_corrector, default='')
+    taxpayer_organization = attr.ib(default='')
     taxpayer_name = attr.ib(default='')
     owner_name = attr.ib(default='')
     owner_iin = attr.ib(default='')

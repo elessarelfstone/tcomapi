@@ -1,4 +1,5 @@
 CSV_SEP = ';'
+CSV_SEP_REPLACE = ' '
 
 SERVER_IS_DOWN = 'Address is unreachable. Exiting...'
 

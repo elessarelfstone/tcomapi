@@ -1,4 +1,16 @@
-from tcomapi.common.constants import CSV_SEP
+from tcomapi.common.constants import CSV_SEP, CSV_SEP_REPLACE
+
+
+def clean_for_csv(value: str):
+    # replace CSV_SEP symbol in value by ' '
+    # unless we will have more columns than it needs to be
+    _value = value.replace(CSV_SEP, CSV_SEP_REPLACE)
+
+    # remove trailing newline
+    # replace double quote by single qoute
+    _value = _value.strip().replace('"', "'")
+
+    return _value
 
 
 def basic_corrector(value):

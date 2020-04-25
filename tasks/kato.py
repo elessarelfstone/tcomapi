@@ -23,8 +23,8 @@ class Row:
     ef = attr.ib(default='')
     hij = attr.ib(default='')
     k = attr.ib(default='')
-    name_kaz = attr.ib(default='', converter=basic_corrector)
-    name_rus = attr.ib(default='', converter=basic_corrector)
+    name_kaz = attr.ib(default='')
+    name_rus = attr.ib(default='')
     nn = attr.ib(default='')
 
 

@@ -5,7 +5,6 @@ import attr
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.correctors import basic_corrector
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_to_csv
 from settings import CONFIG_DIR
@@ -15,8 +14,8 @@ from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
 @attr.s
 class Row:
     code = attr.ib(default='')
-    namekz = attr.ib(default='', converter=basic_corrector)
-    nameru = attr.ib(default='', converter=basic_corrector)
+    namekz = attr.ib(default='')
+    nameru = attr.ib(default='')
     lv0 = attr.ib(default='')
     lv1 = attr.ib(default='')
     lv2 = attr.ib(default='')
