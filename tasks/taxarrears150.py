@@ -38,11 +38,11 @@ class Row:
     sub_total_fine = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'debtors150.conf')
+config_path = os.path.join(CONFIG_DIR, 'taxarrears150.conf')
 add_config_path(config_path)
 
 
-class kgd_debtors150(BaseConfig):
+class kgd_taxarrears150(BaseConfig):
     url = luigi.Parameter(default='')
     # name = luigi.Parameter(default='')
     skiptop = luigi.IntParameter(default=0)
@@ -50,21 +50,22 @@ class kgd_debtors150(BaseConfig):
     usecolumns = luigi.Parameter(default='')
 
 
-class Debtors150Parse(ParseWebExcelFile):
+class TaxArrears150Parse(ParseWebExcelFile):
     def run(self):
         rows = parse(self.input().path, Row, skiprows=self.skiptop)
         save_to_csv(self.output().path, [attr.astuple(r) for r in rows])
 
 
-@requires(Debtors150Parse)
+@requires(TaxArrears150Parse)
 class GzipDebtorsToFtp(GzipToFtp):
     pass
 
 
-class Debtors150(luigi.WrapperTask):
+class TaxArrears150(luigi.WrapperTask):
     def requires(self):
-        return GzipDebtorsToFtp(url=kgd_debtors150().url, name=kgd_debtors150().name(),
-                                skiptop=kgd_debtors150().skiptop)
+        return GzipDebtorsToFtp(url=kgd_taxarrears150().url,
+                                name=kgd_taxarrears150().name(),
+                                skiptop=kgd_taxarrears150().skiptop)
 
 
 if __name__ == '__main__':
