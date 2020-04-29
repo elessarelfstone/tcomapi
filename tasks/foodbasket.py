@@ -11,7 +11,7 @@ from tcomapi.common.utils import save_to_csv, append_file
 from tcomapi.common.correctors import float_corrector
 from tcomapi.common.data_verification import is_float
 from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
-                              build_query_url, ElasticApiParser as eprs)
+                              data_url, report_url)
 
 from settings import CONFIG_DIR, DGOV_API_KEY
 
@@ -47,13 +47,13 @@ add_config_path(config_path)
 class ParseFoodBasket(ParseElasticApi):
 
     def run(self):
-        rep_url = eprs.report_url(eprs.host, self.rep_name)
+        rep_url = report_url(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            data_url = eprs.data_url(eprs.host, self.rep_name, DGOV_API_KEY, version=vs)
-            data = load_data_as_tuple(data_url, Row)
+            url = data_url(self.rep_name, DGOV_API_KEY, version=vs)
+            data = load_data_as_tuple(url, Row)
             save_to_csv(self.output().path, data)
 
 

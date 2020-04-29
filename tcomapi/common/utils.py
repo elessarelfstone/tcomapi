@@ -9,9 +9,11 @@ import socket
 import subprocess as subp
 from collections import namedtuple
 from datetime import datetime
+from os.path import basename, join
 
 import attr
 from requests import ConnectionError, HTTPError, Timeout
+from retry_requests import retry, TSession
 
 from tcomapi.common.correctors import clean_for_csv
 from tcomapi.common.constants import CSV_SEP
@@ -61,14 +63,18 @@ def append_file(fpath, data):
         f.write(data + '\n')
 
 
-def get_basename(fpath):
-    return os.path.splitext(os.path.basename(fpath))[0]
+def fpath_noext(fpath):
+    return os.path.splitext(fpath)[0]
 
 
-def get_base_fpath(fpath):
-    _dir = os.path.dirname(fpath)
-    _basename = os.path.splitext(os.path.basename(fpath))[0]
-    return os.path.join(_dir, _basename)
+def fpath_noext2(fpath):
+    directory = os.path.dirname(fpath)
+    bsname = os.path.splitext(basename(fpath))[0]
+    return os.path.join(directory, bsname)
+
+
+def parsed_fpath(fpath, ext='prs'):
+    return '.'.join((fpath_noext(fpath), ext))
 
 
 def run_command(args, encoding="utf-8", **kwargs):
@@ -113,7 +119,7 @@ def save_to_csv(fpath, recs, sep=None):
         _sep = sep
     else:
         _sep = CSV_SEP
-    with open(fpath, 'a', encoding="utf-8") as f:
+    with open(fpath, 'a+', encoding="utf-8") as f:
         for rec in recs:
             # clean
             _rec = [clean_for_csv(v) for v in rec]
@@ -125,9 +131,9 @@ def gziped_fname(fpath, suff=None):
     ext = os.path.basename(fpath).split('.')[1]
 
     if suff:
-        result = '{}_{}.{}.gzip'.format(get_basename(fpath), suff, ext)
+        result = '{}_{}.{}.gzip'.format(fpath_noext(fpath), suff, ext)
     else:
-        result = '{}.{}.gzip'.format(get_basename(fpath), ext)
+        result = '{}.{}.gzip'.format(fpath_noext(fpath), ext)
 
     return result
 
@@ -143,6 +149,26 @@ def gzip_file(fpath):
             shutil.copyfileobj(f_in, f_out)
 
     return _fpath
+
+
+def get(url: str, headers=None, timeout=None,
+        retries=None, backoff_factor=None) -> str:
+    if retries:
+        tsession = TSession(timeout)
+        tsession.headers.update(headers)
+        session = retry(tsession, retries=retries,
+                        backoff_factor=backoff_factor)
+        r = session.get(url, verify=False)
+    else:
+        r = requests.get(url, verify=False,
+                         timeout=timeout, headers=headers)
+
+    if r.status_code != 200:
+        r.raise_for_status()
+
+    return r.text
+
+
 
 
 def load_html(url, headers=None):

@@ -1,7 +1,9 @@
 import attr
+import fnmatch
 import os
+from os.path import join, isfile, getsize
 
-from tcomapi.common.utils import load_lines, get_base_fpath
+from tcomapi.common.utils import load_lines, fpath_noext
 
 
 @attr.s
@@ -25,6 +27,35 @@ def check_id(_id):
         return all([c.isdigit() for c in _id])
 
 
+class ParseSession:
+    def __init__(self, name: str, path: str, max_fsize=None, ext='csv'):
+        self.output = ['{}_out.{}'.format(join(path, name), ext)]
+        self.name = name
+        self.path = path
+        self.max_fsize = max_fsize
+        self.ext = ext
+
+        # collect already exists output files
+        fs = [f for f in os.listdir(path) if isfile(join(path, f))]
+        fs = fnmatch.filter(fs, '{}_out*.{}'.format(name, ext))
+        for f in fs:
+            self.output.append(join(path, f))
+
+    @property
+    def current(self):
+        if self.max_fsize:
+            if getsize(self.output[-1]) > self.max_fsize:
+                n = len(self.output)
+                self.output.append('{}_out_{}.{}'.format(
+                    join(self.path, self.name), n, self.ext)
+                )
+                open(self.output[-1], 'a').close()
+        return self.output[-1]
+
+
+
+
+
 class DataFileHelper:
 
     """ Helper for handling all
@@ -42,7 +73,7 @@ class DataFileHelper:
         self._prs_cnt = 0
 
         # file dirname and file name without extension
-        self._fpath_base = get_base_fpath(ids_fpath)
+        self._fpath_base = fpath_noext(ids_fpath)
 
         # file path for logging parsed ids
         self._parsed_fpath = f'{self._fpath_base}.prs'

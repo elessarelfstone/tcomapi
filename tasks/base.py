@@ -70,7 +70,7 @@ class ParseJavaScript(luigi.Task):
 
 class ParseElasticApi(luigi.Task):
     name = luigi.Parameter(default='')
-    # TODO remove url, url_data_temlate, url_total params
+
     versions = luigi.Parameter(default='')
     rep_name = luigi.Parameter(default='')
 
