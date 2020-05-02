@@ -50,16 +50,16 @@ class ParseIncomePopul(ParseElasticApi):
 
 
 @requires(ParseIncomePopul)
-class GzipFoodBasketToFtp(GzipToFtp):
+class GzipIncomePopulToFtp(GzipToFtp):
     pass
 
 
 class IncomePopul(luigi.WrapperTask):
 
     def requires(self):
-        return GzipFoodBasketToFtp(name=dgov_incomepopul().name(),
-                                   versions=dgov_incomepopul().versions,
-                                   rep_name=dgov_incomepopul().rep_name)
+        return GzipIncomePopulToFtp(name=dgov_incomepopul().name(),
+                                    versions=dgov_incomepopul().versions,
+                                    rep_name=dgov_incomepopul().rep_name)
 
 
 if __name__ == '__main__':

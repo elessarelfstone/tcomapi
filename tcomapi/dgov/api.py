@@ -1,17 +1,19 @@
 import json
 from collections import Counter
 from concurrent import futures
-from datetime import datetime
+from time import sleep
 
 import attr
 from bs4 import BeautifulSoup
 from box import Box
 from requests import Session, HTTPError, ConnectionError, Timeout
+from requests.exceptions import RetryError
 from retry_requests import retry, TSession
 
 
 from tcomapi.common.exceptions import BadDataType
-from tcomapi.common.utils import load_html, save_to_csv, get, append_file
+from tcomapi.common.utils import (load_html, save_to_csv,
+                                  get, append_file, result_fpath)
 
 HOST = 'https://data.egov.kz'
 
@@ -20,14 +22,15 @@ headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)'}
 BACKOFF_FACTOR = 0.5
 CHUNK_SIZE = 10000
 RETRIES = 5
-TIMEOUT = 3
+TIMEOUT = 20
 
 URI_REP_TMPL = 'datasets/view?index={}'
 URI_DATA_TMPL = '/api/v4/{}/{}?apiKey={}'
 URI_DETAIL_TMPL = '/api/detailed/{}/{}?apiKey={}'
 URI_META_TMPL = '/meta/{}/{}'
 
-QUERY_TMPL = '"from": {}, "size": {}'
+QUERY_TMPL = '"from":{},"size":{}'
+RETRY_STATUS = [403, 500, 501, 502]
 
 
 class ElkRequestError(Exception):
@@ -89,33 +92,32 @@ def load_data_as_tuple(url, struct):
 
 
 def load(url, struct, timeout=TIMEOUT,
-         retries=RETRIES,
-         backoff_factor=BACKOFF_FACTOR):
-    # make retry mechanism
-    # tsession = TSession(timeout)
-    # tsession.headers.update(headers)
-    # sess = retry(tsession, retries=retries,
-    #              backoff_factor=backoff_factor)
-    # r = sess.get(url)
-    #
-    # if r.status_code != 200:
-    #     r.raise_for_status()
-    r = get(url, headers=headers, timeout=TIMEOUT,
+         retries=RETRIES, backoff_factor=BACKOFF_FACTOR):
+    r = get(url, headers=headers, timeout=TIMEOUT, status_to_retry=RETRY_STATUS,
             retries=RETRIES, backoff_factor=BACKOFF_FACTOR)
 
     data = None
     if r:
         # trasform to python object
         raw = json.loads(r)
-        # OOP style of dict
-        box_obj = Box(raw)
-        if hasattr(box_obj, 'error'):
-            # raise error if instead of data we get error dict
-            # in response
-            print(url)
-            raise ElkRequestError(box_obj.error)
+        if isinstance(raw, dict):
+            box_obj = Box(raw)
+            if hasattr(box_obj, 'error'):
+                # raise error if instead of data
+                # we get error dict in response
+                raise ElkRequestError(box_obj.error)
         else:
             data = [attr.astuple(struct(**d)) for d in raw]
+        # OOP style of dict
+        # print(raw)
+        # box_obj = Box(raw)
+        # if hasattr(box_obj, 'error'):
+        #     # raise error if instead of data we get error dict
+        #     # in response
+        #     print(url)
+        #     raise ElkRequestError(box_obj.error)
+        # else:
+        # data = [attr.astuple(struct(**d)) for d in raw]
 
     return data
 
@@ -131,7 +133,8 @@ def parse_chunk(url, struct, output_fpath,
     except Exception:
         raise
     else:
-        save_to_csv(output_fpath)
+        save_to_csv(output_fpath, data)
+        # sleep(10)
 
     return len(data)
 
@@ -167,13 +170,11 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
         _chunks = set(chunks)
         _chunks.difference_update(set(parsed_chunks))
         chunks = list(_chunks)
-
-    with futures.ThreadPoolExecutor(max_workers=5) as ex:
+    print(len(chunks))
+    with futures.ThreadPoolExecutor(max_workers=3) as ex:
         to_do_map = {}
         for chunk in chunks:
             # build query using chunk
-            # _query = str(dict(start=chunk[0], size=chunk[1])).replace('start', 'from')
-            # _query = QUERY_TMPL.format(chunk[0], chunk[1])
             _query = '{'+QUERY_TMPL.format(chunk[0], chunk[1])+'}'
 
             # build url
@@ -192,11 +193,14 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
 
             except ElkRequestError:
                 stat['elkerror'] += 1
-                raise
+                print('ElkRequestError' + str(parsed_count) + ' - ' + str(to_do_map[future]))
 
             except (HTTPError, ConnectionError, Timeout) as exc:
                 stat['serror'] += 1
-                raise
+                print('HTTPError, ConnectionError, Timeout' + str(parsed_count) + ' - ' + str(to_do_map[future]))
+            except RetryError:
+                stat['serror'] += 1
+                print('RetryError' + str(parsed_count) + ' - ' + str(to_do_map[future]))
             else:
                 stat['success'] += 1
                 start, size = to_do_map[future]
@@ -206,6 +210,7 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
             if callback:
                 callback(total, all_parsed)
 
+    append_file(result_fpath(output_fpath), stat)
     return all_parsed
 
 
@@ -241,48 +246,3 @@ def load_total(det_url: str) -> int:
         cnt = int(Box(raw).totalCount)
 
     return cnt
-
-
-class ElasticApiParser:
-
-    host = 'https://data.egov.kz'
-    query_tmpl = '{"from": {}, "size": {}}'
-
-    def __init__(self, name, apikey):
-        self.name = name
-        self.apikey = apikey
-
-    @staticmethod
-    def build_filter(qfilter=None):
-        if not qfilter:
-            _filter = ''
-
-    def process_slice(self, rep_name, start=None, size=None):
-        if start:
-            _
-        url = ElasticApiParser.data_url(self.host, rep_name, self.apikey)
-        query = '{"from": {}, "size": {}'.format(start, size)
-
-        load_html()
-
-    def process_rep(self, rep_name, processed=None, elkfilter=None):
-
-        slice_size = BIG_QUERY_SLICE_SIZE
-        total = load_total(detail_url(self.host, rep_name, self.apikey))
-        req_cnt, rest = divmod(total, slice_size)
-        if rest:
-            req_cnt += 1
-
-        to_do_map = [self.process_slice(d * slice_size + 1, slice_size) for d in range(req_cnt)]
-
-        with futures.ThreadPoolExecutor(max_workers=req_cnt) as executor:
-            for rng in to_do_map:
-                future = executor.submit()
-
-        query = None
-        if total > BIG_QUERY_SLICE_SIZE:
-            query = self.query_tmpl.format(1, )
-
-
-
-

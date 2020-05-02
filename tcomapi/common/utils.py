@@ -41,7 +41,7 @@ def curr_date_time():
 
 
 def load_lines(fpath):
-    """ Return rows of file as list"""
+    """ Return rows of file as list """
 
     with open(fpath, "r", encoding="utf-8") as f:
         lines = [b.rstrip() for b in f.readlines()]
@@ -63,6 +63,10 @@ def append_file(fpath, data):
         f.write(data + '\n')
 
 
+def fname_noext(fpath):
+    return os.path.splitext(basename(fpath))[0]
+
+
 def fpath_noext(fpath):
     return os.path.splitext(fpath)[0]
 
@@ -74,6 +78,10 @@ def fpath_noext2(fpath):
 
 
 def parsed_fpath(fpath, ext='prs'):
+    return '.'.join((fpath_noext(fpath), ext))
+
+
+def result_fpath(fpath, ext='res'):
     return '.'.join((fpath_noext(fpath), ext))
 
 
@@ -131,9 +139,9 @@ def gziped_fname(fpath, suff=None):
     ext = os.path.basename(fpath).split('.')[1]
 
     if suff:
-        result = '{}_{}.{}.gzip'.format(fpath_noext(fpath), suff, ext)
+        result = '{}_{}.{}.gzip'.format(fname_noext(fpath), suff, ext)
     else:
-        result = '{}.{}.gzip'.format(fpath_noext(fpath), ext)
+        result = '{}.{}.gzip'.format(fname_noext(fpath), ext)
 
     return result
 
@@ -152,12 +160,14 @@ def gzip_file(fpath):
 
 
 def get(url: str, headers=None, timeout=None,
-        retries=None, backoff_factor=None) -> str:
+        retries=None, backoff_factor=None,
+        status_to_retry=None) -> str:
     if retries:
         tsession = TSession(timeout)
         tsession.headers.update(headers)
         session = retry(tsession, retries=retries,
-                        backoff_factor=backoff_factor)
+                        backoff_factor=backoff_factor,
+                        status_to_retry=status_to_retry)
         r = session.get(url, verify=False)
     else:
         r = requests.get(url, verify=False,
@@ -167,8 +177,6 @@ def get(url: str, headers=None, timeout=None,
         r.raise_for_status()
 
     return r.text
-
-
 
 
 def load_html(url, headers=None):

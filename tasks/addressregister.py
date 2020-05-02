@@ -7,7 +7,7 @@ from luigi.util import requires
 
 
 from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi
-from tcomapi.common.utils import parsed_fpath, load_lines
+from tcomapi.common.utils import parsed_fpath, load_lines, result_fpath
 from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
                               build_query_url, CHUNK_SIZE, load_total,
                               parse_report)
@@ -45,11 +45,21 @@ class ParseAddressRegister(ParseElasticApi):
     def progress(self, total, parsed):
         status_message = ''
         self.set_status_message = '{} of {}'.format(parsed, total)
+        self.set_progress_percentage(int(round(parsed * 100/total)))
 
-        self.set_progress_percentage = int(round(parsed * 100/total))
+    def complete(self):
+        if not os.path.exists(result_fpath(super(ParseAddressRegister, self).output().path)):
+            return False
+        else:
+            return True
+
+    # def output(self):
+    #     return luigi.LocalTarget(result_fpath(
+    #         super(ParseAddressRegister, self).output().path))
 
     def run(self):
         rep = self.rep_name
+        # out_fpath = result_fpath(self.output().path, ext='csv')
         out_fpath = self.output().path
         prs_fpath = parsed_fpath(self.output().path)
 
@@ -60,7 +70,8 @@ class ParseAddressRegister(ParseElasticApi):
                 parsed_chunks.append((int(start), int(size)))
 
         parse_report(rep, Row, DGOV_API_KEY, out_fpath, prs_fpath,
-                     parsed_chunks=parsed_chunks, version=self.versions[0], callback=self.progress)
+                     parsed_chunks=parsed_chunks, version=self.versions[0],
+                     callback=self.progress)
 
         # total = load_total(self.url_total)
         # dataset = self.datasets[0]
@@ -77,16 +88,16 @@ class ParseAddressRegister(ParseElasticApi):
 
 
 @requires(ParseAddressRegister)
-class GzipMzpToFtp(GzipToFtp):
+class GzipAddressToFtp(GzipToFtp):
     pass
 
 
 class AddressRegister(luigi.WrapperTask):
 
     def requires(self):
-        return GzipMzpToFtp(name=dgov_addressregister().name(),
-                            versions=dgov_addressregister().versions,
-                            rep_name=dgov_addressregister().rep_name)
+        return GzipAddressToFtp(name=dgov_addressregister().name(),
+                                versions=dgov_addressregister().versions,
+                                rep_name=dgov_addressregister().rep_name)
 
 
 if __name__ == '__main__':

@@ -70,7 +70,6 @@ class ParseJavaScript(luigi.Task):
 
 class ParseElasticApi(luigi.Task):
     name = luigi.Parameter(default='')
-
     versions = luigi.Parameter(default='')
     rep_name = luigi.Parameter(default='')
 
@@ -112,6 +111,7 @@ class GzipToFtp(luigi.Task):
                             username=FTP_USER, password=FTP_PASS)
 
     def run(self):
+
         if os.path.getsize(self.input().path) == 0:
             _fpath = os.path.join(ARCH_DIR, gziped_fname(self.input().path))
             self.output().put(_fpath, atomic=False)
