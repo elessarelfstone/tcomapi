@@ -18,7 +18,7 @@ from tcomapi.common.correctors import common_corrector, bool_corrector
 from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.common.data_file_helper import DataFileHelper
 from tcomapi.common.ratelimit import Ratelimit
-from tcomapi.common.utils import append_file, prepare, download
+from tcomapi.common.utils import append_file, dict_to_csvrow, download
 
 
 class SgovClientError(Exception):
@@ -152,7 +152,7 @@ class SgovJuridicalsParser:
             async with self.ratelimit:
                 async with semaphore:
                     d = await self._load(session, idx)
-                    row = ';'.join(prepare(d, JuridicalInfo))
+                    row = ';'.join(dict_to_csvrow(d, JuridicalInfo))
         except NotSuccessError as e:
             self.stat['nse'] += 1
             # print('--', idx1)

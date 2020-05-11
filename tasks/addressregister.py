@@ -7,11 +7,55 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseAddressRegister
+from tasks.base import GzipToFtp, BaseConfig, ParseAddressRegister, GzipDataGovToFtp
 from tcomapi.common.utils import parsed_fpath, read_lines, result_fpath
 from tcomapi.dgov.api import parse_addrreg
 
 from settings import CONFIG_DIR, DGOV_API_KEY
+
+
+@attr.s
+class DAtsTypes:
+    actual = attr.ib(default='')
+    code = attr.ib(default='')
+    value_ru = attr.ib(default='')
+    short_value_kz = attr.ib(default='')
+    id = attr.ib(default='')
+    short_value_ru = attr.ib(default='')
+    value_kz = attr.ib(default='')
+
+
+@attr.s
+class DBuildingsPointers:
+    actual = attr.ib(default='')
+    code = attr.ib(default='')
+    value_ru = attr.ib(default='')
+    short_value_kz = attr.ib(default='')
+    id = attr.ib(default='')
+    short_value_ru = attr.ib(default='')
+    value_kz = attr.ib(default='')
+
+
+@attr.s
+class DGeonimsTypes:
+    actual = attr.ib(default='')
+    code = attr.ib(default='')
+    value_ru = attr.ib(default='')
+    short_value_kz = attr.ib(default='')
+    id = attr.ib(default='')
+    short_value_ru = attr.ib(default='')
+    value_kz = attr.ib(default='')
+
+
+@attr.s
+class DRoomsTypes:
+    actual = attr.ib(default='')
+    code = attr.ib(default='')
+    value_ru = attr.ib(default='')
+    short_value_kz = attr.ib(default='')
+    id = attr.ib(default='')
+    short_value_ru = attr.ib(default='')
+    value_kz = attr.ib(default='')
 
 
 @attr.s
@@ -93,35 +137,45 @@ class SPbRow:
     modified = attr.ib(default='')
 
 
-class ParseAddrRegSpb(ParseAddressRegister):
-
-    def run(self):
-        prs_fpath = parsed_fpath(self.output().path)
-        updates_date = None
-        if self.updates_days:
-            updates_date = datetime.today() - timedelta(days=self.updates_days)
-
-        parse_addrreg(self.rep_name, SPbRow, DGOV_API_KEY, self.output().path, prs_fpath,
-                      updates_date=updates_date.date(),
-                      version=self.version, callback=self.progress)
-
-
-class ParseAddressRegisterSAts(ParseAddressRegister):
-
-    def run(self):
-        prs_fpath = parsed_fpath(self.output().path)
-        updates_date = None
-        if self.updates_days:
-            updates_date = datetime.today() - timedelta(days=self.updates_days)
-
-        parse_addrreg(self.rep_name, SPbRow, DGOV_API_KEY, self.output().path, prs_fpath,
-                      updates_date=updates_date.date(),
-                      version=self.version, callback=self.progress)
-
-
 @requires(ParseAddressRegister)
 class GzipAddrRegToFtp(GzipToFtp):
     pass
+
+
+class AddrRegDAtsTypes(luigi.WrapperTask):
+
+    def requires(self):
+        return GzipDataGovToFtp(name='dgov_datstypes',
+                                versions=('data',),
+                                rep_name='d_ats_types',
+                                struct=DAtsTypes)
+
+
+class AddrRegDBuildingsPointers(luigi.WrapperTask):
+
+    def requires(self):
+        return GzipDataGovToFtp(name='dgov_dbuildingspointers',
+                                versions=('data',),
+                                rep_name='d_buildings_pointers',
+                                struct=DBuildingsPointers)
+
+
+class AddrRegDGeonimsTypes(luigi.WrapperTask):
+
+    def requires(self):
+        return GzipDataGovToFtp(name='dgov_dgeonimstypes',
+                                versions=('data',),
+                                rep_name='d_geonims_types',
+                                struct=DGeonimsTypes)
+
+
+class AddrRegDRoomsTypes(luigi.WrapperTask):
+
+    def requires(self):
+        return GzipDataGovToFtp(name='dgov_droomstypes',
+                                versions=('data',),
+                                rep_name='d_rooms_types',
+                                struct=DRoomsTypes)
 
 
 class AddrRegSAts(luigi.WrapperTask):

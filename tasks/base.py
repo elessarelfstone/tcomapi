@@ -10,7 +10,8 @@ from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
 from tcomapi.dgov.api import (parse_addrreg, build_url_report,
-                              load_versions, build_url_data, load_data)
+                              load_versions, build_url_data, load_data,
+                              QUERY_TMPL, CHUNK_SIZE)
 from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname, parsed_fpath,
@@ -137,13 +138,14 @@ class ParseElasticApi(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
     def run(self):
-
+        query = '{' + QUERY_TMPL.format(0, CHUNK_SIZE) + '}'
         rep_url = build_url_report(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            url = build_url_data(self.rep_name, DGOV_API_KEY, version=vs)
+            url = build_url_data(self.rep_name, DGOV_API_KEY,
+                                 version=vs, query=query)
             data = load_data(url, self.struct)
             save_csvrows(self.output().path, data)
 
@@ -198,7 +200,3 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
-
-
-
-
