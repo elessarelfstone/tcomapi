@@ -34,7 +34,8 @@ URI_META_TMPL = '/meta/{}/{}'
 QUERY_TMPL = '"from":{},"size":{}'
 RETRY_STATUS = (403, 500, 501, 502)
 
-Chunk = namedtuple('Chunk', ['start', 'size', 'count'], defaults=[0, 0, 0])
+Chunk = namedtuple('Chunk', ['start', 'size', 'count'])
+Chunk.__new__.__defaults__ = (0,) * len(Chunk._fields)
 
 
 class ElkRequestError(Exception):
