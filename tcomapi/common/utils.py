@@ -14,7 +14,6 @@ from urllib.parse import urlparse
 
 import attr
 from requests import ConnectionError, HTTPError, Timeout, ReadTimeout, ConnectTimeout
-from retry_requests import retry, TSession
 
 from tcomapi.common.correctors import clean_for_csv
 from tcomapi.common.constants import CSV_SEP

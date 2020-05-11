@@ -1,7 +1,6 @@
 import os
 import json
 from collections import Counter, namedtuple, deque
-from concurrent import futures
 from datetime import datetime
 from time import sleep
 from typing import List, Tuple
@@ -11,8 +10,6 @@ from bs4 import BeautifulSoup
 from box import Box
 from requests import Session, HTTPError, ConnectionError, Timeout, ReadTimeout
 from requests.exceptions import RetryError
-from retry_requests import retry, TSession
-from urllib3.exceptions import ReadTimeoutError
 
 
 from tcomapi.common.exceptions import BadDataType, ExternalSourceError
