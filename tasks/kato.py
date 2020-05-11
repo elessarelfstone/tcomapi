@@ -6,7 +6,7 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_to_csv
+from tcomapi.common.utils import save_csvrows
 from tcomapi.common.correctors import basic_corrector
 from settings import CONFIG_DIR
 from tasks.base import (GzipToFtp, BaseConfig, ParseWebExcelFileFromArchive)
@@ -40,7 +40,7 @@ class KatoParse(ParseWebExcelFileFromArchive):
     def run(self):
         for target in self.input():
             rows = parse(target.path, Row, skiprows=self.skiptop, usecols=self.usecolumns)
-            save_to_csv(self.output().path, [attr.astuple(r) for r in rows])
+            save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
 
 
 @requires(KatoParse)

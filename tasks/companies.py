@@ -11,7 +11,7 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_to_csv, save_webfile, build_fpath
+from tcomapi.common.utils import save_csvrows, save_webfile, build_fpath
 from tcomapi.common.unpacking import unpack, zipo_flist
 from settings import CONFIG_DIR, TMP_DIR
 from tasks.base import GzipToFtp, BaseConfig
@@ -123,7 +123,7 @@ class ParseCompanies(luigi.Task):
             sheets = self.sheets
             rows = parse(target.path, Row, skiprows=sgov_companies().skiptop,
                          sheets=sheets)
-            save_to_csv(self.output().path, [attr.astuple(r) for r in rows])
+            save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
 
 
 @requires(ParseCompanies)

@@ -7,17 +7,18 @@ import urllib3
 import shutil
 import socket
 import subprocess as subp
-from collections import namedtuple
+from collections import namedtuple, Counter
 from datetime import datetime
 from os.path import basename, join
+from urllib.parse import urlparse
 
 import attr
-from requests import ConnectionError, HTTPError, Timeout
+from requests import ConnectionError, HTTPError, Timeout, ReadTimeout, ConnectTimeout
 from retry_requests import retry, TSession
 
 from tcomapi.common.correctors import clean_for_csv
 from tcomapi.common.constants import CSV_SEP
-from tcomapi.common.exceptions import ExternalSourceError
+from tcomapi.common.exceptions import ExternalSourceError, BadDataType
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -40,7 +41,7 @@ def curr_date_time():
     return datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
 
 
-def load_lines(fpath):
+def read_lines(fpath):
     """ Return rows of file as list """
 
     with open(fpath, "r", encoding="utf-8") as f:
@@ -108,31 +109,46 @@ def is_server_up(address, port=443):
     return r
 
 
-def prepare(row, struct):
-    """ Convert dict into tuple using
+def dict_to_csvrow(raw_dict, struct):
+    """ Convert given dict into tuple using
     given structure(attr class)."""
 
-    # cast all fields name of struct in lowercase
-    _p_dict = {k.lower(): v for k, v in row.items() if k.lower()}
+    # cast each keys's name of dict to lower case
+    __raw_dict = {k.lower(): v for k, v in raw_dict.items() if k.lower()}
+
+    # get fields of structure
+    keys = [a.name for a in attr.fields(struct)]
+
+    _dict = {}
+    # build new dict with fields specified in struct
+    for k in keys:
+        if k in __raw_dict.keys():
+            _dict[k] = __raw_dict[k]
+
+    # _dict = {k: _dict[k] for k in keys}
 
     # wrap in struct
-    data = struct(**_p_dict)
+    attr_obj = struct(**_dict)
 
-    return attr.astuple(data)
+    return attr.astuple(attr_obj)
 
 
-def save_to_csv(fpath, recs, sep=None):
+def save_csvrows(fpath, recs, sep=None):
     """ Save list of tuples as csv row to file """
+
     if sep:
         _sep = sep
     else:
         _sep = CSV_SEP
+
     with open(fpath, 'a+', encoding="utf-8") as f:
         for rec in recs:
             # clean
             _rec = [clean_for_csv(v) for v in rec]
             row = _sep.join(_rec)
             f.write(row + '\n')
+
+    return os.path.getsize(fpath)
 
 
 def gziped_fname(fpath, suff=None):
@@ -159,19 +175,12 @@ def gzip_file(fpath):
     return _fpath
 
 
-def get(url: str, headers=None, timeout=None,
-        retries=None, backoff_factor=None,
-        status_to_retry=None) -> str:
-    if retries:
-        tsession = TSession(timeout)
-        tsession.headers.update(headers)
-        session = retry(tsession, retries=retries,
-                        backoff_factor=backoff_factor,
-                        status_to_retry=status_to_retry)
-        r = session.get(url, verify=False)
-    else:
-        r = requests.get(url, verify=False,
-                         timeout=timeout, headers=headers)
+def get(url: str, headers=None, timeout=None) -> str:
+
+    # we always specify verify to False
+    # cause we don't use certificate into
+    # Kazakhtelecom network
+    r = requests.get(url, verify=False, headers=headers, timeout=timeout)
 
     if r.status_code != 200:
         r.raise_for_status()
@@ -179,14 +188,34 @@ def get(url: str, headers=None, timeout=None,
     return r.text
 
 
-def load_html(url, headers=None):
-    """ Just simply load html"""
+def load_content(url: str, headers=None, timeout=None) -> str:
+
+    r = None
+
     try:
-        with requests.get(url, verify=False, timeout=REQUEST_TIMEOUT, headers=headers) as r:
+        r = get(url, headers=headers, timeout=timeout)
+    except (ConnectionError, ConnectTimeout) as e:
+        host = urlparse(url).netloc
+        raise ExternalSourceError('Could not connect to ' + host)
+
+    except Exception:
+        raise
+
+    return r
+
+
+def load_url_content(url, headers=None, timeout=None):
+    """ Just simply url data"""
+    try:
+        # we always specify verify to False
+        # cause we don't use certificate into
+        # Kazakhtelecom network
+        with requests.get(url, verify=False, timeout=timeout,
+                          headers=headers) as r:
             r.raise_for_status()
 
         return r.text
-    except (ConnectionError, HTTPError, Timeout) as e:
+    except Exception as e:
         raise ExternalSourceError('Could not load html.' + url)
 
 
@@ -311,6 +340,9 @@ def get_hash(f_path, mode='sha256'):
 def download(url, fpath):
     """Download file using stream"""
     try:
+        # we always specify verify to False
+        # cause we don't use certificate into
+        # Kazakhtelecom network
         with requests.get(url, stream=True, verify=False) as r:
             r.raise_for_status()
             f_size = 0
@@ -319,7 +351,6 @@ def download(url, fpath):
                     if chunk:
                         f.write(chunk)
                         f_size += len(chunk)
-                # f_hash = get_hash(fpath)
 
         return f_size
 
@@ -333,3 +364,7 @@ def swap_elements(values, pos1, pos2):
     _lst = list(values)
     _lst[pos1], _lst[pos2] = _lst[pos2], _lst[pos1]
     return tuple(_lst)
+
+
+def get_stata(c: Counter):
+    return ' '.join(('{}:{}'.format(k, v) for k, v in c.items()))

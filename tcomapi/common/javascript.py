@@ -6,11 +6,11 @@ from bs4 import BeautifulSoup
 
 
 from tcomapi.common.exceptions import ExternalSourceError
-from tcomapi.common.utils import load_html
+from tcomapi.common.utils import load_url_content
 
 
 def load_js_raw(url):
-    r = codecs.encode(load_html(url), encoding="utf8")
+    r = codecs.encode(load_url_content(url), encoding="utf8")
     soup = BeautifulSoup(r, 'lxml')
     scripts = soup.find_all('script')
     return ''.join([str(s) for s in scripts])

@@ -6,12 +6,12 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi
-from tcomapi.common.utils import save_to_csv, append_file
+from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi, GzipDataGovToFtp
+from tcomapi.common.utils import save_csvrows, append_file
 from tcomapi.common.correctors import float_corrector
 from tcomapi.common.data_verification import is_float
-from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
-                              data_url, report_url)
+from tcomapi.dgov.api import (load_versions, load_data,
+                              build_url_data, build_url_report)
 
 from settings import CONFIG_DIR, DGOV_API_KEY
 
@@ -47,27 +47,24 @@ add_config_path(config_path)
 class ParseFoodBasket(ParseElasticApi):
 
     def run(self):
-        rep_url = report_url(self.rep_name)
+
+        rep_url = build_url_report(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            url = data_url(self.rep_name, DGOV_API_KEY, version=vs)
-            data = load_data_as_tuple(url, Row)
-            save_to_csv(self.output().path, data)
-
-
-@requires(ParseFoodBasket)
-class GzipFoodBasketToFtp(GzipToFtp):
-    pass
+            url = build_url_data(self.rep_name, DGOV_API_KEY, version=vs)
+            data = load_data(url, Row)
+            save_csvrows(self.output().path, data)
 
 
 class FoodBasket(luigi.WrapperTask):
 
     def requires(self):
-        return GzipFoodBasketToFtp(name=dgov_foodbasket().name(),
-                                   versions=dgov_foodbasket().versions,
-                                   rep_name=dgov_foodbasket().rep_name)
+        return GzipDataGovToFtp(name='dgov_foodbasket',
+                                versions=('v3', 'v4'),
+                                rep_name='tabysy_azyk-tulik_korzhyny_kun',
+                                struct=Row)
 
 
 if __name__ == '__main__':

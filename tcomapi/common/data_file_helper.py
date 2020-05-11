@@ -3,7 +3,7 @@ import fnmatch
 import os
 from os.path import join, isfile, getsize
 
-from tcomapi.common.utils import load_lines, fpath_noext
+from tcomapi.common.utils import read_lines, fpath_noext
 
 
 @attr.s
@@ -136,11 +136,11 @@ class DataFileHelper:
 
     @property
     def src_ids(self):
-        return load_lines(self._ids_fpath)
+        return read_lines(self._ids_fpath)
 
     @property
     def prs_ids(self):
-        return load_lines(self.parsed_file)
+        return read_lines(self.parsed_file)
 
     def update(self):
 

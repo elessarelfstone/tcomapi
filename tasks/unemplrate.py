@@ -6,22 +6,13 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi
-from tcomapi.common.utils import save_to_csv, append_file
+from tasks.base import GzipToFtp, BaseConfig, GzipDataGovToFtp
+from tcomapi.common.utils import save_csvrows, append_file
 from tcomapi.common.correctors import float_corrector
 from tcomapi.common.data_verification import is_float
-from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
-                              data_url, report_url)
+from tcomapi.dgov.api import (load_versions, build_url_data, build_url_report)
 
 from settings import CONFIG_DIR, DGOV_API_KEY
-
-#
-# def is_float(value):
-#     try:
-#         _ = float(value)
-#         return True
-#     except ValueError:
-#         return False
 
 
 @attr.s
@@ -44,30 +35,13 @@ config_path = os.path.join(CONFIG_DIR, 'unemplrate.conf')
 add_config_path(config_path)
 
 
-class ParseUnemplRate(ParseElasticApi):
-
-    def run(self):
-        rep_url = report_url(self.rep_name)
-        versions = self.versions
-        if not versions:
-            versions = load_versions(rep_url)
-        for vs in versions:
-            url = data_url(self.rep_name, DGOV_API_KEY, version=vs)
-            data = load_data_as_tuple(url, Row)
-            save_to_csv(self.output().path, data)
-
-
-@requires(ParseUnemplRate)
-class GzipFoodBasketToFtp(GzipToFtp):
-    pass
-
-
 class UnemplRate(luigi.WrapperTask):
 
     def requires(self):
-        return GzipFoodBasketToFtp(name=dgov_unemplrate().name(),
-                                   versions=dgov_unemplrate().versions,
-                                   rep_name=dgov_unemplrate().rep_name)
+        return GzipDataGovToFtp(name='dgov_unemplrate',
+                                versions=('v7', 'v8', 'v9', 'v10', 'v11'),
+                                rep_name='zhumyssyzdyk_dengeii1',
+                                struct=Row)
 
 
 if __name__ == '__main__':

@@ -6,3 +6,5 @@ def is_float(instance, attribute, value):
         return float(value.replace(',', '.'))
     except ValueError:
         raise BadDataType('{} cannot be represented as float')
+
+

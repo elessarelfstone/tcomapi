@@ -7,7 +7,7 @@ from luigi.util import requires
 
 from tasks.base import ParseJavaScript, GzipToFtp, BaseConfig
 from tcomapi.common.javascript import parse_json_from_js
-from tcomapi.common.utils import save_to_csv
+from tcomapi.common.utils import save_csvrows
 from settings import CONFIG_DIR
 
 
@@ -35,7 +35,7 @@ class MrpParse(ParseJavaScript):
         d = parse_json_from_js(self.url, self.pattern)
         # wrap each row and get tuple
         rows = [attr.astuple(Row(**_d)) for _d in d]
-        save_to_csv(self.output().path, rows)
+        save_csvrows(self.output().path, rows)
 
 
 @requires(MrpParse)

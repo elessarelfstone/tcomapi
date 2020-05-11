@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 
 import attr
 import luigi
@@ -6,20 +7,82 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi
-from tcomapi.common.utils import parsed_fpath, load_lines, result_fpath
-from tcomapi.dgov.api import (load_versions, load_data_as_tuple,
-                              build_query_url, CHUNK_SIZE, load_total,
-                              parse_report)
+from tasks.base import GzipToFtp, BaseConfig, ParseAddressRegister
+from tcomapi.common.utils import parsed_fpath, read_lines, result_fpath
+from tcomapi.dgov.api import parse_addrreg
 
 from settings import CONFIG_DIR, DGOV_API_KEY
 
 
 @attr.s
-class Row:
+class SAtsRow:
+    id = attr.ib(default='')
+    rco = attr.ib(default='')
+    name_rus = attr.ib(default='')
+    name_kaz = attr.ib(default='')
+    full_path_kaz = attr.ib(default='')
+    full_path_rus = attr.ib(default='')
+    d_ats_type_id = attr.ib(default='')
+    cato = attr.ib(default='')
+    actual = attr.ib(default='')
+    parent_id = attr.ib(default='')
+    modified = attr.ib(default='')
+
+
+@attr.s
+class SGeonimsRow:
+    id = attr.ib(default='')
+    full_path_rus = attr.ib(default='')
+    rco = attr.ib(default='')
+    name_kaz = attr.ib(default='')
+    full_path_kaz = attr.ib(default='')
+    cato = attr.ib(default='')
+    s_ats_id = attr.ib(default='')
+    name_rus = attr.ib(default='')
+    actual = attr.ib(default='')
+    d_geonims_type_id = attr.ib(default='')
+    parent_id = attr.ib(default='')
+    modified = attr.ib(default='')
+
+
+@attr.s
+class SGroundsRow:
+    id = attr.ib(default='')
+    s_geonim_id = attr.ib(default='')
+    full_path_rus = attr.ib(default='')
+    full_path_kaz = attr.ib(default='')
+    cadastre_number = attr.ib(default='')
+    s_ats_id = attr.ib(default='')
+    actual = attr.ib(default='')
+    number = attr.ib(default='')
+    rca = attr.ib(default='')
+    modified = attr.ib(default='')
+
+
+@attr.s
+class SBuildingsRow:
+    s_geonims_id = attr.ib(default='')
+    d_buildings_pointer_id = attr.ib(default='')
+    number = attr.ib(default='')
+    modified = attr.ib(default='')
+    full_path_rus = attr.ib(default='')
+    id = attr.ib(default='')
+    full_path_kaz = attr.ib(default='')
+    distance = attr.ib(default='')
+    this_is = attr.ib(default='')
+    s_ats_id = attr.ib(default='')
+    actual = attr.ib(default='')
+    d_buildings_pointer_code = attr.ib(default='')
+    parent_rca = attr.ib(default='')
+    s_ground_id = attr.ib(default='')
+    rca = attr.ib(default='')
+    parent_id = attr.ib(default='')
+
+
+@attr.s
+class SPbRow:
     id = attr.ib(default='')
     d_room_type_code = attr.ib(default='')
-    category_room = attr.ib(default='')
     d_room_type_id = attr.ib(default='')
     full_path_rus = attr.ib(default='')
     full_path_kaz = attr.ib(default='')
@@ -27,77 +90,113 @@ class Row:
     s_building_id = attr.ib(default='')
     number = attr.ib(default='')
     rca = attr.ib(default='')
-    rca_building = attr.ib(default='')
     modified = attr.ib(default='')
 
 
-class dgov_addressregister(BaseConfig):
-    rep_name = luigi.Parameter(default='')
-    versions = luigi.TupleParameter(default=None)
-
-
-config_path = os.path.join(CONFIG_DIR, 'addressregister.conf')
-add_config_path(config_path)
-
-
-class ParseAddressRegister(ParseElasticApi):
-
-    def progress(self, total, parsed):
-        status_message = ''
-        self.set_status_message = '{} of {}'.format(parsed, total)
-        self.set_progress_percentage(int(round(parsed * 100/total)))
-
-    def complete(self):
-        if not os.path.exists(result_fpath(super(ParseAddressRegister, self).output().path)):
-            return False
-        else:
-            return True
-
-    # def output(self):
-    #     return luigi.LocalTarget(result_fpath(
-    #         super(ParseAddressRegister, self).output().path))
+class ParseAddrRegSpb(ParseAddressRegister):
 
     def run(self):
-        rep = self.rep_name
-        # out_fpath = result_fpath(self.output().path, ext='csv')
-        out_fpath = self.output().path
         prs_fpath = parsed_fpath(self.output().path)
+        updates_date = None
+        if self.updates_days:
+            updates_date = datetime.today() - timedelta(days=self.updates_days)
 
-        parsed_chunks = []
-        if os.path.exists(prs_fpath):
-            for line in load_lines(prs_fpath):
-                start, size = line.split(',')
-                parsed_chunks.append((int(start), int(size)))
+        parse_addrreg(self.rep_name, SPbRow, DGOV_API_KEY, self.output().path, prs_fpath,
+                      updates_date=updates_date.date(),
+                      version=self.version, callback=self.progress)
 
-        parse_report(rep, Row, DGOV_API_KEY, out_fpath, prs_fpath,
-                     parsed_chunks=parsed_chunks, version=self.versions[0],
-                     callback=self.progress)
 
-        # total = load_total(self.url_total)
-        # dataset = self.datasets[0]
-        # size = CHUNK_SIZE
-        # chunks = list(range(1, total, size))
-        # for i, start in enumerate(chunks):
-        #     # set status
-        #     self.set_status_message('Saving from {} to {} '.format(start, start + size-1))
-        #     url = build_query_url(self.url_data_template, dataset, DGOV_API_KEY, start, size)
-        #     data = load_data_as_tuple(url, Row)
-        #     save_to_csv(self.output().path, data)
-        #     percent = round((i+1)*100/len(chunks))
-        #     self.set_progress_percentage(percent)
+class ParseAddressRegisterSAts(ParseAddressRegister):
+
+    def run(self):
+        prs_fpath = parsed_fpath(self.output().path)
+        updates_date = None
+        if self.updates_days:
+            updates_date = datetime.today() - timedelta(days=self.updates_days)
+
+        parse_addrreg(self.rep_name, SPbRow, DGOV_API_KEY, self.output().path, prs_fpath,
+                      updates_date=updates_date.date(),
+                      version=self.version, callback=self.progress)
 
 
 @requires(ParseAddressRegister)
-class GzipAddressToFtp(GzipToFtp):
+class GzipAddrRegToFtp(GzipToFtp):
     pass
 
 
-class AddressRegister(luigi.WrapperTask):
+class AddrRegSAts(luigi.WrapperTask):
+
+    updates_days = luigi.IntParameter()
+    rep_name = luigi.Parameter(default='s_ats')
+    version = luigi.Parameter(default='data')
+    struct = luigi.Parameter(default=SAtsRow)
 
     def requires(self):
-        return GzipAddressToFtp(name=dgov_addressregister().name(),
-                                versions=dgov_addressregister().versions,
-                                rep_name=dgov_addressregister().rep_name)
+        return GzipAddrRegToFtp(name='dgov_addrregsats',
+                                struct=self.struct,
+                                version=self.version,
+                                rep_name=self.rep_name,
+                                updates_days=self.updates_days)
+
+
+class AddrRegSGeonims(luigi.WrapperTask):
+
+    updates_days = luigi.IntParameter()
+    rep_name = luigi.Parameter(default='s_geonims')
+    version = luigi.Parameter(default='data')
+    struct = luigi.Parameter(default=SGeonimsRow)
+
+    def requires(self):
+        return GzipAddrRegToFtp(name='dgov_addrregsgeonims',
+                                struct=self.struct,
+                                version=self.version,
+                                rep_name=self.rep_name,
+                                updates_days=self.updates_days)
+
+
+class AddrRegSGrounds(luigi.WrapperTask):
+
+    updates_days = luigi.IntParameter()
+    rep_name = luigi.Parameter(default='s_grounds')
+    version = luigi.Parameter(default='data')
+    struct = luigi.Parameter(default=SGroundsRow)
+
+    def requires(self):
+        return GzipAddrRegToFtp(name='dgov_addrregsgrounds',
+                                struct=self.struct,
+                                version=self.version,
+                                rep_name=self.rep_name,
+                                updates_days=self.updates_days)
+
+
+class AddrRegSBuildings(luigi.WrapperTask):
+
+    updates_days = luigi.IntParameter()
+    rep_name = luigi.Parameter(default='s_buildings')
+    version = luigi.Parameter(default='data')
+    struct = luigi.Parameter(default=SBuildingsRow)
+
+    def requires(self):
+        return GzipAddrRegToFtp(name='dgov_addrregsbuildings',
+                                struct=self.struct,
+                                version=self.version,
+                                rep_name=self.rep_name,
+                                updates_days=self.updates_days)
+
+
+class AddrRegSpb(luigi.WrapperTask):
+
+    updates_days = luigi.IntParameter()
+    rep_name = luigi.Parameter(default='s_pb')
+    version = luigi.Parameter(default='data')
+    struct = luigi.Parameter(default=SPbRow)
+
+    def requires(self):
+        return GzipAddrRegToFtp(name='dgov_addrregspb',
+                                struct=self.struct,
+                                version=self.version,
+                                rep_name=self.rep_name,
+                                updates_days=self.updates_days)
 
 
 if __name__ == '__main__':

@@ -5,3 +5,6 @@ class ExternalSourceError(Exception):
 class BadDataType(Exception):
     pass
 
+
+class ServerError(Exception):
+    pass
