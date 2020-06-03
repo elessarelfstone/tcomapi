@@ -196,7 +196,7 @@ class AddrRegSAts(luigi.WrapperTask):
 class AddrRegSGeonims(luigi.WrapperTask):
 
     updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_geonims')
+    rep_name = luigi.Parameter(default='s_geonims_new')
     version = luigi.Parameter(default='data')
     struct = luigi.Parameter(default=SGeonimsRow)
 

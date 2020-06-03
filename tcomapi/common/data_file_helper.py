@@ -53,9 +53,6 @@ class ParseSession:
         return self.output[-1]
 
 
-
-
-
 class DataFileHelper:
 
     """ Helper for handling all
@@ -64,7 +61,6 @@ class DataFileHelper:
     def __init__(self, ids_fpath, limit_fsize=1000000, ext='csv'):
         self._output_fpaths = []
         self._ids_fpath = ids_fpath
-
         self._limit_fsize = limit_fsize
         self._ext = ext
         # self._ids = self.load_ids()

@@ -3,12 +3,12 @@ from setuptools import setup, find_packages
 
 from os import path
 this_directory = path.abspath(path.dirname(__file__))
-with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+with open(path.join(this_directory, 'tcomapi', 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='tcomapi',
       version='0.1.12',
-      description='Tool for retrieving information on tax payments by Kazakhstan companies',
+      description='Bundle for getting open data from some KZ sites.',
       url='https://github.com/elessarelfstone/tcomapi',
       author='Dauren Sdykov',
       author_email='elessarelfstone@mail.ru',

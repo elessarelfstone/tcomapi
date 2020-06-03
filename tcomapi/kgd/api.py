@@ -6,7 +6,7 @@ from http.client import responses
 from time import sleep
 
 import requests
-from requests import HTTPError, ConnectionError
+from requests import HTTPError, ConnectionError, ReadTimeout
 from box import Box
 from xmltodict import parse
 from xml.parsers.expat import ExpatError
@@ -14,7 +14,7 @@ from xml.parsers.expat import ExpatError
 # from common import ParseFilesManager
 from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.correctors import basic_corrector, date_corrector, num_corrector
-from tcomapi.common.utils import is_server_up, append_file, read_file, prepare
+from tcomapi.common.utils import is_server_up, append_file, read_file, dict_to_csvrow
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -86,7 +86,7 @@ class KgdTaxPaymentParser:
         request = self.request_template.format(_bin, *date_range)
         url = self.url_template.format(self.host, self.token)
 
-        r = requests.post(url, request, headers=self.headers, verify=False)
+        r = requests.post(url, request,  headers=self.headers, verify=False, timeout=self.timeout)
 
         status_code = r.status_code
 
@@ -128,7 +128,7 @@ class KgdTaxPaymentParser:
         for p in payments:
             p.bin = _bin
 
-        return [prepare(p, PaymentData) for p in payments]
+        return [dict_to_csvrow(p, PaymentData) for p in payments]
 
     def process_bin(self, _bin, date_range, out_fpath, prs_fpath):
 
@@ -139,8 +139,10 @@ class KgdTaxPaymentParser:
 
         except KgdRequestError:
             # we are done with this bin
+            # self._failed_bins.append(_bin)
             append_file(prs_fpath, _bin)
             self.stat['rqe'] += 1
+            sleep(self.timeout)
 
         except KgdResponseError:
             # just mark _bin as failed and sleep
@@ -148,7 +150,7 @@ class KgdTaxPaymentParser:
             self.stat['rse'] += 1
             sleep(self.timeout)
 
-        except (HTTPError, ConnectionError) as e:
+        except (HTTPError, ConnectionError, ReadTimeout) as e:
             self.stat['se'] += 1
             sleep(self.timeout)
             # continue if service is available

@@ -1,15 +1,19 @@
-Kgd
+Tcomapi
 ========
 
-Tool for retrieving information on tax payments by Kazakhstan companies.
+Bundle for getting open data from some KZ sites.
 
-## Features
+## KGD
+
+Retrieving information on tax payments by Kazakhstan companies.
+
+### Features
 
 * progressbar with additional info
 * max output file size limitation
 
 
-## Usage
+### Usage
 
 ```
 $ kgd --help
@@ -29,7 +33,7 @@ optional arguments:
                         size limit for output file (default: 50000000)
 ```
 
-#### Usage examples
+### Usage examples
 
 ```
 kgd sdfgggw5gsdg4g4g4435dg /home/user/bins.txt -t 3  2018-01-01:2019-01-01 -f 500000000 
@@ -38,7 +42,7 @@ kgd sdfgggw5gsdg4g4g4435dg /home/user/bins.txt -t 3  2018-01-01:2019-01-01 -f 50
 Note: In this example secret token is fake. To run command successfully 
 you need get them from KGD government agency.
 
-## Installation
+### Installation
 
 Python 3.6.1+ required.
 
@@ -48,3 +52,18 @@ From PyPI:
 pip install kgd
 ```
 
+## SGOV
+
+Retrieving information on Kazakhstan by business ID(IIN/BIN).
+
+### Features
+
+* progressbar with additional info
+* max output file size limitation
+
+
+### Usage
+
+```
+
+```
