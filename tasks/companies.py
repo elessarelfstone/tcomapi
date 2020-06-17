@@ -2,13 +2,17 @@ import re
 import os
 import urllib3
 from os.path import basename
+# from urllib.parse import urlparse
+from urllib.parse import urlsplit
 from shutil import move
 
 import attr
 import luigi
 import requests
+from bs4 import BeautifulSoup
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
+from requests_html import HTMLSession
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows, save_webfile, build_fpath
@@ -44,8 +48,6 @@ class Row:
 
 class sgov_companies(BaseConfig):
     url = luigi.Parameter(default=None)
-    template_url = luigi.Parameter(default=None)
-    regex = luigi.Parameter(default=None)
     skiptop = luigi.IntParameter(default=0)
     skipbottom = luigi.IntParameter(default=0)
     usecolumns = luigi.Parameter(default='')
@@ -55,19 +57,22 @@ class sgov_companies(BaseConfig):
 class RetrieveCompaniesWebDataFiles(luigi.Task):
     url = luigi.Parameter(default=None)
     name = luigi.Parameter(default=None)
-    template_url = luigi.Parameter(default=None)
-    regex = luigi.Parameter(default=None)
 
     def _links(self):
         """ Parse links for all regions"""
 
-        # we have page which contains all ids
-        # for all region links, like ESTAT086119, etc
-        _json = requests.get(self.url, verify=False).text
-        ids = re.findall(self.regex, _json)
+        # parse page with list of urls to files
+        sess = HTMLSession()
+        resp = sess.get(self.url)
+        resp.html.render()
 
-        # build links
-        links = [f'{self.template_url}{_id}' for _id in ids]
+        soup = BeautifulSoup(resp.html.html, "lxml")
+
+        links = []
+        for li in soup.find_all('ul')[7]:
+            link = "{0.scheme}://{0.netloc}/{1}".format(urlsplit(self.url), li.find('a').get('href'))
+            links.append(link)
+
         return links
 
     def output(self):
@@ -85,29 +90,13 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
     def run(self):
         links = self._links()
         for i, f in enumerate(self.output()):
-
             # set status
             self.set_status_message('Saving {}'.format(basename(f.path)))
 
-            # get just filename without extension
-            bsname = basename(f.path).split('.')[0]
-
-            # build path for each zip archive
-            fpath = os.path.join(TMP_DIR, f'{bsname}.zip')
-            save_webfile(links[i], fpath)
-            zipo, flist = zipo_flist(fpath)
-
-            folder = os.path.abspath(os.path.dirname(f.path))
-
-            # extract single file
-            zipo.extract(flist[0], folder)
-            src = os.path.join(folder, flist[0])
-            # rename xls file to file in output()
-            move(src, f.path)
+            save_webfile(links[i], f.path)
 
             percent = round((i+1)*100/len(self.output()))
             self.set_progress_percentage(percent)
-            # progress_luigi_status(self, len(self.output()), i, f'Saving {}')
 
 
 @requires(RetrieveCompaniesWebDataFiles)
@@ -119,11 +108,15 @@ class ParseCompanies(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
     def run(self):
-        for target in self.input():
+        for i, target in enumerate(self.input()):
+            self.set_status_message('Parsing {}'.format(target.path))
             sheets = self.sheets
             rows = parse(target.path, Row, skiprows=sgov_companies().skiptop,
                          sheets=sheets)
             save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
+
+            percent = round((i + 1) * 100 / len(self.input()))
+            self.set_progress_percentage(percent)
 
 
 @requires(ParseCompanies)
@@ -135,8 +128,6 @@ class Companies(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesToFtp(url=sgov_companies().url,
                                  name=sgov_companies().name(),
-                                 template_url=sgov_companies().template_url,
-                                 regex=sgov_companies().regex,
                                  sheets=sgov_companies().sheets)
 
 
