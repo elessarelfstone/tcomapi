@@ -12,7 +12,6 @@ import requests
 from bs4 import BeautifulSoup
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
-from requests_html import HTMLSession
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows, save_webfile, build_fpath
