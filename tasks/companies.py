@@ -57,6 +57,33 @@ class sgov_companies(BaseConfig):
 class RetrieveCompaniesWebDataFiles(luigi.Task):
     url = luigi.Parameter(default=None)
     name = luigi.Parameter(default=None)
+    url_params = "https://stat.gov.kz/api/general/get"
+    url_regions_tmpl = "https://stat.gov.kz/api/klazz/{}/{}/ru"
+    url_region_id_tmpl = "https://stat.gov.kz/api/sbr/expPortalResult/{}/ru"
+    url_region_download_tmpl = "https://stat.gov.kz/api/sbr/download?bucket=SBR&guid={}"
+
+    def _links2(self):
+        # step 1
+        r = requests.get(self.url_params)
+        _json = r.json()
+        cls_kato_id = _json["clsKatoVersionId"]
+        kato_parent_id = _json["katoParent"]["itemId"]
+
+        # step 2
+        r = requests.get(self.url_regions_tmpl.format(cls_kato_id, kato_parent_id))
+        _json = r.json()
+        _list = []
+        for region in _json["list"]:
+            _list.append(region["itemId"])
+
+        # step 3
+        res = []
+        for _l in _list:
+            r = requests.get(self.url_region_id_tmpl.format(_l))
+            _json = r.json()
+            res.append(self.url_region_download_tmpl.format(_json["obj"]["fileGuid"]))
+
+        return res
 
     def _links(self):
         """ Parse links for all regions"""
@@ -77,18 +104,19 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
 
     def output(self):
         fpaths = []
-        links = self._links()
+        links = self._links2()
+        print(links)
 
         # according number of links we build paths for
         # xls files, cause each zip file contains one xls file
-        for i, link in enumerate(links):
+        for i, _ in enumerate(links):
             fpath = os.path.join(TMP_DIR, f'{self.name}_{i}.xls')
             fpaths.append(fpath)
 
         return [luigi.LocalTarget(f) for f in fpaths]
 
     def run(self):
-        links = self._links()
+        links = self._links2()
         for i, f in enumerate(self.output()):
             # set status
             self.set_status_message('Saving {}'.format(basename(f.path)))
