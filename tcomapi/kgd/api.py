@@ -4,8 +4,10 @@ import urllib3
 from collections import deque, Counter
 from http.client import responses
 from time import sleep
+from urllib3.exceptions import ProtocolError
 
 import requests
+from http.client import RemoteDisconnected
 from requests import HTTPError, ConnectionError, ReadTimeout
 from box import Box
 from xmltodict import parse
@@ -14,9 +16,13 @@ from xml.parsers.expat import ExpatError
 # from common import ParseFilesManager
 from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.correctors import basic_corrector, date_corrector, num_corrector
+from tcomapi.common.parsers import BidsBigDataToCsvHandler
 from tcomapi.common.utils import is_server_up, append_file, read_file, dict_to_csvrow
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+
+KGD_TIMEOUT_FACTOR = 10
 
 
 class KgdServerNotAvailableError(Exception):
@@ -29,6 +35,10 @@ class KgdClientError(Exception):
 
 class KgdResponseError(Exception):
     """ Connection, network, 5XX errors, etc"""
+    pass
+
+
+class KgdTooManyRequests(Exception):
     pass
 
 
@@ -57,7 +67,7 @@ class PaymentData:
     summa = attr.ib(converter=num_corrector, default='')
 
 
-class KgdTaxPaymentParser:
+class KgdTaxPaymentParser2(BidsBigDataToCsvHandler):
     request_template = read_file(
         os.path.join(os.path.abspath(
             os.path.join(os.path.dirname(__file__))), 'request.xml'
@@ -68,34 +78,30 @@ class KgdTaxPaymentParser:
     headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
                'content-type': 'text/xml'}
 
-    def __init__(self, token, timeout):
-        self.token = token
-        self.timeout = timeout
-        self._failed_bins = deque([])
-        self.stat = Counter()
+    def __init__(self, name, bids_fpath, date_range,
+                 token, timeout, limit_outputfsize=None):
+        super().__init__(name, bids_fpath, limit_outputfsize)
+        self._token = token
+        self._timeout = timeout
+        self._date_range = date_range
+        self._stat = Counter()
         for s in ['rqe', 'rse', 'se', 's']:
-            self.stat.setdefault(s, 0)
-        self.session = requests.Session()
-        self.session.headers.update(self.headers)
+            self._stat.setdefault(s, 0)
+        self._session = requests.Session()
+        self._session.headers.update(self.headers)
 
-    @property
-    def failed(self):
-        return self._failed_bins
+    def _load(self, bid):
+        request = self.request_template.format(bid, *self._date_range)
+        url = self.url_template.format(self.host, self._token)
 
-    def load(self, _bin, date_range):
-        request = self.request_template.format(_bin, *date_range)
-        url = self.url_template.format(self.host, self.token)
-
-        r = requests.post(url, request,  headers=self.headers, verify=False, timeout=self.timeout)
+        r = requests.post(url, request, headers=self.headers, verify=False, timeout=self._timeout)
 
         status_code = r.status_code
 
         if status_code != 200:
-            # we are doing something wrong
-            if 400 <= status_code <= 499:
-                raise KgdClientError(f'{status_code} Client error : {responses[status_code]}')
-            else:
-                r.raise_for_status()
+            if status_code == 429:
+                raise KgdTooManyRequests('Kgd limitation exceeded')
+            r.raise_for_status()
 
         if r.text:
             try:
@@ -126,56 +132,57 @@ class KgdTaxPaymentParser:
 
         # enrich each row by bin
         for p in payments:
-            p.bin = _bin
+            p.bin = bid
 
         return [dict_to_csvrow(p, PaymentData) for p in payments]
 
-    def process_bin(self, _bin, date_range, out_fpath, prs_fpath):
+    def process_bin(self, bid):
 
         payments = []
 
         try:
-            payments = self.load(_bin, date_range)
+            payments = self._load(bid)
 
         except KgdRequestError:
             # we are done with this bin
             # self._failed_bins.append(_bin)
-            append_file(prs_fpath, _bin)
-            self.stat['rqe'] += 1
-            sleep(self.timeout)
+            append_file(self._parsed_fpath, bid)
+            self._stat['rqe'] += 1
+            sleep(self._timeout)
 
         except KgdResponseError:
             # just mark _bin as failed and sleep
-            self._failed_bins.append(_bin)
-            self.stat['rse'] += 1
-            sleep(self.timeout)
+            self._failed_bids.append(bid)
+            self._stat['rse'] += 1
+            sleep(self._timeout)
 
-        except (HTTPError, ConnectionError, ReadTimeout) as e:
-            self.stat['se'] += 1
-            sleep(self.timeout)
+        except (HTTPError, ConnectionError, ReadTimeout,
+                KgdTooManyRequests, RemoteDisconnected, ProtocolError) as e:
+            self._stat['se'] += 1
+            sleep(self._timeout * KGD_TIMEOUT_FACTOR)
             # continue if service is available
             if is_server_up(self.host):
-                self._failed_bins.append(_bin)
+                self._failed_bids.append(bid)
             else:
                 raise KgdServerNotAvailableError('Kgd is not available')
 
         else:
             # write payments to output file
             for p in payments:
-                append_file(out_fpath, CSV_SEP.join(p))
+                append_file(self.output, CSV_SEP.join(p))
             # write bin to prs file
-            append_file(prs_fpath, _bin)
-            self.stat['s'] += 1
+            append_file(self._parsed_fpath, bid)
+            self._stat['s'] += 1
+            sleep(1.5)
 
         return payments
 
-    @staticmethod
-    def status(c, _bin, fname, reprocess):
+    def status(self, bid, reprocess=False):
         if reprocess:
             r = 'R'
         else:
             r = ''
-        curr = '{} in {} {}'.format(_bin, fname, r)
-        stata = ' '.join(f'{k}:{v}' for k, v in c.items())
+        curr = '{} in {} {}'.format(bid, self.output, r)
+        stata = ' '.join(f'{k}:{v}' for k, v in self._stat.items())
 
         return curr + ' ' + stata

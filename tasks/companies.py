@@ -61,7 +61,7 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
     url_region_id_tmpl = "https://stat.gov.kz/api/sbr/expPortalResult/{}/ru"
     url_region_download_tmpl = "https://stat.gov.kz/api/sbr/download?bucket=SBR&guid={}"
 
-    def _links2(self):
+    def _links(self):
         # step 1
         r = requests.get(self.url_params)
         _json = r.json()
@@ -84,27 +84,9 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
 
         return res
 
-    def _links(self):
-        """ Parse links for all regions"""
-
-        # parse page with list of urls to files
-        sess = HTMLSession()
-        resp = sess.get(self.url)
-        resp.html.render()
-
-        soup = BeautifulSoup(resp.html.html, "lxml")
-
-        links = []
-        for li in soup.find_all('ul')[7]:
-            link = "{0.scheme}://{0.netloc}/{1}".format(urlsplit(self.url), li.find('a').get('href'))
-            links.append(link)
-
-        return links
-
     def output(self):
         fpaths = []
-        links = self._links2()
-        print(links)
+        links = self._links()
 
         # according number of links we build paths for
         # xls files, cause each zip file contains one xls file
@@ -115,7 +97,7 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
         return [luigi.LocalTarget(f) for f in fpaths]
 
     def run(self):
-        links = self._links2()
+        links = self._links()
         for i, f in enumerate(self.output()):
             # set status
             self.set_status_message('Saving {}'.format(basename(f.path)))

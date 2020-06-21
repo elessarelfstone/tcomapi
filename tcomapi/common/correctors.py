@@ -7,8 +7,10 @@ def clean_for_csv(value: str):
     _value = value.replace(CSV_SEP, CSV_SEP_REPLACE)
 
     # remove trailing newline
+    _value = _value.strip().replace('\n', '')
+
     # replace double quote by single qoute
-    _value = _value.strip().replace('"', "'")
+    _value = _value.replace('"', "'")
 
     return _value
 

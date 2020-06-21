@@ -42,7 +42,6 @@ def curr_date_time():
 
 def read_lines(fpath):
     """ Return rows of file as list """
-
     with open(fpath, "r", encoding="utf-8") as f:
         lines = [b.rstrip() for b in f.readlines()]
 
@@ -367,3 +366,5 @@ def swap_elements(values, pos1, pos2):
 
 def get_stata(c: Counter):
     return ' '.join(('{}:{}'.format(k, v) for k, v in c.items()))
+
+

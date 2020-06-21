@@ -1,6 +1,7 @@
 import argparse
 
 import tcomapi.common.cli_validators as validators
+from tcomapi.kgd.api import KGD_TIMEOUT_DEFAULT
 
 
 def parse_args():
@@ -18,7 +19,7 @@ def parse_args():
     parser.add_argument("date_range", type=validators.check_date_range,
                         help="date range for which we retrieve data")
 
-    parser.add_argument("-t", "--timeout", default=3.0,
+    parser.add_argument("-t", "--timeout", default=KGD_TIMEOUT_DEFAULT,
                         type=validators.check_positive_float,
                         help="server connect timeout")
 

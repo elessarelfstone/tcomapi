@@ -1,7 +1,9 @@
 import json
 import os
 import shutil
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+from calendar import monthrange
+from typing import Tuple
 
 
 import attr
@@ -21,6 +23,22 @@ from tcomapi.common.unpacking import unpack
 from settings import (TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
 
+
+def prev_month(month: Tuple[int, int]) -> Tuple[int, int]:
+    _year, _month = month
+    first_day = date(_year, _month, 1)
+    lastday_prevmonth = first_day - timedelta(days=1)
+    return lastday_prevmonth.year, lastday_prevmonth.month
+
+
+def month_to_range(month: str) -> Tuple[str, str]:
+    _year, _month = map(int, month.split('-'))
+    days = monthrange(_year, _month)[1]
+    first_day = date(year=_year, month=_month, day=1)
+    last_day = date(year=_year, month=_month, day=days)
+    return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
+    # return '{}:{}'.format(first_day.strftime('%Y-%m-%d'),
+    #                       last_day.strftime('%Y-%m-%d'))
 
 @attr.s
 class DataList(object):
@@ -124,6 +142,7 @@ class ParseBigElasticApi(ParseBigData):
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+
 
 
 class ParseElasticApi(luigi.Task):
