@@ -10,9 +10,9 @@ from settings import FTP_IN_PATH, FTP_HOST, FTP_PASS, FTP_USER, TMP_DIR
 from tasks.base import ParseBigData, GzipToFtp, prev_month, month_to_range
 from tcomapi.kgd.api import KgdTaxPaymentParser2, KgdServerNotAvailableError
 
-from tcomapi.common.constants import SERVER_IS_DOWN
 from settings import KGD_API_TOKEN
-from utils import build_fpath
+from tcomapi.common.constants import SERVER_IS_DOWN
+from tcomapi.common.utils import build_fpath
 
 
 IN_FILENAME = 'kgd.bins'
