@@ -95,8 +95,11 @@ class GzipKgdTazPaymentsToFtp(GzipToFtp):
 
 
 class KgdTaxPayments(luigi.WrapperTask):
+
+    month = luigi.Parameter()
+
     def requires(self):
-        yield GzipKgdTazPaymentsToFtp(month='2020-01',
+        yield GzipKgdTazPaymentsToFtp(month=self.month,
                                       name='kgd_taxpayments',
                                       timeout=2)
 
