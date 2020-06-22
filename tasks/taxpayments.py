@@ -12,7 +12,7 @@ from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
 from settings import KGD_API_TOKEN
 from tcomapi.common.constants import SERVER_IS_DOWN
-from tcomapi.common.utils import build_fpath
+from tcomapi.common.utils import build_fpath, append_file
 
 
 IN_FILENAME = 'kgd.bins'
@@ -90,6 +90,9 @@ class ParseKgdTaxPayments(ParseBigData):
             except Exception as e:
                 print(e)
                 raise
+
+        stata = dict(total=total_count, parsed_count=parsed_count)
+        append_file(parser.result_fpath, stata)
 
 
 @requires(ParseKgdTaxPayments)

@@ -23,6 +23,7 @@ class BidsBigDataToCsvHandler:
 
         # file with already parsed bids
         self._parsed_fpath = build_fpath(dirname(bids_fpath), self.name, 'prs')
+        self._result_fpath = build_fpath(dirname(bids_fpath), self.name, 'res')
 
         out_fpath = build_fpath(dirname(bids_fpath), self.name, self.ext)
 
@@ -95,4 +96,9 @@ class BidsBigDataToCsvHandler:
     @property
     def parsed_bids_count(self):
         return self._parsed_bids_count
+
+    @property
+    def result_fpath(self):
+        return self._result_fpath
+
 

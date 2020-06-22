@@ -177,12 +177,12 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
 
         return payments
 
-    def status(self, bid, reprocess=False):
+    def status(self, parsed_count, bid, reprocess=False):
         if reprocess:
             r = 'R'
         else:
             r = ''
-        curr = '{} in {} {}'.format(bid, self.output, r)
+        curr = 'Parsed:{}. {} in {} {}'.format(parsed_count, bid, self.output, r)
         stata = ' '.join(f'{k}:{v}' for k, v in self._stat.items())
 
         return curr + ' ' + stata
