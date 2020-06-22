@@ -67,7 +67,7 @@ class PaymentData:
     summa = attr.ib(converter=num_corrector, default='')
 
 
-class KgdTaxPaymentParser2(BidsBigDataToCsvHandler):
+class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
     request_template = read_file(
         os.path.join(os.path.abspath(
             os.path.join(os.path.dirname(__file__))), 'request.xml'

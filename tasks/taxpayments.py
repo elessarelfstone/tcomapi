@@ -8,7 +8,7 @@ from luigi.util import requires
 
 from settings import FTP_IN_PATH, FTP_HOST, FTP_PASS, FTP_USER, TMP_DIR
 from tasks.base import ParseBigData, GzipToFtp, prev_month, month_to_range
-from tcomapi.kgd.api import KgdTaxPaymentParser2, KgdServerNotAvailableError
+from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
 from settings import KGD_API_TOKEN
 from tcomapi.common.constants import SERVER_IS_DOWN
@@ -35,7 +35,9 @@ class KgdBins(luigi.ExternalTask):
 
 class ParseKgdTaxPayments(ParseBigData):
 
-    month = luigi.Parameter(default=default_month())
+    # month = luigi.Parameter(default=default_month())
+    start_date = luigi.Parameter()
+    end_date = luigi.Parameter()
     timeout = luigi.FloatParameter(default=1.5)
 
     def requires(self):
@@ -53,10 +55,11 @@ class ParseKgdTaxPayments(ParseBigData):
         if not exists(bids_fpath):
             self.input().get(bids_fpath)
 
-        date_range = month_to_range(self.month)
+        # date_range = month_to_range(self.month)
+        date_range = self.start_date, self.end_date
 
-        parser = KgdTaxPaymentParser2(self.name, bids_fpath, date_range,
-                                      KGD_API_TOKEN, self.timeout)
+        parser = KgdTaxPaymentParser(self.name, bids_fpath, date_range,
+                                     KGD_API_TOKEN, self.timeout)
 
         total_count = parser.source_bids_count
         parsed_count = parser.parsed_bids_count
@@ -94,12 +97,24 @@ class GzipKgdTazPaymentsToFtp(GzipToFtp):
     pass
 
 
-class KgdTaxPayments(luigi.WrapperTask):
+class KgdTaxPaymentsForMonth(luigi.WrapperTask):
 
     month = luigi.Parameter()
 
     def requires(self):
         yield GzipKgdTazPaymentsToFtp(month=self.month,
+                                      name='kgd_taxpayments',
+                                      timeout=2)
+
+
+class KgdTaxPaymentsForPeriod(luigi.WrapperTask):
+
+    start_date = luigi.Parameter()
+    end_date = luigi.Parameter()
+
+    def requires(self):
+        yield GzipKgdTazPaymentsToFtp(start_date=self.start_date,
+                                      end_date=self.end_date,
                                       name='kgd_taxpayments',
                                       timeout=2)
 

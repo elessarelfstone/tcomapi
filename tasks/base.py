@@ -144,7 +144,6 @@ class ParseBigElasticApi(ParseBigData):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
 
-
 class ParseElasticApi(luigi.Task):
 
     name = luigi.Parameter(default='')
