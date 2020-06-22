@@ -75,7 +75,7 @@ class ParseKgdTaxPayments(ParseBigData):
                 r = True
             # refresh status bar
             fname = basename(parser.output)
-            status = parser.status(bid, r)
+            status = parser.status(parsed_count, bid, r)
             self.set_status_message(status)
             try:
                 r = parser.process_bin(bid)
