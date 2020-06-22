@@ -93,7 +93,7 @@ class ParseKgdTaxPayments(ParseBigData):
 
 
 @requires(ParseKgdTaxPayments)
-class GzipKgdTazPaymentsToFtp(GzipToFtp):
+class GzipKgdTaxPaymentsToFtp(GzipToFtp):
     pass
 
 
@@ -102,7 +102,7 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
     month = luigi.Parameter()
 
     def requires(self):
-        yield GzipKgdTazPaymentsToFtp(month=self.month,
+        yield GzipKgdTaxPaymentsToFtp(month=self.month,
                                       name='kgd_taxpayments',
                                       timeout=2)
 
@@ -113,7 +113,7 @@ class KgdTaxPaymentsForPeriod(luigi.WrapperTask):
     end_date = luigi.Parameter()
 
     def requires(self):
-        yield GzipKgdTazPaymentsToFtp(start_date=self.start_date,
+        yield GzipKgdTaxPaymentsToFtp(start_date=self.start_date,
                                       end_date=self.end_date,
                                       name='kgd_taxpayments',
                                       timeout=2)
