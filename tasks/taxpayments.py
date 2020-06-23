@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import date
 from os.path import basename, exists
@@ -28,7 +29,7 @@ def default_month() -> str:
 
 class KgdBins(luigi.ExternalTask):
     def output(self):
-        bins_ftp_path = os.path.join(FTP_IN_PATH, 'bins.csv')
+        bins_ftp_path = os.path.join(FTP_IN_PATH, 'bins.csv', )
         return RemoteTarget(bins_ftp_path, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
 
@@ -55,14 +56,10 @@ class ParseKgdTaxPayments(ParseBigData):
         if not exists(bids_fpath):
             self.input().get(bids_fpath)
 
-        # date_range = month_to_range(self.month)
         date_range = self.start_date, self.end_date
 
         parser = KgdTaxPaymentParser(self.name, bids_fpath, date_range,
                                      KGD_API_TOKEN, self.timeout)
-
-        total_count = parser.source_bids_count
-        parsed_count = parser.parsed_bids_count
 
         while parser.bids:
             incr = 1
@@ -74,14 +71,12 @@ class ParseKgdTaxPayments(ParseBigData):
                 bid = parser.bids.popleft()
                 r = True
             # refresh status bar
-            fname = basename(parser.output)
-            status = parser.status(parsed_count, bid, r)
+            status = parser.status(bid, r)
             self.set_status_message(status)
             try:
                 r = parser.process_bin(bid)
-                parsed_count += incr
-                self.set_progress_percentage(percent(total_count,
-                                                     parsed_count))
+                self.set_progress_percentage(percent(parser.source_bids_count,
+                                                     parser.parsed_bids_count))
 
             except KgdServerNotAvailableError:
                 print(SERVER_IS_DOWN)
@@ -91,8 +86,10 @@ class ParseKgdTaxPayments(ParseBigData):
                 print(e)
                 raise
 
-        stata = dict(total=total_count, parsed_count=parsed_count)
-        append_file(parser.result_fpath, stata)
+        stata = dict(total=parser.source_bids_count,
+                     parsed_count=parser.parsed_bids_count)
+
+        append_file(parser.success_fpath, json.dumps(stata))
 
 
 @requires(ParseKgdTaxPayments)
