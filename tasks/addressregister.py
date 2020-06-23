@@ -8,7 +8,7 @@ from luigi.util import requires
 
 
 from tasks.base import GzipToFtp, BaseConfig, ParseAddressRegister, GzipDataGovToFtp
-from tcomapi.common.utils import parsed_fpath, read_lines, result_fpath
+from tcomapi.common.utils import parsed_fpath, read_lines, success_fpath
 from tcomapi.dgov.api import parse_addrreg
 
 from settings import CONFIG_DIR, DGOV_API_KEY

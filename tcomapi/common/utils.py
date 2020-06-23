@@ -80,7 +80,7 @@ def parsed_fpath(fpath, ext='prs'):
     return '.'.join((fpath_noext(fpath), ext))
 
 
-def result_fpath(fpath, ext='res'):
+def success_fpath(fpath, ext='success'):
     return '.'.join((fpath_noext(fpath), ext))
 
 

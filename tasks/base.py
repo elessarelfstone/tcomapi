@@ -126,7 +126,7 @@ class ParseBigData(luigi.Task):
     name = luigi.Parameter(default='')
 
     def complete(self):
-        res_fpath = build_fpath(TMP_DIR, self.name, 'res')
+        res_fpath = build_fpath(TMP_DIR, self.name, 'success')
         if not os.path.exists(res_fpath):
             return False
         else:

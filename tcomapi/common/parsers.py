@@ -13,19 +13,22 @@ def check_id(_id):
 
 class BidsBigDataToCsvHandler:
     def __init__(self, name, bids_fpath, limit_outputfsize=None, ext='csv'):
-        self.out_fpaths = []
-        self.name = name
+
+        self._out_fpaths = []
+        self._name = name
         self._bids_fpath = bids_fpath
         self._limit_outputfsize = limit_outputfsize
-        self.ext = ext
+        self._ext = ext
 
         self._failed_bids = deque([])
 
-        # file with already parsed bids
-        self._parsed_fpath = build_fpath(dirname(bids_fpath), self.name, 'prs')
-        self._result_fpath = build_fpath(dirname(bids_fpath), self.name, 'res')
+        # file path with already parsed bids
+        self._parsed_fpath = build_fpath(dirname(bids_fpath), self._name, 'prs')
 
-        out_fpath = build_fpath(dirname(bids_fpath), self.name, self.ext)
+        # success file path...usually store statistic data
+        self._success_fpath = build_fpath(dirname(bids_fpath), self._name, 'success')
+
+        out_fpath = build_fpath(dirname(bids_fpath), self._name, self._ext)
 
         # collect all existed data csv files paths
         if self._limit_outputfsize:
@@ -34,7 +37,7 @@ class BidsBigDataToCsvHandler:
             while exists(out_fpath):
                 self._output.append(out_fpath)
                 num += 1
-                out_fpath = build_fpath(dirname(bids_fpath), f'{self.name}_{num}', 'prs')
+                out_fpath = build_fpath(dirname(bids_fpath), f'{self._name}_{num}', 'prs')
 
             if not self._output:
                 open(out_fpath, 'a').close()
@@ -61,9 +64,10 @@ class BidsBigDataToCsvHandler:
             self._bids = deque(source_bids)
 
     def _add_output(self):
+        """ Add new output file"""
         num = len(self._output)
         new_output = build_fpath(dirname(self._bids_fpath),
-                                 f'{self.name}_{num}', self.ext)
+                                 f'{self._name}_{num}', self._ext)
         open(new_output, 'a').close()
         self._output.append(new_output)
 
@@ -98,7 +102,7 @@ class BidsBigDataToCsvHandler:
         return self._parsed_bids_count
 
     @property
-    def result_fpath(self):
-        return self._result_fpath
+    def success_fpath(self):
+        return self._success_fpath
 
 

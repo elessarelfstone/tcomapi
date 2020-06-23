@@ -9,7 +9,7 @@ from requests.exceptions import RetryError
 from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.dgov.api import (TIMEOUT, QUERY_TMPL, Chunk, build_url_detail, build_url_data, load_total,
                               read_lines, prepare_chunks, load2, prepare_callback_info)
-from tcomapi.common.utils import save_csvrows, append_file, result_fpath
+from tcomapi.common.utils import save_csvrows, append_file, success_fpath
 
 
 
@@ -121,5 +121,5 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
         raise ExternalSourceError("Could not parse all the data. Try again.")
 
     stata = dict(total=total, parsed_count=parsed_count)
-    append_file(result_fpath(output_fpath), json.dumps(stata))
+    append_file(success_fpath(output_fpath), json.dumps(stata))
     return parsed_count

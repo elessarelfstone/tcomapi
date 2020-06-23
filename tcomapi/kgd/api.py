@@ -137,7 +137,9 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
         return [dict_to_csvrow(p, PaymentData) for p in payments]
 
     def process_bin(self, bid):
-
+        """
+        bid - business_id
+        """
         payments = []
 
         try:
@@ -145,9 +147,9 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
 
         except KgdRequestError:
             # we are done with this bin
-            # self._failed_bins.append(_bin)
             append_file(self._parsed_fpath, bid)
             self._stat['rqe'] += 1
+            self._parsed_bids_count += 1
             sleep(self._timeout)
 
         except KgdResponseError:
@@ -164,7 +166,7 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
             if is_server_up(self.host):
                 self._failed_bids.append(bid)
             else:
-                raise KgdServerNotAvailableError('Kgd is not available')
+                raise KgdServerNotAvailableError('Service is not available')
 
         else:
             # write payments to output file
@@ -173,16 +175,17 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
             # write bin to prs file
             append_file(self._parsed_fpath, bid)
             self._stat['s'] += 1
-            sleep(1.5)
+            self._parsed_bids_count += 1
+            sleep(self._timeout)
 
         return payments
 
-    def status(self, parsed_count, bid, reprocess=False):
+    def status(self, bid, reprocess=False):
         if reprocess:
             r = 'R'
         else:
             r = ''
-        curr = 'Parsed:{}. {} in {} {}'.format(parsed_count, bid, self.output, r)
+        curr = 'Total: {}. Parsed:{}. {} in {} {}'.format(self._source_bids_count, self._parsed_bids_count,
+                                                          bid, self.output, r)
         stata = ' '.join(f'{k}:{v}' for k, v in self._stat.items())
-
         return curr + ' ' + stata

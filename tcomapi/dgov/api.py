@@ -14,7 +14,7 @@ from requests.exceptions import RetryError
 
 from tcomapi.common.exceptions import BadDataType, ExternalSourceError
 from tcomapi.common.utils import (load_url_content, save_csvrows,
-                                  get, append_file, result_fpath, load_content,
+                                  get, append_file, success_fpath, load_content,
                                   get_stata, read_lines, dict_to_csvrow)
 
 HOST = 'https://data.egov.kz'
@@ -268,7 +268,7 @@ def parse_addrreg(rep, struct, apikey, output_fpath, parsed_fpath,
         raise ExternalSourceError("Could not parse all chunks. Try again.")
 
     stata = dict(total=total, parsed_count=parsed_count)
-    append_file(result_fpath(output_fpath), json.dumps(stata))
+    append_file(success_fpath(output_fpath), json.dumps(stata))
     return parsed_count
 
 
