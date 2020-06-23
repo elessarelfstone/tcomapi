@@ -7,7 +7,8 @@ import luigi
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
-from settings import FTP_IN_PATH, FTP_HOST, FTP_PASS, FTP_USER, TMP_DIR
+from settings import (FTP_IN_PATH, FTP_HOST,
+                      FTP_PASS, FTP_USER, BIGDATA_TMP_DIR)
 from tasks.base import ParseBigData, GzipToFtp, prev_month, month_to_range
 from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
@@ -29,6 +30,9 @@ def default_month() -> str:
 
 class KgdBins(luigi.ExternalTask):
     def output(self):
+        # TODO fix this cause format of file
+        #  we get from DataFlow is diffrent
+        #  export_kgdgovkz_bins_%Y-%m-%d_time.csv
         bins_ftp_path = os.path.join(FTP_IN_PATH, 'bins.csv', )
         return RemoteTarget(bins_ftp_path, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
@@ -45,13 +49,13 @@ class ParseKgdTaxPayments(ParseBigData):
         return KgdBins()
 
     def output(self):
-        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+        return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
 
     def run(self):
         def percent(total, parsed):
             return round((parsed * 100) / total)
 
-        bids_fpath = build_fpath(TMP_DIR, self.name, 'bins')
+        bids_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'bins')
 
         if not exists(bids_fpath):
             self.input().get(bids_fpath)

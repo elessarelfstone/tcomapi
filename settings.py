@@ -11,6 +11,7 @@ DGOV_API_KEY = os.getenv('DGOV_API_KEY')
 
 # TMP_DIR = gettempdir()
 TMP_DIR = os.path.join(os.path.expanduser('~'), 'data')
+BIGDATA_TMP_DIR = os.path.join(os.path.expanduser('~'), 'bigdata')
 ARCH_DIR = os.path.join(os.path.expanduser('~'), 'arch')
 
 EVENTS_DB_PATH = os.path.join(os.path.expanduser('~'), 'data', 'events.db')
