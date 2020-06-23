@@ -61,18 +61,21 @@ class ParseKgdTaxPayments(ParseBigData):
         parser = KgdTaxPaymentParser(self.name, bids_fpath, date_range,
                                      KGD_API_TOKEN, self.timeout)
 
+        # until the last bid
         while parser.bids:
-            incr = 1
+            # if we have failed bids
+            # pull last to process again
             if parser.failed_bids:
                 bid = parser.failed_bids.popleft()
-                incr = 0
                 r = True
             else:
                 bid = parser.bids.popleft()
-                r = True
+                r = False
+
             # refresh status bar
             status = parser.status(bid, r)
             self.set_status_message(status)
+
             try:
                 r = parser.process_bin(bid)
                 self.set_progress_percentage(percent(parser.source_bids_count,
