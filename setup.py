@@ -7,7 +7,7 @@ with open(path.join(this_directory, 'tcomapi', 'README.md'), encoding='utf-8') a
     long_description = f.read()
 
 setup(name='tcomapi',
-      version='0.1.12',
+      version='0.1.13',
       description='Bundle for getting open data from some KZ sites.',
       url='https://github.com/elessarelfstone/tcomapi',
       author='Dauren Sdykov',

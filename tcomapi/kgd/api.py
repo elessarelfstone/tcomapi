@@ -23,6 +23,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 KGD_TIMEOUT_FACTOR = 10
+KGD_TIMEOUT_DEFAULT = 2
 
 
 class KgdServerNotAvailableError(Exception):
