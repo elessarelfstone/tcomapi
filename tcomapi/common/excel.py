@@ -17,13 +17,19 @@ def parse(fpath, wrapper, sheets=None,
     if not sheets:
         _sheets = [0]
 
+    # init skiprows
+    _skiprows = [1 for x in range(len(_sheets))]
+
+    if skiprows:
+        _skiprows[0] = skiprows
+
     # parse only given sheets
-    for sh in _sheets:
+    for i, sh in enumerate(_sheets):
 
         if sh <= len(xl_sheets)-1:
             df = pd.read_excel(fpath,
                                sheet_name=xl_sheets[sh],
-                               skiprows=skiprows,
+                               skiprows=_skiprows[i],
                                usecols=usecols,
                                index_col=None,
                                dtype=str,
