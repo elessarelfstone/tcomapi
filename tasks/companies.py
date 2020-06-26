@@ -112,6 +112,7 @@ class RetrieveCompaniesWebDataFiles(luigi.Task):
 class ParseCompanies(luigi.Task):
 
     sheets = luigi.TupleParameter(default=None)
+    skiptop = luigi.TupleParameter(default=None)
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
@@ -119,9 +120,8 @@ class ParseCompanies(luigi.Task):
     def run(self):
         for i, target in enumerate(self.input()):
             self.set_status_message('Parsing {}'.format(target.path))
-            sheets = self.sheets
-            rows = parse(target.path, Row, skiprows=sgov_companies().skiptop,
-                         sheets=sheets)
+            rows = parse(target.path, Row, skiprows=self.skiptop,
+                         sheets=self.sheets)
             save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
 
             percent = round((i + 1) * 100 / len(self.input()))
@@ -135,9 +135,8 @@ class GzipCompaniesToFtp(GzipToFtp):
 
 class Companies(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesToFtp(url=sgov_companies().url,
-                                 name=sgov_companies().name(),
-                                 sheets=sgov_companies().sheets)
+        yield GzipCompaniesToFtp(name='sgov_companies',
+                                 skiptop=3)
 
 
 if __name__ == '__main__':

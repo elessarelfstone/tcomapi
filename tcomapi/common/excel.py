@@ -13,9 +13,8 @@ def parse(fpath, wrapper, sheets=None,
 
     _sheets = sheets
 
-    # by default read only first sheet
     if not sheets:
-        _sheets = [0]
+        _sheets = [i for i, _ in enumerate(range(len(xl_sheets)))]
 
     # init skiprows
     _skiprows = [1 for x in range(len(_sheets))]
