@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse
+from tcomapi.common.excel import parse_to_csv
 from tcomapi.common.utils import (save_csvrows, save_webfile,
                                   build_fpath, fname_noext, fpath_noext)
 from tcomapi.common.unpacking import unpack, zipo_flist, unzip_one_file
@@ -148,8 +148,9 @@ class ParseRegCompanies(luigi.Task):
 
     def run(self):
         for i, target in enumerate(self.input()):
-            rows = parse(target.path, Row, skiprows=self.skiprows)
-            save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
+            # rows = parse(target.path, Row, skiprows=self.skiprows)
+            # save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
+            parse_to_csv(target.path, self.output().path, skiprows=self.skiprows)
 
 
 @requires(ParseRegCompanies)
