@@ -150,7 +150,7 @@ class ParseRegCompanies(luigi.Task):
         for i, target in enumerate(self.input()):
             # rows = parse(target.path, Row, skiprows=self.skiprows)
             # save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-            parse_to_csv(target.path, self.output().path, skiprows=self.skiprows)
+            parse_to_csv(target.path, self.output().path, Row, skiprows=self.skiprows)
 
 
 @requires(ParseRegCompanies)
