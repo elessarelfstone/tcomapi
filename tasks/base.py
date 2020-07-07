@@ -20,7 +20,7 @@ from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
                                   save_csvrows)
 
 from tcomapi.common.unpacking import unpack
-from settings import (TMP_DIR, ARCH_DIR, FTP_PATH,
+from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
 
 
@@ -39,6 +39,7 @@ def month_to_range(month: str) -> Tuple[str, str]:
     return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
     # return '{}:{}'.format(first_day.strftime('%Y-%m-%d'),
     #                       last_day.strftime('%Y-%m-%d'))
+
 
 @attr.s
 class DataList(object):
@@ -126,7 +127,7 @@ class ParseBigData(luigi.Task):
     name = luigi.Parameter(default='')
 
     def complete(self):
-        res_fpath = build_fpath(TMP_DIR, self.name, 'success')
+        res_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'success')
         if not os.path.exists(res_fpath):
             return False
         else:
