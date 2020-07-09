@@ -1,3 +1,7 @@
+class NoBinsToParseTaxPayments(Exception):
+    pass
+
+
 class ExternalSourceError(Exception):
     pass
 

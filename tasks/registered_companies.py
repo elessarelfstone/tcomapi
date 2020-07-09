@@ -64,7 +64,6 @@ headers = {
 }
 
 
-
 class RetrieveZipsWithRegCompanies(luigi.Task):
     name = luigi.Parameter()
     url_rcut_list = "https://stat.gov.kz/api/rcut/ru"
@@ -92,9 +91,7 @@ class RetrieveZipsWithRegCompanies(luigi.Task):
             request = {"conditions": [juridical_type_condition, status_condition], "stringForMD5": "string"}
             request.update({"cutId": cut_id})
             data = json.dumps(request)
-            print(data)
             r = requests.post(self.url_request_order, headers=headers, data=data)
-            print(r.text)
             order_no = r.json()['obj']
             _ids.append(order_no)
 
@@ -132,6 +129,7 @@ class RetrieveZipsWithRegCompanies(luigi.Task):
 
     def run(self):
         for i, f in enumerate(self.output()):
+            self.set_status_message('Downloding ...'.format())
             arch_fpath = fpath_noext(f.path)
             frmt = save_webfile(self._urls_to_download[i], arch_fpath)
             name = f'{self.name}_{i}'
@@ -148,9 +146,10 @@ class ParseRegCompanies(luigi.Task):
 
     def run(self):
         for i, target in enumerate(self.input()):
-            # rows = parse(target.path, Row, skiprows=self.skiprows)
-            # save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
+            self.set_status_message('Parsing {}'.format(target.path))
             parse_to_csv(target.path, self.output().path, Row, skiprows=self.skiprows)
+            percent = round((i + 1) * 100 / len(self.input()))
+            self.set_progress_percentage(percent)
 
 
 @requires(ParseRegCompanies)

@@ -1,10 +1,12 @@
 import json
 import os
-from datetime import date
-from os.path import basename, exists
+from datetime import date, datetime
+import fnmatch
+from os.path import basename, exists, join
 
 import luigi
-from luigi.contrib.ftp import RemoteTarget
+from calendar import monthrange
+from luigi.contrib.ftp import RemoteTarget, RemoteFileSystem
 from luigi.util import requires
 
 from settings import (FTP_IN_PATH, FTP_HOST,
@@ -14,27 +16,51 @@ from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
 from settings import KGD_API_TOKEN
 from tcomapi.common.constants import SERVER_IS_DOWN
-from tcomapi.common.utils import build_fpath, append_file
+from tcomapi.common.exceptions import NoBinsToParseTaxPayments
+from tcomapi.common.dataflow import last_file_with_bins
+from tcomapi.common.utils import build_fpath, append_file, fname_noext
 
 
 IN_FILENAME = 'kgd.bins'
+IN_FILENAME_TMPL = 'export_kgdgovkz_bins'
+
+
+BINS_REMOTE_DIR = 'export'
 
 
 def default_month() -> str:
-    """ Usually we parse taxpayments for previous month"""
+    """ Usually we parse taxpayments for previous month """
     today = date.today()
-    _month = (today.year, today.month)
-    _prev_year, _prev_month = prev_month(_month)
-    return '{}-{}'.format(today.year, today.month)
+    curr_month = (today.year, today.month)
+    _year, _month = prev_month(curr_month)
+    return '{}-{}'.format(_year, _month)
+#
+# def get_last_bins(lst_dir):
 
 
 class KgdBins(luigi.ExternalTask):
+
+    bins_fname_tmp = 'export_kgdgovkz_bins_*.csv'
+
     def output(self):
         # TODO fix this cause format of file
-        #  we get from DataFlow is diffrent
+        #  we get from DataFlow is different
         #  export_kgdgovkz_bins_%Y-%m-%d_time.csv
-        bins_ftp_path = os.path.join(FTP_IN_PATH, 'bins.csv', )
-        return RemoteTarget(bins_ftp_path, FTP_HOST,
+        bins_ftp_path = os.path.join(FTP_IN_PATH, 'bins.csv')
+        rmfs = RemoteFileSystem(FTP_HOST, username=FTP_USER, password=FTP_PASS)
+
+        files = None
+
+        if rmfs.exists(FTP_IN_PATH):
+            lst = rmfs.listdir(FTP_IN_PATH)
+            files = fnmatch.filter([basename(l) for l in lst], self.bins_fname_tmp)
+
+        if not files:
+            raise NoBinsToParseTaxPayments('Could not find any file with bins')
+
+        bins_fpath = join(FTP_IN_PATH, last_file_with_bins(files))
+        # bins_fpath = FTP_IN_PATH + '/' + last_file_with_bins(files)
+        return RemoteTarget(bins_fpath, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
 
 
@@ -55,7 +81,10 @@ class ParseKgdTaxPayments(ParseBigData):
         def percent(total, parsed):
             return round((parsed * 100) / total)
 
+        # bids_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'bins')
         bids_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'bins')
+
+        remote_bids_fdir = join(BINS_REMOTE_DIR)
 
         if not exists(bids_fpath):
             self.input().get(bids_fpath)
@@ -109,7 +138,13 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
     month = luigi.Parameter()
 
     def requires(self):
-        yield GzipKgdTaxPaymentsToFtp(month=self.month,
+        year = int(self.month[:4])
+        month = int(self.month[-2:])
+        start_date = date(year, month, 1).strftime('%Y-%m-%d')
+        end_date = date(year, month, monthrange(year, month)[1]).strftime('%Y-%m-%d')
+
+        yield GzipKgdTaxPaymentsToFtp(start_date=start_date,
+                                      end_date=end_date,
                                       name='kgd_taxpayments',
                                       timeout=2)
 

@@ -3,6 +3,7 @@ import attr
 import urllib3
 from collections import deque, Counter
 from http.client import responses
+from os.path import dirname
 from time import sleep
 from urllib3.exceptions import ProtocolError
 
@@ -17,7 +18,7 @@ from xml.parsers.expat import ExpatError
 from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.correctors import basic_corrector, date_corrector, num_corrector
 from tcomapi.common.parsers import BidsBigDataToCsvHandler
-from tcomapi.common.utils import is_server_up, append_file, read_file, dict_to_csvrow
+from tcomapi.common.utils import is_server_up, append_file, read_file, dict_to_csvrow, build_fpath
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -36,6 +37,11 @@ class KgdClientError(Exception):
 
 class KgdResponseError(Exception):
     """ Connection, network, 5XX errors, etc"""
+    pass
+
+
+class KgdNoTaxesError(Exception):
+    """ Signal to handle bins with no tax payments """
     pass
 
 
@@ -79,6 +85,8 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
     headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
                'content-type': 'text/xml'}
 
+    notax_payments_errorcode = 10
+
     def __init__(self, name, bids_fpath, date_range,
                  token, timeout, limit_outputfsize=None):
         super().__init__(name, bids_fpath, limit_outputfsize)
@@ -88,6 +96,8 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
         self._stat = Counter()
         for s in ['rqe', 'rse', 'se', 's']:
             self._stat.setdefault(s, 0)
+
+        self.notaxes_fpath = build_fpath(dirname(bids_fpath), self._name, 'kgdnotaxpayments')
         self._session = requests.Session()
         self._session.headers.update(self.headers)
 
@@ -146,11 +156,13 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
         try:
             payments = self._load(bid)
 
-        except KgdRequestError:
+        except KgdRequestError as e:
             # we are done with this bin
             append_file(self._parsed_fpath, bid)
             self._stat['rqe'] += 1
             self._parsed_bids_count += 1
+            if str(e).endswith('10'):
+                append_file(self.notaxes_fpath, bid)
             sleep(self._timeout)
 
         except KgdResponseError:
