@@ -86,6 +86,7 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
                'content-type': 'text/xml'}
 
     notax_payments_errorcode = 10
+    notax_file_ext = 'notaxes'
 
     def __init__(self, name, bids_fpath, date_range,
                  token, timeout, limit_outputfsize=None):
@@ -97,7 +98,7 @@ class KgdTaxPaymentParser(BidsBigDataToCsvHandler):
         for s in ['rqe', 'rse', 'se', 's']:
             self._stat.setdefault(s, 0)
 
-        self.notaxes_fpath = build_fpath(dirname(bids_fpath), self._name, 'kgdnotaxpayments')
+        self.notaxes_fpath = build_fpath(dirname(bids_fpath), self._name, self.notax_file_ext)
         self._session = requests.Session()
         self._session.headers.update(self.headers)
 

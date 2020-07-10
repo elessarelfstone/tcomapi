@@ -12,6 +12,10 @@ def check_id(_id):
 
 
 class BidsBigDataToCsvHandler:
+
+    parsed_file_ext = 'prs'
+    success_file_ext = 'success'
+
     def __init__(self, name, bids_fpath, limit_outputfsize=None, ext='csv'):
 
         self._out_fpaths = []
@@ -23,10 +27,10 @@ class BidsBigDataToCsvHandler:
         self._failed_bids = deque([])
 
         # file path with already parsed bids
-        self._parsed_fpath = build_fpath(dirname(bids_fpath), self._name, 'prs')
+        self._parsed_fpath = build_fpath(dirname(bids_fpath), self._name, self.parsed_file_ext)
 
         # success file path...usually store statistic data
-        self._success_fpath = build_fpath(dirname(bids_fpath), self._name, 'success')
+        self._success_fpath = build_fpath(dirname(bids_fpath), self._name, self.success_file_ext)
 
         out_fpath = build_fpath(dirname(bids_fpath), self._name, self._ext)
 
