@@ -136,23 +136,24 @@ class ParseKgdTaxPayments(ParseBigData):
 @requires(ParseKgdTaxPayments)
 class GzipKgdTaxPaymentsToFtpFull(luigi.Task):
 
-    date = luigi.DateParameter(default=datetime.today())
+    # date = luigi.DateParameter(default=datetime.today())
 
     def output(self):
+        dt = datetime.today()
         ftp_prs_gzip_fpath = os.path.join(FTP_PATH, gziped_fname(self.input()[0].path,
-                                                                 suff=date_for_fname(self.date)))
+                                                                 suff=date_for_fname(dt)))
         ftp_notax_gzip_fpath = os.path.join(FTP_PATH, gziped_fname(self.input()[1].path,
-                                                                   suff=date_for_fname(self.date)))
+                                                                   suff=date_for_fname(dt)))
         ftp_data_gzip_fpath = os.path.join(FTP_PATH, gziped_fname(self.input()[2].path,
-                                                                  suff=date_for_fname(self.date)))
+                                                                  suff=date_for_fname(dt)))
 
         return [
             RemoteTarget(ftp_prs_gzip_fpath, FTP_HOST,
-                            username=FTP_USER, password=FTP_PASS),
+                         username=FTP_USER, password=FTP_PASS),
             RemoteTarget(ftp_notax_gzip_fpath, FTP_HOST,
-                            username=FTP_USER, password=FTP_PASS),
+                         username=FTP_USER, password=FTP_PASS),
             RemoteTarget(ftp_data_gzip_fpath, FTP_HOST,
-                            username=FTP_USER, password=FTP_PASS)
+                         username=FTP_USER, password=FTP_PASS)
         ]
 
     def run(self):
@@ -202,9 +203,9 @@ class KgdTaxPaymentsForPeriodFull(luigi.WrapperTask):
 
     def requires(self):
         yield GzipKgdTaxPaymentsToFtpFull(start_date=self.start_date,
-                                      end_date=self.end_date,
-                                      name='kgd_taxpayments',
-                                      timeout=2)
+                                          end_date=self.end_date,
+                                          name='kgd_taxpayments',
+                                          timeout=2)
 
 
 if __name__ == '__main__':
