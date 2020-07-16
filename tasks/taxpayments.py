@@ -170,7 +170,7 @@ class GzipKgdTaxPaymentsToFtp(GzipToFtp):
 
 class KgdTaxPaymentsForMonth(luigi.WrapperTask):
 
-    month = luigi.Parameter()
+    month = luigi.Parameter(default=default_month())
 
     def requires(self):
         year = int(self.month[:4])
@@ -182,6 +182,22 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
                                       end_date=end_date,
                                       name='kgd_taxpayments',
                                       timeout=2)
+
+
+class KgdTaxPaymentsForMonthFull(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=default_month())
+
+    def requires(self):
+        year = int(self.month[:4])
+        month = int(self.month[-2:])
+        start_date = date(year, month, 1).strftime('%Y-%m-%d')
+        end_date = date(year, month, monthrange(year, month)[1]).strftime('%Y-%m-%d')
+
+        yield GzipKgdTaxPaymentsToFtpFull(start_date=start_date,
+                                          end_date=end_date,
+                                          name='kgd_taxpayments',
+                                          timeout=2)
 
 
 class KgdTaxPaymentsForPeriod(luigi.WrapperTask):
