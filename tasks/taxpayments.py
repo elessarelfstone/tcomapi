@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import fnmatch
 from os.path import basename, exists, join
 
@@ -11,16 +11,15 @@ from luigi.util import requires
 
 from settings import (FTP_IN_PATH, FTP_HOST, FTP_PATH,
                       FTP_PASS, FTP_USER, BIGDATA_TMP_DIR)
-from tasks.base import ParseBigData, GzipToFtp, prev_month, month_to_range
+from tasks.base import ParseBigData, GzipToFtp
 from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
 from settings import KGD_API_TOKEN
 from tcomapi.common.constants import SERVER_IS_DOWN
 from tcomapi.common.exceptions import NoBinsToParseTaxPayments
 from tcomapi.common.dataflow import last_file_with_bins
-from tcomapi.common.utils import (build_fpath, append_file, fname_noext,
-                                  gziped_fname, date_for_fname, gzip_file)
-
+from tcomapi.common.utils import (build_fpath, append_file, gziped_fname, date_for_fname, gzip_file)
+from utils import prev_month
 
 IN_FILENAME = 'kgd.bins'
 IN_FILENAME_TMPL = 'export_kgdgovkz_bins'
@@ -30,13 +29,10 @@ BINS_REMOTE_DIR = 'export'
 
 
 def default_month() -> str:
-    """ Usually we parse taxpayments for previous month """
+    """ Return  """
     today = date.today()
-    curr_month = (today.year, today.month)
-    _year, _month = prev_month(curr_month)
-    return '{}-{}'.format(_year, _month)
-#
-# def get_last_bins(lst_dir):
+    year, month = prev_month(today.year, today.month)
+    return '{}-{:02}'.format(year, month)
 
 
 class KgdBins(luigi.ExternalTask):
@@ -139,7 +135,11 @@ class GzipKgdTaxPaymentsToFtpFull(luigi.Task):
     # date = luigi.DateParameter(default=datetime.today())
 
     def output(self):
-        dt = datetime.today()
+        # fix from 30.07.2020
+        # requested by Esmukhanov to avoid probability getting no data for DataFlow
+        # here we just use tomorrow date to build output file name
+        dt = datetime.today() + timedelta(days=1)
+
         ftp_prs_gzip_fpath = os.path.join(FTP_PATH, gziped_fname(self.input()[0].path,
                                                                  suff=date_for_fname(dt)))
         ftp_notax_gzip_fpath = os.path.join(FTP_PATH, gziped_fname(self.input()[1].path,
@@ -189,6 +189,7 @@ class KgdTaxPaymentsForMonthFull(luigi.WrapperTask):
     month = luigi.Parameter(default=default_month())
 
     def requires(self):
+        print(self.month)
         year = int(self.month[:4])
         month = int(self.month[-2:])
         start_date = date(year, month, 1).strftime('%Y-%m-%d')
@@ -226,3 +227,4 @@ class KgdTaxPaymentsForPeriodFull(luigi.WrapperTask):
 
 if __name__ == '__main__':
     luigi.run()
+

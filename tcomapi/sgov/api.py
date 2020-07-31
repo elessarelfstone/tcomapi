@@ -29,6 +29,9 @@ class NotSuccessError(Exception):
     pass
 
 
+class NotSuccessRCutError(Exception):
+    pass
+
 
 @attr.s
 class JuridicalInfo:
@@ -49,59 +52,83 @@ class JuridicalInfo:
     krpname = attr.ib(converter=common_corrector, default='')
 
 
+headers = {
+    'authority': 'stat.gov.kz',
+    'pragma': 'no-cache',
+    'cache-control': 'no-cache',
+    'accept': 'application/json, text/plain, */*',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Safari/537.36',
+    'content-type': 'application/json;charset=UTF-8',
+    'origin': 'https://stat.gov.kz',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-dest': 'empty',
+    'referer': 'https://stat.gov.kz/jur-search/filter',
+    'accept-language': 'ru,en-US;q=0.9,en;q=0.8',
+}
+
+
 class SgovRCutParser:
     host = 'stat.gov.kz'
     rcuts_url = 'https://{}/api/rcut/ru'.format(host)
-    request_url_tmpl = 'https://{}/api/sbr/request'.format(host)
-    check_req_url_tmpl = 'https://{}/api/sbr/requestResult/{}/{}'
-    file_download_url_tmpl = 'https://{}/api/sbr/download?bucket=SBR&guid={}'
+    request_url = 'https://{}/api/sbr/request'.format(host)
+    result_url_tmpl = 'https://{}/api/sbr/requestResult/{}/ru'
+    rcut_download_url_tmpl = 'https://{}/api/sbr/download?bucket=SBR&guid={}'
 
-    # kato_id = 741880
+    juridical_type_class_version_id = 2153
+    status_class_version_id = 1989
 
-    def __init__(self, conditions, wait_for_request_done=10):
-        self.conditions = conditions
-        self.wait_for_request_done = wait_for_request_done
+    # could be changed
+    statuses = [39354, 39355, 39356, 39358, 534829, 39359]
+
+    def __init__(self, timeout=620):
+        self.timeout = timeout
         try:
             r = requests.get(self.rcuts_url, verify=False)
             if r.status_code != 0:
                 r.raise_for_status()
             rcuts = json.loads(r.text)
             self.curr_cut_id = rcuts[0]["id"]
-        except (ConnectionError, HTTPError, Timeout):
+        except (ConnectionError, HTTPError, Timeout) as e:
+            # print(e)
             raise ExternalSourceError('Statgov rcuts not available')
 
-    def file_url(self, kato_ids):
+    def get_order(self, juridical_type):
+        """ Place order to get file
+            klass: KATO identificator
+        """
+        # make request to put order to get file GUID
+        jt = {"classVersionId": self.juridical_type_class_version_id, "itemIds": [juridical_type]}
+        s = {"classVersionId": self.status_class_version_id, "itemIds": self.statuses}
+        request = json.dumps({'conditions': [jt, s],
+                              'stringForMD5': 'string',
+                              'cutId': self.curr_cut_id})
 
-        kato_condition = {"classVersionId": 213, "itemIds": kato_ids}
-        conditions = self.conditions
-        conditions.append(kato_condition)
-        data = {"conditions": conditions, "cutId": self.curr_cut_id}
+        # return order number
+        r = requests.post(self.request_url, headers=headers, data=request)
+        print(r.json())
+        return r.json()['obj']
 
-        r = requests.post(self.request_url_tmpl, json=data, verify=False)
-        if r.status_code != 0:
-            r.raise_for_status()
-
-        rdata = json.loads(r.text)
-        if rdata["success"]:
-            obj_num = rdata["obj"]
+    def get_file_guid(self, order_no):
+        url = self.result_url_tmpl.format(self.host, order_no)
+        r = requests.get(url, headers=headers)
+        response = r.json()
+        print(response)
+        _guid = None
+        if response.get('success') is True and response.get('description') == 'Обработан':
+            _guid = response.get('obj', {}).get('fileGuid')
         else:
-            raise NotSuccessError('Request is not success')
+            raise NotSuccessRCutError('Rcut file guid not available.')
 
-        url = self.check_req_url_tmpl.format(self.host, obj_num, 'ru')
-        file_guid = None
-        while not file_guid:
-            sleep(self.wait_for_request_done)
-            r = requests.get(url, verify=False)
-            rdata = r.json()
-            if rdata["success"]:
-                if rdata["description"] == 'Обработан':
-                    file_guid = rdata["fileGuid"]
-            else:
-                raise NotSuccessError('Checking request is not success')
-        return file_guid
+        return _guid
 
-    def parse(self):
-        pass
+    def get_url(self, juridical_type):
+        order_id = self.get_order(juridical_type)
+        # we have to wait for while, cause order could be yet not ready
+        sleep(self.timeout)
+        rcut_guid = self.get_file_guid(order_id)
+        sleep(10)
+        return self.rcut_download_url_tmpl.format(self.host, rcut_guid)
 
 
 class SgovJuridicalsParser:
@@ -186,14 +213,4 @@ class SgovJuridicalsParser:
         coro = self._process_coro(ids, hook=hook)
         loop.run_until_complete(coro)
         loop.close()
-
-
-# conditions = [{"classVerisonId": 2153, "itemIds": [742681]},
-#               {"classVersionId": 1989, "itemIds": [39355]},
-#             {"classVersionId": 213, "itemIds": [741880]}]
-
-conditions = [{"classVerisonId": 2153, "itemIds": [742681]}, {"classVersionId": 1989, "itemIds": [39355]}]
-
-obj = SgovRCutParser(conditions)
-print(obj.file_url([253161]))
-
+#

@@ -48,8 +48,9 @@ def parse(fpath, wrapper, sheets=None,
     return [wrapper(*x) for x in data.values]
 
 
-def parse_to_csv(xl_fpath, csv_fpath, wrapper, sheets=None, skiprows=None, usecols=None):
-    """ Return list of records parsed from excel file """
+def parse_to_csv(xl_fpath, csv_fpath, wrapper, sheets=None,
+                 skiprows=None, usecols=None):
+    """ Save records parsed from excel file to csv """
     data = pd.DataFrame()
 
     # get list of sheets of excel file

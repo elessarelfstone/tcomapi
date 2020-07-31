@@ -1,4 +1,3 @@
-import json
 import os
 import shutil
 from datetime import datetime, timedelta, date
@@ -14,31 +13,13 @@ from luigi.util import requires
 from tcomapi.dgov.api import (parse_addrreg, build_url_report,
                               load_versions, build_url_data, load_data,
                               QUERY_TMPL, CHUNK_SIZE)
-from tcomapi.common.exceptions import ExternalSourceError
-from tcomapi.common.utils import (build_fpath, build_webfpath, save_webfile,
+from tcomapi.common.utils import (build_fpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname, parsed_fpath,
                                   save_csvrows)
 
 from tcomapi.common.unpacking import unpack
 from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
-
-
-def prev_month(month: Tuple[int, int]) -> Tuple[int, int]:
-    _year, _month = month
-    first_day = date(_year, _month, 1)
-    lastday_prevmonth = first_day - timedelta(days=1)
-    return lastday_prevmonth.year, lastday_prevmonth.month
-
-
-def month_to_range(month: str) -> Tuple[str, str]:
-    _year, _month = map(int, month.split('-'))
-    days = monthrange(_year, _month)[1]
-    first_day = date(year=_year, month=_month, day=1)
-    last_day = date(year=_year, month=_month, day=days)
-    return first_day.strftime('%Y-%m-%d'), last_day.strftime('%Y-%m-%d')
-    # return '{}:{}'.format(first_day.strftime('%Y-%m-%d'),
-    #                       last_day.strftime('%Y-%m-%d'))
 
 
 @attr.s

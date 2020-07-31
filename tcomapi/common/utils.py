@@ -2,22 +2,24 @@ import os
 import gzip
 import hashlib
 import json
+from typing import Tuple
+
 import requests
 import urllib3
 import shutil
 import socket
 import subprocess as subp
 from collections import namedtuple, Counter
-from datetime import datetime
-from os.path import basename, join
+from datetime import datetime, date, timedelta
+from os.path import basename
 from urllib.parse import urlparse
 
 import attr
-from requests import ConnectionError, HTTPError, Timeout, ReadTimeout, ConnectTimeout
+from requests import ConnectionError, HTTPError, ConnectTimeout
 
 from tcomapi.common.correctors import clean_for_csv
 from tcomapi.common.constants import CSV_SEP
-from tcomapi.common.exceptions import ExternalSourceError, BadDataType
+from tcomapi.common.exceptions import ExternalSourceError
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -132,7 +134,7 @@ def dict_to_csvrow(raw_dict, struct):
 
 
 def save_csvrows(fpath, recs, sep=None):
-    """ Save list of tuples as csv row to file """
+    """ Save list of tuples as csv rows to file """
 
     if sep:
         _sep = sep
@@ -366,5 +368,11 @@ def swap_elements(values, pos1, pos2):
 
 def get_stata(c: Counter):
     return ' '.join(('{}:{}'.format(k, v) for k, v in c.items()))
+
+
+def prev_month(year, month) -> Tuple[int, int]:
+    first_day = date(year, month, 1)
+    lastday_prevmonth = first_day - timedelta(days=1)
+    return lastday_prevmonth.year, lastday_prevmonth.month
 
 
