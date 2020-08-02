@@ -18,8 +18,9 @@ from settings import KGD_API_TOKEN
 from tcomapi.common.constants import SERVER_IS_DOWN
 from tcomapi.common.exceptions import NoBinsToParseTaxPayments
 from tcomapi.common.dataflow import last_file_with_bins
-from tcomapi.common.utils import (build_fpath, append_file, gziped_fname, date_for_fname, gzip_file)
-from utils import prev_month
+from tcomapi.common.utils import (build_fpath, append_file, gziped_fname,
+                                  date_for_fname, gzip_file, prev_month)
+
 
 IN_FILENAME = 'kgd.bins'
 IN_FILENAME_TMPL = 'export_kgdgovkz_bins'
