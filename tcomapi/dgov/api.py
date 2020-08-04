@@ -15,7 +15,7 @@ from requests.exceptions import RetryError
 from tcomapi.common.exceptions import BadDataType, ExternalSourceError
 from tcomapi.common.utils import (load_url_content, save_csvrows,
                                   get, append_file, success_fpath, load_content,
-                                  get_stata, read_lines, dict_to_csvrow)
+                                  get_stata, read_lines, dict_to_csvrow, apply_filter_to_dict)
 
 HOST = 'https://data.egov.kz'
 
@@ -83,7 +83,7 @@ def build_url_meta(rep_name, version):
     return '{}{}'.format(HOST, uri)
 
 
-def load_data(url, struct):
+def load_data(url, struct, column_filter=None):
 
     data = []
 
@@ -102,7 +102,16 @@ def load_data(url, struct):
 
         for d in raw:
             try:
-                data.append(dict_to_csvrow(d, struct))
+                # we need all values to be string
+
+                _d = {k: str(v) for (k, v) in d.items()}
+                # convert values in dict to str
+                # for k, v in d.items():
+
+                if column_filter:
+                    _d = apply_filter_to_dict(_d, column_filter)
+
+                data.append(dict_to_csvrow(_d, struct))
             except BadDataType as e:
                 pass
 
@@ -211,7 +220,7 @@ def prepare_callback_info(total, total_chunks, parsed_count, errors,
     return status, percentage
 
 
-def parse_addrreg(rep, struct, apikey, output_fpath, parsed_fpath,
+def parse_dgovbig(rep, struct, apikey, output_fpath, parsed_fpath,
                   updates_date=None, version=None, query=None,
                   callback=None):
 
@@ -243,6 +252,7 @@ def parse_addrreg(rep, struct, apikey, output_fpath, parsed_fpath,
         query = '{' + QUERY_TMPL.format(chunk.start, chunk.size) + '}'
 
         url = build_url_data(rep, apikey, version=version, query=query)
+        print(url)
         try:
             data = load2(url, struct, updates_date=updates_date)
         except (HTTPError, ConnectionError, Timeout, RetryError, ReadTimeout) as exc:

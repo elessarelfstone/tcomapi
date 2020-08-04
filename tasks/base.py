@@ -10,7 +10,7 @@ import luigi
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
-from tcomapi.dgov.api import (parse_addrreg, build_url_report,
+from tcomapi.dgov.api import (parse_dgovbig, build_url_report,
                               load_versions, build_url_data, load_data,
                               QUERY_TMPL, CHUNK_SIZE)
 from tcomapi.common.utils import (build_fpath, save_webfile,
@@ -121,9 +121,13 @@ class ParseBigElasticApi(ParseBigData):
     version = luigi.Parameter(default='')
     versions = luigi.TupleParameter(default='')
     rep_name = luigi.Parameter(default='')
+    chunk_size = luigi.IntParameter(default=CHUNK_SIZE)
+    api_key = luigi.Parameter(default=DGOV_API_KEY)
+    struct = luigi.Parameter(default=None)
+    columns_filter = luigi.DictParameter(default=None)
 
     def output(self):
-        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+        return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
 
 
 class ParseElasticApi(luigi.Task):
@@ -132,21 +136,24 @@ class ParseElasticApi(luigi.Task):
     version = luigi.Parameter(default='')
     versions = luigi.TupleParameter(default='')
     rep_name = luigi.Parameter(default='')
+    chunk_size = luigi.IntParameter(default=CHUNK_SIZE)
+    api_key = luigi.Parameter(default=DGOV_API_KEY)
     struct = luigi.Parameter(default=None)
+    columns_filter = luigi.DictParameter(default=None)
 
-    def output(self):
-        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+    # def output(self):
+    #     return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
     def run(self):
-        query = '{' + QUERY_TMPL.format(0, CHUNK_SIZE) + '}'
+        query = '{' + QUERY_TMPL.format(0, self.chunk_size) + '}'
         rep_url = build_url_report(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            url = build_url_data(self.rep_name, DGOV_API_KEY,
+            url = build_url_data(self.rep_name, self.api_key,
                                  version=vs, query=query)
-            data = load_data(url, self.struct)
+            data = load_data(url, self.struct, self.columns_filter)
             save_csvrows(self.output().path, data)
 
 
@@ -155,11 +162,11 @@ class GzipDataGovToFtp(GzipToFtp):
     pass
 
 
-class ParseAddressRegister(ParseBigElasticApi):
-    # version = luigi.Parameter(default='')
-    # rep_name = luigi.Parameter(default='')
+class ParseDgovBig(ParseBigElasticApi):
+
     struct = luigi.Parameter()
     updates_days = luigi.Parameter(default=None)
+    columns_filter = luigi.DictParameter(default=None)
 
     def progress(self, status, percent):
         self.set_status_message(status)
@@ -174,10 +181,18 @@ class ParseAddressRegister(ParseBigElasticApi):
         if self.updates_days:
             days = float(self.updates_days)
             updates_date = datetime.today() - timedelta(days=days)
+            updates_date = updates_date.date()
 
-        parse_addrreg(self.rep_name, self.struct, DGOV_API_KEY, self.output().path, prs_fpath,
-                      updates_date=updates_date.date(),
-                      version=self.version, callback=self.progress)
+        parse_dgovbig(self.rep_name, self.struct, self.api_key,
+                      self.output().path, prs_fpath,
+                      updates_date=updates_date,
+                      version=self.version,
+                      callback=self.progress)
+
+
+@requires(ParseDgovBig)
+class GzipDgovBigToFtp(GzipToFtp):
+    pass
 
 
 @requires(RetrieveWebDataFile)

@@ -7,9 +7,9 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseAddressRegister, GzipDataGovToFtp
+from tasks.base import GzipDataGovToFtp, GzipDgovBigToFtp
 from tcomapi.common.utils import parsed_fpath, read_lines, success_fpath
-from tcomapi.dgov.api import parse_addrreg
+from tcomapi.dgov.api import parse_dgovbig
 
 from settings import CONFIG_DIR, DGOV_API_KEY
 
@@ -137,9 +137,7 @@ class SPbRow:
     modified = attr.ib(default='')
 
 
-@requires(ParseAddressRegister)
-class GzipAddrRegToFtp(GzipToFtp):
-    pass
+
 
 
 class AddrRegDAtsTypes(luigi.WrapperTask):
@@ -186,7 +184,7 @@ class AddrRegSAts(luigi.WrapperTask):
     struct = luigi.Parameter(default=SAtsRow)
 
     def requires(self):
-        return GzipAddrRegToFtp(name='dgov_addrregsats',
+        return GzipDgovBigToFtp(name='dgov_addrregsats',
                                 struct=self.struct,
                                 version=self.version,
                                 rep_name=self.rep_name,
@@ -201,7 +199,7 @@ class AddrRegSGeonims(luigi.WrapperTask):
     struct = luigi.Parameter(default=SGeonimsRow)
 
     def requires(self):
-        return GzipAddrRegToFtp(name='dgov_addrregsgeonims',
+        return GzipDgovBigToFtp(name='dgov_addrregsgeonims',
                                 struct=self.struct,
                                 version=self.version,
                                 rep_name=self.rep_name,
@@ -216,7 +214,7 @@ class AddrRegSGrounds(luigi.WrapperTask):
     struct = luigi.Parameter(default=SGroundsRow)
 
     def requires(self):
-        return GzipAddrRegToFtp(name='dgov_addrregsgrounds',
+        return GzipDgovBigToFtp(name='dgov_addrregsgrounds',
                                 struct=self.struct,
                                 version=self.version,
                                 rep_name=self.rep_name,
@@ -231,7 +229,7 @@ class AddrRegSBuildings(luigi.WrapperTask):
     struct = luigi.Parameter(default=SBuildingsRow)
 
     def requires(self):
-        return GzipAddrRegToFtp(name='dgov_addrregsbuildings',
+        return GzipDgovBigToFtp(name='dgov_addrregsbuildings',
                                 struct=self.struct,
                                 version=self.version,
                                 rep_name=self.rep_name,
@@ -246,7 +244,7 @@ class AddrRegSpb(luigi.WrapperTask):
     struct = luigi.Parameter(default=SPbRow)
 
     def requires(self):
-        return GzipAddrRegToFtp(name='dgov_addrregspb',
+        return GzipDgovBigToFtp(name='dgov_addrregspb',
                                 struct=self.struct,
                                 version=self.version,
                                 rep_name=self.rep_name,
