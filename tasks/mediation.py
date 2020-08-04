@@ -15,7 +15,8 @@ class LoadSimpleBetweenDatesData(luigi.Task):
 
     def output(self):
         templated_fname = 'md_{}_range_{begin_date:%Y%m%d}_{end_date:%Y%m%d}.csv'
-        instantiated_fname = templated_fname.format(self.table_name, self.begin_date, self.end_date)
+        instantiated_fname = templated_fname.format(self.table_name, begin_date=self.begin_date,
+                                                    end_date=self.end_date)
         fname = f'md_{self.table_name}_range_{{date:%Y/%m/%d}}.csv'
 
         return luigi.LocalTarget(os.path.join(BIGDATA_TMP_DIR, instantiated_fname))
