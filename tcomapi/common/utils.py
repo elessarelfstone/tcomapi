@@ -2,7 +2,7 @@ import os
 import gzip
 import hashlib
 import json
-from typing import Tuple
+from typing import Tuple, Dict
 
 import requests
 import urllib3
@@ -12,6 +12,7 @@ import subprocess as subp
 from collections import namedtuple, Counter
 from datetime import datetime, date, timedelta
 from os.path import basename
+from subprocess import CalledProcessError
 from urllib.parse import urlparse
 
 import attr
@@ -375,4 +376,28 @@ def prev_month(year, month) -> Tuple[int, int]:
     lastday_prevmonth = first_day - timedelta(days=1)
     return lastday_prevmonth.year, lastday_prevmonth.month
 
+
+def apply_filter_to_dict(d: Dict, column_filter: Dict) -> Dict:
+    """
+        Return dict with removed excess columns
+        and renamed target columns
+    """
+    for k in column_filter.keys():
+        if k not in d.keys():
+            del d[k]
+
+    _d = {}
+
+    for old_key, new_key in column_filter.items():
+        _d[new_key] = d.pop(old_key)
+
+    return _d
+
+
+def run_and_report(args, **kwargs):
+    try:
+        out_bytes = subp.check_output(args, stderr=subp.STDOUT, **kwargs)
+        return out_bytes.decode('utf-8')
+    except CalledProcessError as e:
+        return e.output.decode('utf-8')
 
