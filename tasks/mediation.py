@@ -15,12 +15,11 @@ class LoadSimpleBetweenDatesData(luigi.Task):
 
     def output(self):
         templated_fname = 'md_{}_range_{start_date:%Y%m%d}_{end_date:%Y%m%d}.csv'
-        instantiated_fname = templated_fname.format(self.table_name, self.start_date,
+        instantiated_fname = templated_fname.format(self.table_name, self.begin_date,
                                                     self.end_date)
         fname = f'md_{self.table_name}_range_{{date:%Y/%m/%d}}.csv'
 
         return luigi.LocalTarget(os.path.join(BIGDATA_TMP_DIR, instantiated_fname))
-
 
     def run(self):
         ch_client = ClickhouseClient(CH_MEDIATION_ARCH_HOST, CH_MEDIATION_ARCH_PORT,
@@ -30,5 +29,3 @@ class LoadSimpleBetweenDatesData(luigi.Task):
                                                             self.begin_date, self.end_date)
 
         ch_client.execute_client_command(query, self.output().path)
-
-
