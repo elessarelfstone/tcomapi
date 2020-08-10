@@ -28,11 +28,12 @@ add_config_path(config_path)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-rcut_legal_entities = 'sgov_legal_entities'
-rcut_legal_branches = 'sgov_legal_branches'
-rcut_joint_ventures = 'sgov_joint_ventures'
-rcut_foreign_branches = 'sgov_foreign_branches'
-rcut_entrepreneurs = 'sgov_entrepreneurs'
+rcut_legal_entities = 'legal_entities'
+rcut_legal_branches = 'legal_branches'
+rcut_joint_ventures = 'joint_ventures'
+rcut_foreign_branches = 'foreign_branches'
+rcut_entrepreneurs = 'entrepreneurs'
+
 
 @attr.s
 class Row:
@@ -219,32 +220,33 @@ class Companies(luigi.WrapperTask):
 
 class CompaniesForeignBranches(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=rcut_foreign_branches, skiptop=2,
-                                     directory='companies')
+        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_foreign_branches}', skiptop=2,
+                                     directory=rcut_foreign_branches)
 
 
 class CompaniesLegalBranches(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=rcut_legal_branches, skiptop=2,
-                                     directory='companies')
+        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_legal_branches}',
+                                     skiptop=2,
+                                     directory=rcut_legal_branches)
 
 
 class CompaniesJointVentures(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=rcut_joint_ventures, skiptop=2,
-                                     directory='companies')
+        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_joint_ventures}', skiptop=2,
+                                     directory=rcut_joint_ventures)
 
 
 class CompaniesLegalEntities(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=rcut_legal_entities, skiptop=2,
-                                     directory='companies')
+        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_legal_entities}', skiptop=2,
+                                     directory=rcut_legal_entities)
 
 
 class CompaniesLegalEntrepreneurs(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=rcut_entrepreneurs, skiptop=2,
-                                     directory='companies')
+        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_entrepreneurs}', skiptop=2,
+                                     directory=rcut_entrepreneurs)
 
 
 if __name__ == '__main__':
