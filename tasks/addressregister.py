@@ -137,9 +137,6 @@ class SPbRow:
     modified = attr.ib(default='')
 
 
-
-
-
 class AddrRegDAtsTypes(luigi.WrapperTask):
 
     def requires(self):

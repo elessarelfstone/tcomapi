@@ -115,19 +115,23 @@ class SgovRCutParser:
         response = r.json()
         print(response)
         _guid = None
-        if response.get('success') is True and response.get('description') == 'Обработан':
-            _guid = response.get('obj', {}).get('fileGuid')
+        if response.get('success') is True:
+            if response.get('description') == 'Обработан':
+                return response.get('obj', {}).get('fileGuid')
+            elif response.get('description') == 'В обработке':
+                return None
         else:
             raise NotSuccessRCutError('Rcut file guid not available.')
-
-        return _guid
 
     def get_url(self, juridical_type):
         order_id = self.get_order(juridical_type)
         # we have to wait for while, cause order could be yet not ready
-        sleep(self.timeout)
-        rcut_guid = self.get_file_guid(order_id)
-        sleep(10)
+
+        rcut_guid = None
+        while rcut_guid is None:
+            sleep(90)
+            rcut_guid = self.get_file_guid(order_id)
+        # sleep(1)
         return self.rcut_download_url_tmpl.format(self.host, rcut_guid)
 
 

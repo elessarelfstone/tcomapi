@@ -394,9 +394,10 @@ def apply_filter_to_dict(d: Dict, column_filter: Dict) -> Dict:
     return _d
 
 
-def run_and_report(args, **kwargs):
+def run_and_redirect(output_fpath, args, **kwargs):
     try:
-        out_bytes = subp.check_output(args, stderr=subp.STDOUT, **kwargs)
+        with open(output_fpath, 'w') as outf:
+            out_bytes = subp.call(args, shell=True, stdout=outf, **kwargs)
         return out_bytes.decode('utf-8')
     except CalledProcessError as e:
         return e.output.decode('utf-8')

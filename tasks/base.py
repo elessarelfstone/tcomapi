@@ -73,11 +73,23 @@ class RetrieveWebDataFileFromArchive(luigi.Task):
 class GzipToFtp(luigi.Task):
 
     date = luigi.DateParameter(default=datetime.today())
+    directory = luigi.Parameter(default=None)
+
     # fsizelim = luigi.IntParameter(default=0)
 
     def output(self):
-        _ftp_path = os.path.join(FTP_PATH, gziped_fname(self.input().path,
-                                                        suff=date_for_fname(self.date)))
+        directory = str(self.directory)
+        if self.directory:
+            _path = os.path.join(FTP_PATH, directory)
+        else:
+            _path = FTP_PATH
+        print(_path)
+
+        # _ftp_path = os.path.join(_path, gziped_fname(self.input().path,
+        #                                              suff=date_for_fname(self.date)))
+
+        _ftp_path = '/'.join([_path, gziped_fname(self.input().path, suff=date_for_fname(self.date))])
+        print(_ftp_path)
         return RemoteTarget(_ftp_path, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
 

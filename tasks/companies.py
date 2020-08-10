@@ -28,11 +28,11 @@ add_config_path(config_path)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-rcut_legal_entities = 'legal_entities'
-rcut_legal_branches = 'legal_branches'
-rcut_joint_ventures = 'joint_ventures'
-rcut_foreign_branches = 'foreign_branches'
-rcut_entrepreneurs = 'legal_entrepreneurs'
+rcut_legal_entities = 'sgov_legal_entities'
+rcut_legal_branches = 'sgov_legal_branches'
+rcut_joint_ventures = 'sgov_joint_ventures'
+rcut_foreign_branches = 'sgov_foreign_branches'
+rcut_entrepreneurs = 'sgov_entrepreneurs'
 
 @attr.s
 class Row:
@@ -88,7 +88,7 @@ class CompaniesRCutUrl(luigi.ExternalTask):
     name = luigi.Parameter()
 
     def output(self):
-        return os.path.join(TMP_DIR, f'{self.name}.url')
+        return luigi.LocalTarget(os.path.join(TMP_DIR, f'{self.name}.url'))
 
 
 class RetrieveCompaniesRCutDataFile(luigi.Task):
@@ -101,11 +101,12 @@ class RetrieveCompaniesRCutDataFile(luigi.Task):
         return CompaniesRCutUrl(name=self.name)
 
     def output(self):
-        return os.path.join(TMP_DIR, f'{self.name}.xls')
+        return luigi.LocalTarget(os.path.join(TMP_DIR, f'{self.name}.xlsx'))
 
     def run(self):
         # read url from file
-        url = read_lines(self.input())
+        url = read_lines(self.input().path)[0]
+        print(url)
         apath = os.path.join(TMP_DIR, f'{self.name}.zip')
         frmt = save_webfile(url, apath)
         unzip_one_file(apath, self.name)
@@ -114,7 +115,7 @@ class RetrieveCompaniesRCutDataFile(luigi.Task):
 @requires(RetrieveCompaniesRCutDataFile)
 class ParseCompaniesRCut(luigi.Task):
 
-    skiprows = luigi.TupleParameter(default=None)
+    skiptop = luigi.TupleParameter(default=None)
 
     def output(self):
         return luigi.LocalTarget(os.path.join(TMP_DIR, f'{self.name}.csv'))
@@ -122,7 +123,12 @@ class ParseCompaniesRCut(luigi.Task):
     def run(self):
         # TODO finish
         parse_to_csv(self.input().path, self.output().path,
-                     Row, skiprows=self.skiprows)
+                     Row, skiprows=self.skiptop)
+
+
+@requires(ParseCompaniesRCut)
+class GzipCompaniesRCutToFtp(GzipToFtp):
+    pass
 
 
 class RetrieveCompaniesRegularDataFiles(luigi.Task):
@@ -209,6 +215,36 @@ class Companies(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesToFtp(name='sgov_companies',
                                  skiptop=3)
+
+
+class CompaniesForeignBranches(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=rcut_foreign_branches, skiptop=2,
+                                     directory='companies')
+
+
+class CompaniesLegalBranches(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=rcut_legal_branches, skiptop=2,
+                                     directory='companies')
+
+
+class CompaniesJointVentures(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=rcut_joint_ventures, skiptop=2,
+                                     directory='companies')
+
+
+class CompaniesLegalEntities(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=rcut_legal_entities, skiptop=2,
+                                     directory='companies')
+
+
+class CompaniesLegalEntrepreneurs(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=rcut_entrepreneurs, skiptop=2,
+                                     directory='companies')
 
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-from tcomapi.common.utils import run_and_report
+from tcomapi.common.utils import run_and_redirect, run_command
 
 
 class ClickHouseException(Exception):
@@ -16,7 +16,9 @@ class ClickhouseClient:
     def build_client_command(self, query, output_fpath):
         command = f'clickhouse-client --host={self.host} ' \
             f'--user={self.user} --password={self.password} -q ' \
-            f'"{query} FORMAT CSV" > {output_fpath}'
+            f'"{query} FORMAT CSV" '
+
+        # c = ['clickhouse-client', '--host', ]
 
         return command
 
@@ -27,16 +29,12 @@ class ClickhouseClient:
 
     def execute_client_command(self, query, output_fpath):
         command = self.build_client_command(query, output_fpath)
-        result = run_and_report([command])
+        result = run_and_redirect(output_fpath, [command])
 
         if result.lower('exception').find >= 0:
             raise ClickhouseClient(result)
 
         return result
-
-
-
-
 
 
 
