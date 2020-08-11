@@ -220,32 +220,32 @@ class Companies(luigi.WrapperTask):
 
 class CompaniesForeignBranches(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_foreign_branches}', skiptop=2,
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_foreign_branches}', skiptop=2,
                                      directory=rcut_foreign_branches)
 
 
 class CompaniesLegalBranches(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_legal_branches}',
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_legal_branches}',
                                      skiptop=2,
                                      directory=rcut_legal_branches)
 
 
 class CompaniesJointVentures(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_joint_ventures}', skiptop=2,
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_joint_ventures}', skiptop=2,
                                      directory=rcut_joint_ventures)
 
 
 class CompaniesLegalEntities(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_legal_entities}', skiptop=2,
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_legal_entities}', skiptop=2,
                                      directory=rcut_legal_entities)
 
 
 class CompaniesEntrepreneurs(luigi.WrapperTask):
     def requires(self):
-        yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_entrepreneurs}', skiptop=2,
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_entrepreneurs}', skiptop=2,
                                      directory=rcut_entrepreneurs)
 
 
