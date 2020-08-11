@@ -88,7 +88,7 @@ class SgovRCutParser:
             if r.status_code != 0:
                 r.raise_for_status()
             rcuts = json.loads(r.text)
-            self.curr_cut_id = rcuts[0]["id"]
+            self.curr_cut_id = rcuts[1]["id"]
         except (ConnectionError, HTTPError, Timeout) as e:
             # print(e)
             raise ExternalSourceError('Statgov rcuts not available')
