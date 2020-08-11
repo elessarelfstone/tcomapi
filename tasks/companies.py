@@ -243,7 +243,7 @@ class CompaniesLegalEntities(luigi.WrapperTask):
                                      directory=rcut_legal_entities)
 
 
-class CompaniesLegalEntrepreneurs(luigi.WrapperTask):
+class CompaniesEntrepreneurs(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'sgov_{rcut_entrepreneurs}', skiptop=2,
                                      directory=rcut_entrepreneurs)
