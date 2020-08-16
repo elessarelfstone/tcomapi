@@ -106,14 +106,12 @@ class SgovRCutParser:
 
         # return order number
         r = requests.post(self.request_url, headers=headers, data=request)
-        print(r.json())
         return r.json()['obj']
 
     def get_file_guid(self, order_no):
         url = self.result_url_tmpl.format(self.host, order_no)
         r = requests.get(url, headers=headers)
         response = r.json()
-        print(response)
         _guid = None
         if response.get('success') is True:
             if response.get('description') == 'Обработан':
