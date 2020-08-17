@@ -31,8 +31,12 @@ REQUEST_TIMEOUT = 10
 FILE_SUFF_DATE_FORMAT = '%Y%m%d'
 
 
-def date_for_fname(dt):
-    return dt.strftime(FILE_SUFF_DATE_FORMAT)
+def date_for_fname(dt, date_format=FILE_SUFF_DATE_FORMAT, for_month=False):
+    if for_month:
+        _dt = dt.replace(day=1)
+    else:
+        _dt = dt
+    return _dt.strftime(date_format)
 
 
 def curr_date():
@@ -401,4 +405,3 @@ def run_and_redirect(output_fpath, args, **kwargs):
         return out_bytes.decode('utf-8')
     except CalledProcessError as e:
         return e.output.decode('utf-8')
-

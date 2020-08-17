@@ -74,24 +74,29 @@ class GzipToFtp(luigi.Task):
 
     date = luigi.DateParameter(default=datetime.today())
     directory = luigi.Parameter(default=None)
-
-    # fsizelim = luigi.IntParameter(default=0)
+    monthly = luigi.Parameter(default=False)
+    ftp_host = luigi.Parameter(default=FTP_HOST)
+    ftp_user = luigi.Parameter(default=FTP_USER)
+    ftp_pass = luigi.Parameter(default=FTP_PASS)
+    ftp_path = luigi.Parameter(default=FTP_PATH)
+    ftp_os_sep = luigi.Parameter(default='/')
 
     def output(self):
+        # convert luigi.Parameter to string
         directory = str(self.directory)
+        sep = str(self.ftp_os_sep)
+
+        # build full path to target directory
         if self.directory:
-            _path = os.path.join(FTP_PATH, directory)
+            path = sep.join([self.ftp_path, directory])
         else:
-            _path = FTP_PATH
-        print(_path)
+            path = self.ftp_path
 
-        # _ftp_path = os.path.join(_path, gziped_fname(self.input().path,
-        #                                              suff=date_for_fname(self.date)))
-
-        _ftp_path = '/'.join([_path, gziped_fname(self.input().path, suff=date_for_fname(self.date))])
-        print(_ftp_path)
-        return RemoteTarget(_ftp_path, FTP_HOST,
-                            username=FTP_USER, password=FTP_PASS)
+        dt = date_for_fname(self.date, for_month=True)
+        fname = gziped_fname(self.input().path, suff=dt)
+        ftp_path = sep.join([path, fname])
+        return RemoteTarget(ftp_path, self.ftp_host,
+                            username=self.ftp_user, password=self.ftp_pass)
 
     def run(self):
         if os.path.getsize(self.input().path) == 0:
