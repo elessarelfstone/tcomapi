@@ -39,6 +39,7 @@ def date_for_fname(dt, date_format=FILE_SUFF_DATE_FORMAT, for_month=False):
     return _dt.strftime(date_format)
 
 
+
 def curr_date():
     return datetime.today().strftime('%Y-%m-%d')
 
@@ -118,6 +119,7 @@ def dict_to_csvrow(raw_dict, struct):
     """ Convert given dict into tuple using
     given structure(attr class)."""
 
+    # print(raw_dict)
     # cast each keys's name of dict to lower case
     __raw_dict = {k.lower(): v for k, v in raw_dict.items() if k.lower()}
 
@@ -343,7 +345,7 @@ def get_hash(f_path, mode='sha256'):
 
 
 def download(url, fpath):
-    """Download file using stream"""
+    """ Download file using stream """
     try:
         # we always specify verify to False
         # cause we don't use certificate into

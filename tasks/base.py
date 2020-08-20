@@ -22,6 +22,7 @@ from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
 
 
+
 @attr.s
 class DataList(object):
     data = attr.ib()
@@ -31,6 +32,22 @@ class BaseConfig(luigi.Config):
     @classmethod
     def name(cls):
         return cls.__name__.lower()
+
+
+class BaseTask(luigi.Task):
+    """ Base root class for tasks"""
+    name = luigi.Parameter(default='')
+
+
+class LoadDataIntoFile(BaseTask):
+    """ Base class for tasks that loads data into file"""
+    directory = luigi.Parameter(default=None)
+
+
+class LoadDataToCsv(LoadDataIntoFile):
+    ext = luigi.Parameter(default='csv')
+    sep = luigi.Parameter(default=';')
+
 
 
 class RetrieveWebDataFile(luigi.Task):
@@ -93,6 +110,7 @@ class GzipToFtp(luigi.Task):
             path = self.ftp_path
 
         dt = date_for_fname(self.date, for_month=True)
+        print(self.input())
         fname = gziped_fname(self.input().path, suff=dt)
         ftp_path = sep.join([path, fname])
         return RemoteTarget(ftp_path, self.ftp_host,
@@ -190,7 +208,7 @@ class ParseDgovBig(ParseBigElasticApi):
         self.set_progress_percentage(percent)
 
     def output(self):
-        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+        return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
 
     def run(self):
         prs_fpath = parsed_fpath(self.output().path)

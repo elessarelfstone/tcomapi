@@ -61,7 +61,8 @@ def build_url_data(rep_name, apikey, version=None, query=None):
     if version:
         _v = version
 
-    uri = URI_DATA_TMPL.format(rep_name, _v, apikey).replace('//', '')
+    uri = URI_DATA_TMPL.format(rep_name, _v, apikey).replace('//', '/')
+    print(uri)
     if query:
         uri = '{}&source={}'.format(uri, query)
     return '{}{}'.format(HOST, uri)

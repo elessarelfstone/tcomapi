@@ -32,15 +32,22 @@ class Row:
 
 @attr.s
 class RowDgovKato:
-    code = attr.ib(default='')
+    code = attr.ib(converter=lambda x: str(x), default='')
     ab = attr.ib(default='')
     cd = attr.ib(default='')
     ef = attr.ib(default='')
     hij = attr.ib(default='')
-    area_type = attr.ib(default='')
-    name_kaz = attr.ib(default='')
-    name_rus = attr.ib(default='')
+    areatype = attr.ib(converter=lambda x: str(x), default='')
+    namekaz = attr.ib(default='')
+    namerus = attr.ib(default='')
     nn = attr.ib(default='')
+
+    def __attrs_post_init__(self):
+        self.code = str(self.code)
+        self.ab = self.code[:2]
+        self.cd = self.code[2:4]
+        self.ef = self.code[4:6]
+        self.hij = self.code[-3:]
 
 
 class sgov_kato(BaseConfig):
@@ -63,30 +70,23 @@ class GzipKatoToFtp(GzipToFtp):
     pass
 
 
-class KatoDgovParse(luigi.WrapperTask):
+class KatoDgovParse(ParseDgovBig):
+    pass
 
+
+@requires(KatoDgovParse)
+class GzipDgovKatoToFtp(GzipToFtp):
+    pass
+
+
+class DgovKato(luigi.WrapperTask):
     def requires(self):
-        column_filter = {'NameKaz': 'name_kaz', 'NameRus': 'name_rus',
-                         'Code': 'te', 'AreaType': 'k'}
-        return GzipDataGovToFtp(name='dgov_kato',
-                                versions=('data',),
-                                rep_name='kato',
-                                struct=Row,
-                                columns_filter=column_filter)
-
-
-class KatoDgovParse2(luigi.WrapperTask):
-
-    # def requires(self):
-    #     return GzipDgovBigToFtp(name='dgov_kato',
-    #                             struct=RowDgovKato,
-    #                             versions=('data',),
-    #                             rep_name='kato')
-    def requires(self):
-        return ParseDgovBig(name='dgov_kato',
-                            struct=RowDgovKato,
-                            versions=('data',),
-                            rep_name='kato')
+        return GzipDgovKatoToFtp(monthly=True,
+                                 name='dgov_kato',
+                                 struct=RowDgovKato,
+                                 version='data',
+                                 rep_name='kato'
+                                 )
 
 
 class Kato(luigi.WrapperTask):
