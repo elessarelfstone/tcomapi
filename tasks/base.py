@@ -35,19 +35,18 @@ class BaseConfig(luigi.Config):
 
 
 class BaseTask(luigi.Task):
-    """ Base root class for tasks"""
+    """ Base root class for all tasks"""
     name = luigi.Parameter(default='')
 
 
-class LoadDataIntoFile(BaseTask):
+class DataFile(BaseTask):
     """ Base class for tasks that loads data into file"""
     directory = luigi.Parameter(default=None)
 
 
-class LoadDataToCsv(LoadDataIntoFile):
+class DataCsvFile(DataFile):
     ext = luigi.Parameter(default='csv')
     sep = luigi.Parameter(default=';')
-
 
 
 class RetrieveWebDataFile(luigi.Task):
@@ -109,8 +108,7 @@ class GzipToFtp(luigi.Task):
         else:
             path = self.ftp_path
 
-        dt = date_for_fname(self.date, for_month=True)
-        print(self.input())
+        dt = date_for_fname(self.date, for_month=self.monthly)
         fname = gziped_fname(self.input().path, suff=dt)
         ftp_path = sep.join([path, fname])
         return RemoteTarget(ftp_path, self.ftp_host,
@@ -138,9 +136,9 @@ class ParseJavaScript(luigi.Task):
         return luigi.LocalTarget(output_fpath)
 
 
-class ParseBigData(luigi.Task):
+class BigDataCsv(DataCsvFile):
 
-    name = luigi.Parameter(default='')
+    # name = luigi.Parameter(default='')
 
     def complete(self):
         res_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'success')
@@ -150,7 +148,7 @@ class ParseBigData(luigi.Task):
             return True
 
 
-class ParseBigElasticApi(ParseBigData):
+class ParseBigElasticApi(BigDataCsv):
 
     name = luigi.Parameter(default='')
     version = luigi.Parameter(default='')
