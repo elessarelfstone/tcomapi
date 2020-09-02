@@ -10,12 +10,12 @@ import luigi
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires
 
-from tcomapi.dgov.api import (parse_dgovbig, build_url_report,
-                              load_versions, build_url_data, load_data,
+from tcomapi.dgov.api import (parse_dgovbig, build_url_for_report_page,
+                              load_versions, build_url_for_data_page, load_data,
                               QUERY_TMPL, CHUNK_SIZE)
 from tcomapi.common.utils import (build_fpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname, parsed_fpath,
-                                  save_csvrows)
+                                  save_csvrows, build_fname)
 
 from tcomapi.common.unpacking import unpack
 from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
@@ -37,16 +37,22 @@ class BaseConfig(luigi.Config):
 class BaseTask(luigi.Task):
     """ Base root class for all tasks"""
     name = luigi.Parameter(default='')
+    struct = luigi.Parameter(default=None)
 
 
-class DataFile(BaseTask):
+class LoadingDataIntoFile(BaseTask):
     """ Base class for tasks that loads data into file"""
     directory = luigi.Parameter(default=None)
 
 
-class DataCsvFile(DataFile):
+class LoadingDataIntoCsvFile(LoadingDataIntoFile):
     ext = luigi.Parameter(default='csv')
     sep = luigi.Parameter(default=';')
+
+    def output(self):
+        directory = str(self.directory)
+        fname = build_fname(self.name, self.ext)
+        return luigi.LocalTarget(os.path.join(directory, fname))
 
 
 class RetrieveWebDataFile(luigi.Task):
@@ -89,7 +95,7 @@ class RetrieveWebDataFileFromArchive(luigi.Task):
 class GzipToFtp(luigi.Task):
 
     date = luigi.DateParameter(default=datetime.today())
-    directory = luigi.Parameter(default=None)
+    ftp_directory = luigi.Parameter(default=None)
     monthly = luigi.Parameter(default=False)
     ftp_host = luigi.Parameter(default=FTP_HOST)
     ftp_user = luigi.Parameter(default=FTP_USER)
@@ -99,11 +105,11 @@ class GzipToFtp(luigi.Task):
 
     def output(self):
         # convert luigi.Parameter to string
-        directory = str(self.directory)
+        directory = str(self.ftp_directory)
         sep = str(self.ftp_os_sep)
 
         # build full path to target directory
-        if self.directory:
+        if self.ftp_directory:
             path = sep.join([self.ftp_path, directory])
         else:
             path = self.ftp_path
@@ -136,19 +142,40 @@ class ParseJavaScript(luigi.Task):
         return luigi.LocalTarget(output_fpath)
 
 
-class BigDataCsv(DataCsvFile):
+class BigDataToCsv(LoadingDataIntoCsvFile):
 
     # name = luigi.Parameter(default='')
+    parsed_fext = luigi.Parameter('prs')
+    success_fext = luigi.Parameter('success')
+
+    @property
+    def success_fpath(self):
+        return build_fpath(self.directory, self.name, self.success_fext)
+
+    @property
+    def parsed_fpath(self):
+        return build_fpath(self.directory, self.name, self.parsed_fext)
+
+    @staticmethod
+    def month_as_dates_range(month, frmt='%Y-%m-%d'):
+        year = int(month[:4])
+        month = int(month[-2:])
+        start_date = date(year, month, 1).strftime(frmt)
+        end_date = date(year, month, monthrange(year, month)[1]).strftime(frmt)
+        return start_date, end_date
+
+    def progress(self, status, percent):
+        self.set_status_message(status)
+        self.set_progress_percentage(percent)
 
     def complete(self):
-        res_fpath = build_fpath(BIGDATA_TMP_DIR, self.name, 'success')
-        if not os.path.exists(res_fpath):
+        if not os.path.exists(self.success_fpath):
             return False
         else:
             return True
 
 
-class ParseBigElasticApi(BigDataCsv):
+class ParseBigElasticApi(BigDataToCsv):
 
     name = luigi.Parameter(default='')
     version = luigi.Parameter(default='')
@@ -179,13 +206,13 @@ class ParseElasticApi(luigi.Task):
 
     def run(self):
         query = '{' + QUERY_TMPL.format(0, self.chunk_size) + '}'
-        rep_url = build_url_report(self.rep_name)
+        rep_url = build_url_for_report_page(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            url = build_url_data(self.rep_name, self.api_key,
-                                 version=vs, query=query)
+            url = build_url_for_data_page(self.rep_name, self.api_key,
+                                          version=vs, query=query)
             data = load_data(url, self.struct, self.columns_filter)
             save_csvrows(self.output().path, data)
 

@@ -11,7 +11,7 @@ from luigi.util import requires
 
 from settings import (FTP_IN_PATH, FTP_HOST, FTP_PATH,
                       FTP_PASS, FTP_USER, BIGDATA_TMP_DIR)
-from tasks.base import ParseBigData, GzipToFtp
+from tasks.base import BigDataToCsv, GzipToFtp
 from tcomapi.kgd.api import KgdTaxPaymentParser, KgdServerNotAvailableError
 
 from settings import KGD_API_TOKEN
@@ -62,7 +62,7 @@ class KgdBins(luigi.ExternalTask):
                             username=FTP_USER, password=FTP_PASS)
 
 
-class ParseKgdTaxPayments(ParseBigData):
+class ParseKgdTaxPayments(BigDataToCsv):
 
     # month = luigi.Parameter(default=default_month())
     start_date = luigi.Parameter()
@@ -158,7 +158,6 @@ class GzipKgdTaxPaymentsToFtpFull(luigi.Task):
         ]
 
     def run(self):
-        print(self.input())
         for i, f in enumerate(self.input()):
             _fpath = gzip_file(f.path)
             self.output()[i].put(_fpath, atomic=False)
@@ -190,7 +189,6 @@ class KgdTaxPaymentsForMonthFull(luigi.WrapperTask):
     month = luigi.Parameter(default=default_month())
 
     def requires(self):
-        print(self.month)
         year = int(self.month[:4])
         month = int(self.month[-2:])
         start_date = date(year, month, 1).strftime('%Y-%m-%d')
