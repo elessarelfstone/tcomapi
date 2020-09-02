@@ -74,9 +74,9 @@ class ParseKgdTaxPayments(BigDataToCsv):
 
     def output(self):
         # return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
-        return [luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, KgdTaxPaymentParser.parsed_file_ext)),
-                luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, KgdTaxPaymentParser.notax_file_ext)),
-                luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv')),
+        return [luigi.LocalTarget(build_fpath(self.directory, self.name, KgdTaxPaymentParser.parsed_file_ext)),
+                luigi.LocalTarget(build_fpath(self.directory, self.name, KgdTaxPaymentParser.notax_file_ext)),
+                luigi.LocalTarget(build_fpath(self.directory, self.name, 'csv')),
                 ]
 
     def run(self):
@@ -197,7 +197,8 @@ class KgdTaxPaymentsForMonthFull(luigi.WrapperTask):
         yield GzipKgdTaxPaymentsToFtpFull(start_date=start_date,
                                           end_date=end_date,
                                           name='kgd_taxpayments',
-                                          timeout=2)
+                                          timeout=2,
+                                          directory=BIGDATA_TMP_DIR)
 
 
 class KgdTaxPaymentsForPeriod(luigi.WrapperTask):
