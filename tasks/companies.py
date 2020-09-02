@@ -107,7 +107,6 @@ class RetrieveCompaniesRCutDataFile(luigi.Task):
     def run(self):
         # read url from file
         url = read_lines(self.input().path)[0]
-        print(url)
         apath = os.path.join(TMP_DIR, f'{self.name}.zip')
         frmt = save_webfile(url, apath)
         unzip_one_file(apath, self.name)
@@ -222,7 +221,7 @@ class CompaniesForeignBranches(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_foreign_branches}',
                                      skiptop=2,
-                                     directory=rcut_foreign_branches,
+                                     ftp_directory=rcut_foreign_branches,
                                      monthly=True)
 
 
@@ -230,28 +229,28 @@ class CompaniesLegalBranches(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_legal_branches}',
                                      skiptop=2,
-                                     directory=rcut_legal_branches,
+                                     ftp_directory=rcut_legal_branches,
                                      monthly=True)
 
 
 class CompaniesJointVentures(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_joint_ventures}', skiptop=2,
-                                     directory=rcut_joint_ventures,
+                                     ftp_directory=rcut_joint_ventures,
                                      monthly=True)
 
 
 class CompaniesLegalEntities(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_legal_entities}', skiptop=2,
-                                     directory=rcut_legal_entities,
+                                     ftp_directory=rcut_legal_entities,
                                      monthly=True)
 
 
 class CompaniesEntrepreneurs(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_entrepreneurs}', skiptop=2,
-                                     directory=rcut_entrepreneurs,
+                                     ftp_directory=rcut_entrepreneurs,
                                      monthly=True)
 
 

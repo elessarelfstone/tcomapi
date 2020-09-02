@@ -7,7 +7,9 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipDataGovToFtp, GzipDgovBigToFtp
+from tasks.base import GzipDataGovToFtp, GzipDgovBigToFtp, GzipToFtp
+from tasks.elastic import BigDataElasticApiParsingToCsv
+from tcomapi.common.dates import default_month, month_as_dates_range
 from tcomapi.common.utils import parsed_fpath, read_lines, success_fpath
 from tcomapi.dgov.api import parse_dgovbig
 
@@ -67,6 +69,7 @@ class SAtsRow:
     full_path_kaz = attr.ib(default='')
     full_path_rus = attr.ib(default='')
     d_ats_type_id = attr.ib(default='')
+    d_ats_type_code = attr.ib(default='')
     cato = attr.ib(default='')
     actual = attr.ib(default='')
     parent_id = attr.ib(default='')
@@ -126,7 +129,6 @@ class SBuildingsRow:
 @attr.s
 class SPbRow:
     id = attr.ib(default='')
-    d_room_type_code = attr.ib(default='')
     d_room_type_id = attr.ib(default='')
     full_path_rus = attr.ib(default='')
     full_path_kaz = attr.ib(default='')
@@ -173,79 +175,24 @@ class AddrRegDRoomsTypes(luigi.WrapperTask):
                                 struct=DRoomsTypes)
 
 
-class AddrRegSAts(luigi.WrapperTask):
-
-    updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_ats')
-    version = luigi.Parameter(default='data')
-    struct = luigi.Parameter(default=SAtsRow)
-
-    def requires(self):
-        return GzipDgovBigToFtp(name='dgov_addrregsats',
-                                struct=self.struct,
-                                version=self.version,
-                                rep_name=self.rep_name,
-                                updates_days=self.updates_days)
+@requires(BigDataElasticApiParsingToCsv)
+class GzipElasticApiParsingToCsv(GzipToFtp):
+    pass
 
 
-class AddrRegSGeonims(luigi.WrapperTask):
+class AddrReg(luigi.WrapperTask):
 
-    updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_geonims_new')
-    version = luigi.Parameter(default='data')
-    struct = luigi.Parameter(default=SGeonimsRow)
+    # month = luigi.Parameter(default=default_month())
 
     def requires(self):
-        return GzipDgovBigToFtp(name='dgov_addrregsgeonims',
-                                struct=self.struct,
-                                version=self.version,
-                                rep_name=self.rep_name,
-                                updates_days=self.updates_days)
 
+        # month_range = month_as_dates_range(self.month, '%Y-%m-%d %H:%M:%S')
 
-class AddrRegSGrounds(luigi.WrapperTask):
-
-    updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_grounds')
-    version = luigi.Parameter(default='data')
-    struct = luigi.Parameter(default=SGroundsRow)
-
-    def requires(self):
-        return GzipDgovBigToFtp(name='dgov_addrregsgrounds',
-                                struct=self.struct,
-                                version=self.version,
-                                rep_name=self.rep_name,
-                                updates_days=self.updates_days)
-
-
-class AddrRegSBuildings(luigi.WrapperTask):
-
-    updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_buildings')
-    version = luigi.Parameter(default='data')
-    struct = luigi.Parameter(default=SBuildingsRow)
-
-    def requires(self):
-        return GzipDgovBigToFtp(name='dgov_addrregsbuildings',
-                                struct=self.struct,
-                                version=self.version,
-                                rep_name=self.rep_name,
-                                updates_days=self.updates_days)
-
-
-class AddrRegSpb(luigi.WrapperTask):
-
-    updates_days = luigi.IntParameter()
-    rep_name = luigi.Parameter(default='s_pb')
-    version = luigi.Parameter(default='data')
-    struct = luigi.Parameter(default=SPbRow)
-
-    def requires(self):
-        return GzipDgovBigToFtp(name='dgov_addrregspb',
-                                struct=self.struct,
-                                version=self.version,
-                                rep_name=self.rep_name,
-                                updates_days=self.updates_days)
+        return GzipElasticApiParsingToCsv(name='dgov_addrregspb',
+                                          struct=SPbRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_pb')
 
 
 if __name__ == '__main__':

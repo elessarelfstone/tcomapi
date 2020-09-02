@@ -188,10 +188,11 @@ def get(url: str, headers=None, timeout=None) -> str:
     # cause we don't use certificate into
     # Kazakhtelecom network
     r = requests.get(url, verify=False, headers=headers, timeout=timeout)
-
+    # try:
     if r.status_code != 200:
         r.raise_for_status()
-
+    # except :
+    #     raise ExternalSourceError()
     return r.text
 
 
@@ -293,6 +294,10 @@ def identify_format(fpath):
             return frmt.extension
 
     return None
+
+
+def build_fname(fname, ext, suff=None):
+    return f'{fname}_{suff}.{ext}' if suff else f'{fname}.{ext}'
 
 
 def build_fpath(fdir, fname, ext):
@@ -407,3 +412,5 @@ def run_and_redirect(output_fpath, args, **kwargs):
         return out_bytes.decode('utf-8')
     except CalledProcessError as e:
         return e.output.decode('utf-8')
+
+

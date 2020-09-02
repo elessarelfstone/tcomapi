@@ -11,7 +11,7 @@ from tcomapi.common.utils import save_csvrows, append_file
 from tcomapi.common.correctors import float_corrector
 from tcomapi.common.data_verification import is_float
 from tcomapi.dgov.api import (load_versions, load_data,
-                              build_url_data, build_url_report)
+                              build_url_for_data_page, build_url_for_report_page)
 
 from settings import CONFIG_DIR, DGOV_API_KEY
 
@@ -48,12 +48,12 @@ class ParseFoodBasket(ParseElasticApi):
 
     def run(self):
 
-        rep_url = build_url_report(self.rep_name)
+        rep_url = build_url_for_report_page(self.rep_name)
         versions = self.versions
         if not versions:
             versions = load_versions(rep_url)
         for vs in versions:
-            url = build_url_data(self.rep_name, DGOV_API_KEY, version=vs)
+            url = build_url_for_data_page(self.rep_name, DGOV_API_KEY, version=vs)
             data = load_data(url, Row)
             save_csvrows(self.output().path, data)
 

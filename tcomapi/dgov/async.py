@@ -7,7 +7,7 @@ from requests import Session, HTTPError, ConnectionError, Timeout, ReadTimeout
 from requests.exceptions import RetryError
 
 from tcomapi.common.exceptions import ExternalSourceError
-from tcomapi.dgov.api import (TIMEOUT, QUERY_TMPL, Chunk, build_url_detail, build_url_data, load_total,
+from tcomapi.dgov.api import (TIMEOUT, QUERY_TMPL, Chunk, build_url_for_detail_page, build_url_for_data_page, load_total,
                               read_lines, prepare_chunks, load2, prepare_callback_info)
 from tcomapi.common.utils import save_csvrows, append_file, success_fpath
 
@@ -61,7 +61,7 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
                   updates_date=None, version=None, query=None,
                   callback=None):
     # retriev total count
-    total = load_total(build_url_detail(rep, apikey, version, query))
+    total = load_total(build_url_for_detail_page(rep, apikey, version, query))
 
     # get parsed chunks from prs file
     parsed_chunks = []
@@ -86,7 +86,7 @@ def parse_report(rep, struct, apikey, output_fpath, parsed_fpath,
             _chunk = Chunk(*(chunk.split(':')))
             query = query = '{' + QUERY_TMPL.format(_chunk.start, _chunk.size) + '}'
 
-            url = build_url_data(rep, apikey, version=version, query=query)
+            url = build_url_for_data_page(rep, apikey, version=version, query=query)
 
             future = ex.submit(load2, url, struct, updates_date)
 
