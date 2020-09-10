@@ -10,9 +10,10 @@ from tasks.base import BigDataToCsv, LoadingDataIntoCsvFile, GzipToFtp
 from tcomapi.dgov.api import DatagovApiParsing
 from tcomapi.common.dates import month_as_dates_range
 from tcomapi.common.utils import build_fname, build_fpath, append_file
-from dates import default_month
+from dates import previous_month_as_str
 
 CHUNK_SIZE = 10000
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 class ElasticApiParsing(luigi.Task):
@@ -54,42 +55,9 @@ class BigDataElasticApiParsingToCsv(BigDataToCsv, ElasticApiParsing):
         append_file(self.success_fpath, stat)
 
 
-# class AddrRegSpb2(luigi.WrapperTask):
-#
-#     month = luigi.Parameter(default=default_month())
-#
-#     def requires(self):
-#
-#         month_range = month_as_dates_range(self.month, '%Y-%m-%d %H:%M:%S')
-#
-#         return BigDataElasticApiParsingToCsv(name='dgov_addrregspb',
-#                                              struct=SPbRow,
-#                                              directory=BIGDATA_TMP_DIR,
-#                                              versions=('data',),
-#                                              report_name='s_pb',
-#                                              updates_dates_range=month_range
-#                                              )
-
-
 @requires(BigDataElasticApiParsingToCsv)
 class GzipElasticApiParsingToCsv(GzipToFtp):
     pass
-
-
-class AddrRegSpbForMonth(luigi.WrapperTask):
-
-    month = luigi.Parameter(default=default_month())
-
-    def requires(self):
-
-        month_range = month_as_dates_range(self.month, '%Y-%m-%d %H:%M:%S')
-
-        return GzipElasticApiParsingToCsv(name='dgov_addrregspb',
-                                          struct=SPbRow,
-                                          monthly=True,
-                                          versions=('data',),
-                                          report_name='s_pb',
-                                          updates_dates_range=month_range)
 
 
 if __name__ == '__main__':

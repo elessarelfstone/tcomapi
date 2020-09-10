@@ -145,8 +145,8 @@ class ParseJavaScript(luigi.Task):
 class BigDataToCsv(LoadingDataIntoCsvFile):
 
     # name = luigi.Parameter(default='')
-    parsed_fext = luigi.Parameter('prs')
-    success_fext = luigi.Parameter('success')
+    parsed_fext = luigi.Parameter(default='prs')
+    success_fext = luigi.Parameter(default='success')
 
     @property
     def success_fpath(self):
@@ -275,3 +275,5 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+
+

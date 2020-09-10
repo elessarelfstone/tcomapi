@@ -2,10 +2,8 @@ from calendar import monthrange
 from datetime import datetime, date, timedelta
 from typing import Tuple
 
-from utils import prev_month
-
 FILENAME_DATE_FORMAT = '%Y%m%d'
-PERIOD_DATE_FORMAT = '%Y-%m-%d'
+DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 PERIOD_MONTH_FORMAT = '%Y-%m'
 
 
@@ -25,19 +23,27 @@ def today_as_str(dt_format=FILENAME_DATE_FORMAT) -> str:
     return datetime.today().strftime(dt_format)
 
 
-def month_as_period(month: str) -> Tuple[date, date]:
+def yesterday_as_str(dt_format=FILENAME_DATE_FORMAT) -> str:
+    """ """
+    yesterday = datetime.today() - timedelta(days=1)
+    return yesterday.strftime(dt_format)
+
+
+
+
+def month_as_range(month: str) -> Tuple[date, date]:
     _date = datetime.strptime(month, PERIOD_MONTH_FORMAT)
     return first_dayof_month(_date), last_dayof_month(_date)
 
 
-def previous_month_as_period(month: str) -> Tuple[date, date]:
+def previous_month_as_range(month: str) -> Tuple[date, date]:
     _date = datetime.strptime(month, PERIOD_MONTH_FORMAT) - timedelta(days=1)
     return first_dayof_month(_date), _date
 
 
-def previous_month_as_period_str(month: str) -> Tuple[str, str]:
+def previous_month_as_range_str(month: str) -> Tuple[str, str]:
     _date = datetime.strptime(month, PERIOD_MONTH_FORMAT) - timedelta(days=1)
-    return first_dayof_month_as_str(_date), _date.strftime(PERIOD_DATE_FORMAT)
+    return first_dayof_month_as_str(_date), _date.strftime(DEFAULT_DATE_FORMAT)
 
 
 def month_as_dates_range(month, frmt):
@@ -48,8 +54,20 @@ def month_as_dates_range(month, frmt):
     return start_date, end_date
 
 
-def default_month() -> str:
-    """ Return  """
+def previous_month(year, month) -> Tuple[int, int]:
+    """ According given year and month return previous month as tuple (year, month)"""
+    first_day = date(year, month, 1)
+    lastday_prevmonth = first_day - timedelta(days=1)
+    return lastday_prevmonth.year, lastday_prevmonth.month
+
+
+def previous_month_as_str() -> str:
+    """ Return string representing privious month formatted as YYYY-MM """
     today = date.today()
-    year, month = prev_month(today.year, today.month)
+    year, month = previous_month(today.year, today.month)
     return '{}-{:02}'.format(year, month)
+
+
+def previous_date_as_str(delta, frmt=DEFAULT_DATE_FORMAT):
+    t = datetime.today() - timedelta(delta)
+    return t.strftime(frmt)

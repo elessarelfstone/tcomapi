@@ -8,8 +8,8 @@ from luigi.util import requires
 
 
 from tasks.base import GzipDataGovToFtp, GzipDgovBigToFtp, GzipToFtp
-from tasks.elastic import BigDataElasticApiParsingToCsv
-from tcomapi.common.dates import default_month, month_as_dates_range
+from tasks.elastic import BigDataElasticApiParsingToCsv, DATE_FORMAT
+from tcomapi.common.dates import previous_month_as_str, month_as_dates_range
 from tcomapi.common.utils import parsed_fpath, read_lines, success_fpath
 from tcomapi.dgov.api import parse_dgovbig
 
@@ -193,6 +193,86 @@ class AddrReg(luigi.WrapperTask):
                                           monthly=True,
                                           versions=('data',),
                                           report_name='s_pb')
+
+
+class AddrRegSAts(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=previous_month_as_str())
+
+    def requires(self):
+
+        month_range = month_as_dates_range(self.month, DATE_FORMAT)
+
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsats',
+                                          struct=SAtsRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_ats',
+                                          updates_dates_range=month_range)
+
+
+class AAddrRegSGeonims(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=previous_month_as_str())
+
+    def requires(self):
+
+        month_range = month_as_dates_range(self.month, DATE_FORMAT)
+
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsgeonims',
+                                          struct=SGeonimsRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_geonims_new',
+                                          updates_dates_range=month_range)
+
+
+class AddrRegSGrounds(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=previous_month_as_str())
+
+    def requires(self):
+
+        month_range = month_as_dates_range(self.month, DATE_FORMAT)
+
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsgrounds',
+                                          struct=SGroundsRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_grounds',
+                                          updates_dates_range=month_range)
+
+
+class AddrRegSBuildings(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=previous_month_as_str())
+
+    def requires(self):
+
+        month_range = month_as_dates_range(self.month, DATE_FORMAT)
+
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsbuildings',
+                                          struct=SBuildingsRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_buildings',
+                                          updates_dates_range=month_range)
+
+
+class AddrRegSpb(luigi.WrapperTask):
+
+    month = luigi.Parameter(default=previous_month_as_str())
+
+    def requires(self):
+
+        month_range = month_as_dates_range(self.month, DATE_FORMAT)
+
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsbuildings',
+                                          struct=SPbRow,
+                                          monthly=True,
+                                          versions=('data',),
+                                          report_name='s_pb',
+                                          updates_dates_range=month_range)
 
 
 if __name__ == '__main__':

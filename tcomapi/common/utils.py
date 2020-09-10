@@ -2,7 +2,7 @@ import os
 import gzip
 import hashlib
 import json
-from typing import Tuple, Dict
+from typing import Dict
 
 import requests
 import urllib3
@@ -10,7 +10,7 @@ import shutil
 import socket
 import subprocess as subp
 from collections import namedtuple, Counter
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from os.path import basename
 from subprocess import CalledProcessError
 from urllib.parse import urlparse
@@ -37,7 +37,6 @@ def date_for_fname(dt, date_format=FILE_SUFF_DATE_FORMAT, for_month=False):
     else:
         _dt = dt
     return _dt.strftime(date_format)
-
 
 
 def curr_date():
@@ -380,12 +379,6 @@ def swap_elements(values, pos1, pos2):
 
 def get_stata(c: Counter):
     return ' '.join(('{}:{}'.format(k, v) for k, v in c.items()))
-
-
-def prev_month(year, month) -> Tuple[int, int]:
-    first_day = date(year, month, 1)
-    lastday_prevmonth = first_day - timedelta(days=1)
-    return lastday_prevmonth.year, lastday_prevmonth.month
 
 
 def apply_filter_to_dict(d: Dict, column_filter: Dict) -> Dict:

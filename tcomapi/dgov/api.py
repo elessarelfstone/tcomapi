@@ -360,9 +360,9 @@ def build_query(start_from: int,  size: int,
     q = ''
 
     if dates_range:
-        begin_day, end_day = dates_range
+        start_date, end_date = dates_range
         q = ', "query":{"range":{"modified":{"gte":"%s","lt":"%s"}}}' \
-                % (begin_day, end_day)
+                % (start_date, end_date)
 
     return '{"from": %s, "size": %s %s}' % (start_from, size, q)
 
