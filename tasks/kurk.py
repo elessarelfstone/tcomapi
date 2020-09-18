@@ -8,8 +8,8 @@ from luigi.util import requires
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows, swap_elements as swap
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import CONFIG_DIR, TMP_DIR
+from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -36,6 +36,25 @@ class KurkParse(ParseWebExcelFile):
         save_csvrows(self.output().path, [swap(attr.astuple(r), 1, 2) for r in rows])
 
 
+class KurkParse2(WebExcelFileParsingToCsv):
+    def run(self):
+        rows = parse(self.input().path, Row, skiprows=self.skiptop)
+        save_csvrows(self.output().path, [swap(attr.astuple(r), 1, 2) for r in rows])
+
+
+@requires(KurkParse2)
+class GzipKurkToFtp2(GzipToFtp):
+    pass
+
+
+class Kurk2(luigi.WrapperTask):
+    def requires(self):
+        return GzipKurkToFtp2(directory=TMP_DIR,
+                              url=sgov_kurk().url,
+                              name=sgov_kurk().name(),
+                              skiptop=sgov_kurk().skiptop)
+
+
 @requires(KurkParse)
 class GzipKurkToFtp(GzipToFtp):
     pass
@@ -43,7 +62,8 @@ class GzipKurkToFtp(GzipToFtp):
 
 class Kurk(luigi.WrapperTask):
     def requires(self):
-        return GzipKurkToFtp(url=sgov_kurk().url, name=sgov_kurk().name(),
+        return GzipKurkToFtp(url=sgov_kurk().url,
+                             name=sgov_kurk().name(),
                              skiptop=sgov_kurk().skiptop)
 
 

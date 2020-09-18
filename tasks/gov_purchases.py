@@ -76,7 +76,10 @@ class GovernmentPurchasesParsingToCsv(GraphQlParsing):
             last_id = data.get('Subjects', [])[-1]['pid']
             start_from = last_id
             data = [dict_to_csvrow(d, self.struct) for d in data.get('Subjects')]
-            save_csvrows(self.output().path, data)
+            header = tuple(f.name for f in attr.fields(GovernmentPurchasesRow))
+            #
+            save_csvrows(self.output().path, [header], sep=self.sep)
+            save_csvrows(self.output().path, data, sep=self.sep)
 
 
 @requires(GovernmentPurchasesParsingToCsv)
@@ -133,6 +136,7 @@ class GovernmentPurchases(luigi.WrapperTask):
 """
         return GzipGovernmentPurchasesParsingToCsv(
             directory=TMP_DIR,
+            sep=',',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,

@@ -8,7 +8,7 @@ from typing import Tuple
 import attr
 import luigi
 from luigi.contrib.ftp import RemoteTarget
-from luigi.util import requires
+from luigi.util import requires, inherits
 
 from tcomapi.dgov.api import (parse_dgovbig, build_url_for_report_page,
                               load_versions, build_url_for_data_page, load_data,
@@ -46,6 +46,7 @@ class LoadingDataIntoFile(BaseTask):
 
 
 class LoadingDataIntoCsvFile(LoadingDataIntoFile):
+
     ext = luigi.Parameter(default='csv')
     sep = luigi.Parameter(default=';')
 
@@ -54,8 +55,11 @@ class LoadingDataIntoCsvFile(LoadingDataIntoFile):
         fname = build_fname(self.name, self.ext)
         return luigi.LocalTarget(os.path.join(directory, fname))
 
+    def run(self):
+        open(self.output().path, 'a').close()
 
-class RetrieveWebDataFile(luigi.Task):
+
+class WebDataFileDownloading(luigi.Task):
     url = luigi.Parameter()
     name = luigi.Parameter()
 
@@ -65,7 +69,39 @@ class RetrieveWebDataFile(luigi.Task):
 
     def run(self):
         # download file and get format(rar, zip, xls, etc) of file
+        print(self.output().path)
         frmt = save_webfile(self.url, self.output().path)
+
+
+@requires(WebDataFileDownloading)
+class WebDataArchiveDownloadingAndUnpacking(luigi.Task):
+
+    fnames = luigi.ListParameter(default=None)
+
+    @staticmethod
+    def get_filepaths(folder, fnames):
+        return [os.path.join(folder, fname) for fname in fnames]
+
+    def output(self):
+        fpaths = self.get_filepaths(TMP_DIR, self.fnames)
+        return [luigi.LocalTarget(f) for f in fpaths]
+
+    def run(self):
+
+        # # build path for downloading file
+        arch_fpath = self.input().path
+        #
+        # # download file and get format(rar, zip, xls, etc) of file
+        # frmt = save_webfile(self.url, arch_fpath)
+        unpack(arch_fpath, [t.path for t in self.output()])
+
+
+@requires(WebDataArchiveDownloadingAndUnpacking)
+class WebDataExcelFileFromArchiveParsingToCsv(LoadingDataIntoCsvFile):
+
+    skiptop = luigi.IntParameter(default=0)
+    skipbottom = luigi.IntParameter(default=0)
+    usecolumns = luigi.Parameter(default='')
 
 
 class RetrieveWebDataFileFromArchive(luigi.Task):
@@ -89,7 +125,7 @@ class RetrieveWebDataFileFromArchive(luigi.Task):
 
         # download file and get format(rar, zip, xls, etc) of file
         frmt = save_webfile(self.url, fpath)
-        unpack(fpath, frmt, [t.path for t in self.output()])
+        unpack(fpath, [t.path for t in self.output()])
 
 
 class GzipToFtp(luigi.Task):
@@ -121,14 +157,17 @@ class GzipToFtp(luigi.Task):
                             username=self.ftp_user, password=self.ftp_pass)
 
     def run(self):
-        if os.path.getsize(self.input().path) == 0:
-            _fpath = os.path.join(ARCH_DIR, gziped_fname(self.input().path))
-            self.output().put(_fpath, atomic=False)
-        else:
-            _fpath = gzip_file(self.input().path)
-            arch_fpath = os.path.join(ARCH_DIR, os.path.basename(_fpath))
-            shutil.copy(_fpath, arch_fpath)
-            self.output().put(_fpath, atomic=False)
+        _fpath = gzip_file(self.input().path)
+        self.output().put(_fpath, atomic=False)
+
+        # if os.path.getsize(self.input().path) == 0:
+        #     _fpath = os.path.join(ARCH_DIR, gziped_fname(self.input().path))
+        #     self.output().put(_fpath, atomic=False)
+        # else:
+        #     _fpath = gzip_file(self.input().path)
+        #     arch_fpath = os.path.join(ARCH_DIR, os.path.basename(_fpath))
+        #     shutil.copy(_fpath, arch_fpath)
+        #     self.output().put(_fpath, atomic=False)
 
 
 class ParseJavaScript(luigi.Task):
@@ -255,7 +294,7 @@ class GzipDgovBigToFtp(GzipToFtp):
     pass
 
 
-@requires(RetrieveWebDataFile)
+@requires(WebDataFileDownloading)
 class ParseWebExcelFile(luigi.Task):
 
     skiptop = luigi.IntParameter(default=0)
@@ -264,6 +303,13 @@ class ParseWebExcelFile(luigi.Task):
 
     def output(self):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+
+
+@requires(WebDataFileDownloading)
+class WebExcelFileParsingToCsv(LoadingDataIntoCsvFile):
+    skiptop = luigi.IntParameter(default=0)
+    skipbottom = luigi.IntParameter(default=0)
+    usecolumns = luigi.Parameter(default='')
 
 
 @requires(RetrieveWebDataFileFromArchive)

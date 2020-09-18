@@ -5,7 +5,8 @@ from shutil import which, move
 from zipfile import ZipFile
 from rarfile import RarFile
 
-from tcomapi.common.utils import fname_noext, build_fpath
+from tcomapi.common.exceptions import ExternalSourceError
+from tcomapi.common.utils import fname_noext, build_fpath, identify_format
 
 
 class UnpackingError(Exception):
@@ -36,8 +37,13 @@ def fflist(apath, frmt):
     return fnames
 
 
-def unpack(apath, frmt, fpaths):
+def unpack(apath, fpaths):
     """ Unpack files from archive. Support only rar, zip archives """
+
+    frmt = identify_format(apath)
+
+    if not frmt:
+        raise ExternalSourceError("Unknown format of file.")
 
     # rename apath name with its format
     # cause before we have file without extension

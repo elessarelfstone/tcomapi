@@ -211,7 +211,7 @@ class AddrRegSAts(luigi.WrapperTask):
                                           updates_dates_range=month_range)
 
 
-class AAddrRegSGeonims(luigi.WrapperTask):
+class AddrRegSGeonims(luigi.WrapperTask):
 
     month = luigi.Parameter(default=previous_month_as_str())
 
@@ -223,7 +223,7 @@ class AAddrRegSGeonims(luigi.WrapperTask):
                                           struct=SGeonimsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_geonims_new',
+                                          report_name='s_geonims',
                                           updates_dates_range=month_range)
 
 

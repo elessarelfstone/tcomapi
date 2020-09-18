@@ -364,7 +364,7 @@ def build_query(start_from: int,  size: int,
         q = ', "query":{"range":{"modified":{"gte":"%s","lt":"%s"}}}' \
                 % (start_date, end_date)
 
-    return '{"from": %s, "size": %s %s}' % (start_from, size, q)
+    return '{"from":%s,"size":%s %s}' % (start_from, size, q)
 
 
 def load_total(det_url: str) -> int:
@@ -462,6 +462,7 @@ class DatagovApiParsing:
                 data = load3(url, self.struct)
 
             except (HTTPError, ConnectionError, Timeout, RetryError, ReadTimeout) as exc:
+                print(exc)
                 chunks.append(chunk)
                 sleep(TIMEOUT * 2)
                 errors += 1
@@ -488,6 +489,3 @@ class DatagovApiParsing:
             raise ExternalSourceError(f'Report {self.report_name}:{version} has no data. ')
 
         return total_rows, parsed_rows_count
-
-
-

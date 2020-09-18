@@ -9,9 +9,9 @@ from typing import Dict
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows
 from tcomapi.common.correctors import basic_corrector
-from settings import CONFIG_DIR
+from settings import CONFIG_DIR, TMP_DIR
 from tasks.base import (GzipToFtp, BaseConfig, ParseWebExcelFileFromArchive, GzipDataGovToFtp,
-                        GzipDgovBigToFtp, ParseDgovBig)
+                        GzipDgovBigToFtp, ParseDgovBig, WebDataExcelFileFromArchiveParsingToCsv)
 
 config_path = os.path.join(CONFIG_DIR, 'kato.conf')
 add_config_path(config_path)
@@ -65,7 +65,14 @@ class KatoSgovParse(ParseWebExcelFileFromArchive):
             save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
 
 
-@requires(KatoSgovParse)
+class KatoSgovParse2(WebDataExcelFileFromArchiveParsingToCsv):
+    def run(self):
+        for target in self.input():
+            rows = parse(target.path, Row, skiprows=self.skiptop, usecols=self.usecolumns)
+            save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
+
+
+@requires(KatoSgovParse2)
 class GzipKatoToFtp(GzipToFtp):
     pass
 
@@ -91,8 +98,11 @@ class DgovKato(luigi.WrapperTask):
 
 class Kato(luigi.WrapperTask):
     def requires(self):
-        return GzipKatoToFtp(url=sgov_kato().url, fnames=sgov_kato().fnames,
-                             name=sgov_kato().name(), skiptop=sgov_kato().skiptop,
+        return GzipKatoToFtp(directory=TMP_DIR,
+                             url=sgov_kato().url,
+                             fnames=sgov_kato().fnames,
+                             name=sgov_kato().name(),
+                             skiptop=sgov_kato().skiptop,
                              usecolumns=sgov_kato().usecolumns)
 
 

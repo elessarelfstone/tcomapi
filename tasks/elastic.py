@@ -39,6 +39,9 @@ class BigDataElasticApiParsingToCsv(BigDataToCsv, ElasticApiParsing):
     directory = luigi.Parameter(default=BIGDATA_TMP_DIR)
 
     def run(self):
+
+        super(BigDataToCsv, self).run()
+
         parser = DatagovApiParsing(self.api_key, self.report_name, self.struct,
                                    self.chunk_size, self.output().path,
                                    self.parsed_fpath)
