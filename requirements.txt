@@ -1,3 +1,4 @@
+gql
 python-dotenv
 numpy
 pandas

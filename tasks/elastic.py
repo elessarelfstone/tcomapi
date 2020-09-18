@@ -5,10 +5,8 @@ from luigi.util import requires
 
 
 from settings import DGOV_API_KEY, BIGDATA_TMP_DIR
-# from tasks.addressregister import SPbRow
 from tasks.base import BigDataToCsv, LoadingDataIntoCsvFile, GzipToFtp
 from tcomapi.dgov.api import DatagovApiParsing
-from tcomapi.common.dates import month_as_dates_range
 from tcomapi.common.utils import build_fname, build_fpath, append_file
 
 CHUNK_SIZE = 10000

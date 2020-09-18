@@ -267,7 +267,7 @@ class AddrRegSpb(luigi.WrapperTask):
 
         month_range = month_as_dates_range(self.month, DATE_FORMAT)
 
-        return GzipElasticApiParsingToCsv(name='dgov_addrregsbuildings',
+        return GzipElasticApiParsingToCsv(name='dgov_addrregspb',
                                           struct=SPbRow,
                                           monthly=True,
                                           versions=('data',),
