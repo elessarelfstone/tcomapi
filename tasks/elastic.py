@@ -10,7 +10,6 @@ from tasks.base import BigDataToCsv, LoadingDataIntoCsvFile, GzipToFtp
 from tcomapi.dgov.api import DatagovApiParsing
 from tcomapi.common.dates import month_as_dates_range
 from tcomapi.common.utils import build_fname, build_fpath, append_file
-from dates import previous_month_as_str
 
 CHUNK_SIZE = 10000
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
