@@ -142,9 +142,7 @@ class GovernmentPurchases(luigi.WrapperTask):
             headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,
             name='goszakup_companies',
-            struct=GovernmentPurchasesRow,
-            start_date='2020-09-18',
-            end_date='2020-09-18'
+            struct=GovernmentPurchasesRow
         )
 
 
