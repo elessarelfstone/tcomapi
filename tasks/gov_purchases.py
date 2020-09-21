@@ -64,6 +64,10 @@ class GovernmentPurchasesParsingToCsv(GraphQlParsing):
         query = gql(self.query)
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
+
+        header = tuple(f.name for f in attr.fields(GovernmentPurchasesRow))
+        save_csvrows(self.output().path, [header], sep=self.sep)
+
         while True:
             p = params
             if start_from:
@@ -76,10 +80,7 @@ class GovernmentPurchasesParsingToCsv(GraphQlParsing):
             last_id = data.get('Subjects', [])[-1]['pid']
             start_from = last_id
             data = [dict_to_csvrow(d, self.struct) for d in data.get('Subjects')]
-            header = tuple(f.name for f in attr.fields(GovernmentPurchasesRow))
-            #
-            save_csvrows(self.output().path, [header], sep=self.sep)
-            save_csvrows(self.output().path, data, sep=self.sep)
+            save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
 @requires(GovernmentPurchasesParsingToCsv)
@@ -142,6 +143,8 @@ class GovernmentPurchases(luigi.WrapperTask):
             query=query,
             name='goszakup_companies',
             struct=GovernmentPurchasesRow,
+            start_date='2020-09-18',
+            end_date='2020-09-18'
         )
 
 

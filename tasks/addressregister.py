@@ -188,11 +188,11 @@ class AddrReg(luigi.WrapperTask):
 
         # month_range = month_as_dates_range(self.month, '%Y-%m-%d %H:%M:%S')
 
-        return GzipElasticApiParsingToCsv(name='dgov_addrregspb',
-                                          struct=SPbRow,
+        return GzipElasticApiParsingToCsv(name='dgov_addrregsats',
+                                          struct=SAtsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_pb')
+                                          report_name='s_ats')
 
 
 class AddrRegSAts(luigi.WrapperTask):

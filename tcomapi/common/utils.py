@@ -139,7 +139,7 @@ def dict_to_csvrow(raw_dict, struct):
     return attr.astuple(attr_obj)
 
 
-def save_csvrows(fpath, recs, sep=None):
+def save_csvrows(fpath, recs, sep=None, quoter=None):
     """ Save list of tuples as csv rows to file """
 
     if sep:
@@ -147,10 +147,17 @@ def save_csvrows(fpath, recs, sep=None):
     else:
         _sep = CSV_SEP
 
+    if quoter is None:
+        _q = ''
+    else:
+        _q = quoter
+
     with open(fpath, 'a+', encoding="utf-8") as f:
         for rec in recs:
             # clean
             _rec = [clean_for_csv(v) for v in rec]
+            # quoting
+            _rec = [f'{_q}{v}{_q}' for v in _rec]
             row = _sep.join(_rec)
             f.write(row + '\n')
 
