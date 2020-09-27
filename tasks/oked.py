@@ -1,14 +1,9 @@
-import os
-
 import luigi
 import attr
-from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import TMP_DIR
+from tasks.base import GzipToFtp, BaseConfig, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -22,15 +17,7 @@ class Row:
     lv3 = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'oked.conf')
-add_config_path(config_path)
-
-
-class sgov_oked(BaseConfig):
-    url = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
+url = 'https://stat.gov.kz/api/getFile/?docId=ESTAT310324'
 
 
 def update_rows(rows):
@@ -66,23 +53,19 @@ def update_rows(rows):
             r.lv0, r.lv1, r.lv2, r.lv3 = b[0], b[1], f'{b[1]}{b[2][0]}', f'{b[1]}{b[2]}'
 
 
-class OkedParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=sgov_oked().skiptop)
-        print(len(rows))
-        update_rows(rows)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-
-
-@requires(OkedParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipOkedToFtp(GzipToFtp):
     pass
 
 
 class Oked(luigi.WrapperTask):
     def requires(self):
-        return GzipOkedToFtp(url=sgov_oked().url, name=sgov_oked().name(),
-                             skiptop=sgov_oked().skiptop)
+        return GzipOkedToFtp(url=url,
+                             name='sgov_oked',
+                             struct=Row,
+                             directory=TMP_DIR,
+                             skiptop=3,
+                             transform_callback=update_rows)
 
 
 if __name__ == '__main__':

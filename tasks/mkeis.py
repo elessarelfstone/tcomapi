@@ -1,14 +1,9 @@
-import os
-
 import attr
 import luigi
-from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import TMP_DIR
+from tasks.base import GzipToFtp, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -18,32 +13,21 @@ class Row:
     nameru = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'mkeis.conf')
-add_config_path(config_path)
+url = 'https://stat.gov.kz/api/getFile/?docId=ESTAT316776'
 
 
-class sgov_mkeis(BaseConfig):
-    url = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class MkeisParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-
-
-@requires(MkeisParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipMkeisToFtp(GzipToFtp):
     pass
 
 
 class Mkeis(luigi.WrapperTask):
     def requires(self):
-        return GzipMkeisToFtp(url=sgov_mkeis().url, name=sgov_mkeis().name(),
-                              skiptop=sgov_mkeis().skiptop)
+        return GzipMkeisToFtp(url=url,
+                              name='sgov_mkeis',
+                              struct=Row,
+                              directory=TMP_DIR,
+                              skiptop=4)
 
 
 if __name__ == '__main__':

@@ -5,11 +5,8 @@ import luigi
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-
-from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from tasks.base import GzipToFtp, WebExcelFileParsingToCsv
+from settings import TMP_DIR
 
 
 @attr.s
@@ -26,32 +23,21 @@ class Row:
     order_date = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'inactive.conf')
-add_config_path(config_path)
+url = 'http://kgd.gov.kz/mobile_api/services/taxpayers_unreliable_exportexcel/INACTIVE/KZ_ALL/fileName/list_INACTIVE_KZ_ALL.xlsx'
 
 
-class kgd_inactive(BaseConfig):
-    url = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class InactiveParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-
-
-@requires(InactiveParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipInactiveToFtp(GzipToFtp):
     pass
 
 
 class Inactive(luigi.WrapperTask):
     def requires(self):
-        return GzipInactiveToFtp(url=kgd_inactive().url, name=kgd_inactive().name(),
-                                 skiptop=kgd_inactive().skiptop)
+        return GzipInactiveToFtp(url=url,
+                                 name='kgd_inactive',
+                                 directory=TMP_DIR,
+                                 struct=Row,
+                                 skiptop=3)
 
 
 if __name__ == '__main__':

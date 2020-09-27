@@ -13,6 +13,9 @@ from luigi.util import requires, inherits
 from tcomapi.dgov.api import (parse_dgovbig, build_url_for_report_page,
                               load_versions, build_url_for_data_page, load_data,
                               QUERY_TMPL, CHUNK_SIZE)
+from tcomapi.common.excel import parse_excel_rect_area_to_csv
+
+
 from tcomapi.common.utils import (build_fpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname, parsed_fpath,
                                   save_csvrows, build_fname)
@@ -69,7 +72,6 @@ class WebDataFileDownloading(luigi.Task):
 
     def run(self):
         # download file and get format(rar, zip, xls, etc) of file
-        print(self.output().path)
         frmt = save_webfile(self.url, self.output().path)
 
 
@@ -295,7 +297,7 @@ class GzipDgovBigToFtp(GzipToFtp):
 
 
 @requires(WebDataFileDownloading)
-class ParseWebExcelFile(luigi.Task):
+class WebExcelFileCustomParsingToCsv(LoadingDataIntoCsvFile):
 
     skiptop = luigi.IntParameter(default=0)
     skipbottom = luigi.IntParameter(default=0)
@@ -307,9 +309,22 @@ class ParseWebExcelFile(luigi.Task):
 
 @requires(WebDataFileDownloading)
 class WebExcelFileParsingToCsv(LoadingDataIntoCsvFile):
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
+    skiptop = luigi.IntParameter(default=None)
+    skipbottom = luigi.IntParameter(default=None)
+    usecolumns = luigi.Parameter(default=None)
+    sheets = luigi.Parameter(default=None)
+    transform_callback = luigi.Parameter(default=None)
+
+    def run(self):
+        super().run()
+        parse_excel_rect_area_to_csv(self.input().path,
+                                     self.output().path,
+                                     self.struct,
+                                     sheets=self.sheets,
+                                     skiptopnum=self.skiptop,
+                                     usecols=self.usecolumns,
+                                     transform_callback=self.transform_callback
+                                     )
 
 
 @requires(RetrieveWebDataFileFromArchive)
@@ -323,3 +338,7 @@ class ParseWebExcelFileFromArchive(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
 
+# class CommonExcelFileParsingToCsv(WebExcelFileParsingToCsv):
+#
+#     def output(self):
+#         parse

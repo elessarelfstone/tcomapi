@@ -6,13 +6,9 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipToFtp, BaseConfig, ParseElasticApi, GzipDataGovToFtp
-from tcomapi.common.utils import save_csvrows, append_file
-from tcomapi.common.correctors import float_corrector
-from tcomapi.common.data_verification import is_float
-from tcomapi.dgov.api import (load_versions, build_url_for_data_page, build_url_for_report_page)
+from tasks.base import BaseConfig, GzipDataGovToFtp
 
-from settings import CONFIG_DIR, DGOV_API_KEY
+from settings import CONFIG_DIR
 
 
 @attr.s

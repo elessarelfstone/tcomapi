@@ -2,13 +2,12 @@ import os
 
 import attr
 import luigi
-from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import TMP_DIR
+from tasks.base import GzipToFtp, WebExcelFileCustomParsingToCsv, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -25,33 +24,21 @@ class Row:
     inspection_date = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'taxviolators.conf')
-add_config_path(config_path)
+url = 'http://kgd.gov.kz/mobile_api/services/taxpayers_unreliable_exportexcel/VIOLATION_TAX_CODE/KZ_ALL/fileName/list_VIOLATION_TAX_CODE_KZ_ALL.xlsx'
 
 
-class kgd_taxviolators(BaseConfig):
-    url = luigi.Parameter(default='')
-    # name = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class TaxViolatorsParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows], ';')
-
-
-@requires(TaxViolatorsParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipTaxViolatorsToFtp(GzipToFtp):
     pass
 
 
 class TaxViolators(luigi.WrapperTask):
     def requires(self):
-        return GzipTaxViolatorsToFtp(url=kgd_taxviolators().url, name=kgd_taxviolators().name(),
-                                     skiptop=kgd_taxviolators().skiptop)
+        return GzipTaxViolatorsToFtp(url=url,
+                                     name='kgd_taxviolators',
+                                     struct=Row,
+                                     directory=TMP_DIR,
+                                     skiptop=3)
 
 
 if __name__ == '__main__':

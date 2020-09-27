@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse_to_csv
+from tcomapi.common.excel import parse_excel_rect_area_to_csv
 from tcomapi.common.utils import (save_csvrows, save_webfile,
                                   build_fpath, fname_noext, fpath_noext)
 from tcomapi.common.unpacking import unpack, zipo_flist, unzip_one_file
@@ -147,7 +147,7 @@ class ParseRegCompanies(luigi.Task):
     def run(self):
         for i, target in enumerate(self.input()):
             self.set_status_message('Parsing {}'.format(target.path))
-            parse_to_csv(target.path, self.output().path, Row, skiprows=self.skiprows)
+            parse_excel_rect_area_to_csv(target.path, self.output().path, Row, skiptopnum=self.skiprows)
             percent = round((i + 1) * 100 / len(self.input()))
             self.set_progress_percentage(percent)
 

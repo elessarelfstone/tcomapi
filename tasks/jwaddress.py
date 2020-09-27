@@ -2,13 +2,11 @@ import os
 
 import attr
 import luigi
-from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+
+from settings import CONFIG_DIR, TMP_DIR
+from tasks.base import GzipToFtp, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -25,32 +23,21 @@ class Row:
     inspection_date = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'jwaddress.conf')
-add_config_path(config_path)
+url = 'http://kgd.gov.kz/mobile_api/services/taxpayers_unreliable_exportexcel/WRONG_ADDRESS/KZ_ALL/fileName/list_WRONG_ADDRESS_KZ_ALL.xlsx'
 
 
-class kgd_jwaddress(BaseConfig):
-    url = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class JwaddressParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-
-
-@requires(JwaddressParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipJwaddressToFtp(GzipToFtp):
     pass
 
 
 class Jwaddress(luigi.WrapperTask):
     def requires(self):
-        return GzipJwaddressToFtp(url=kgd_jwaddress().url, name=kgd_jwaddress().name(),
-                                  skiptop=kgd_jwaddress().skiptop)
+        return GzipJwaddressToFtp(url=url,
+                                  name='kgd_jwaddress',
+                                  directory=TMP_DIR,
+                                  struct=Row,
+                                  skiptop=3)
 
 
 if __name__ == '__main__':

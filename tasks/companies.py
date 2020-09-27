@@ -14,7 +14,7 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tcomapi.common.excel import parse, parse_to_csv
+from tcomapi.common.excel import parse, parse_excel_rect_area_to_csv
 from tcomapi.common.utils import (save_csvrows, save_webfile,
                                   build_fpath, append_file, read_lines)
 
@@ -53,14 +53,6 @@ class Row:
     settlement_ru = attr.ib(default='')
     legal_address = attr.ib(default='')
     head_fio = attr.ib(default='')
-
-
-class sgov_companies(BaseConfig):
-    url = luigi.Parameter(default=None)
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-    sheets = luigi.TupleParameter(default=None)
 
 
 class RCutUrlFile(luigi.Task):
@@ -122,8 +114,8 @@ class ParseCompaniesRCut(luigi.Task):
 
     def run(self):
         # TODO finish
-        parse_to_csv(self.input().path, self.output().path,
-                     Row, skiprows=self.skiptop)
+        parse_excel_rect_area_to_csv(self.input().path, self.output().path,
+                                     Row, skiptopnum=self.skiptop)
 
 
 @requires(ParseCompaniesRCut)

@@ -2,13 +2,10 @@ import os
 
 import attr
 import luigi
-from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
-from tcomapi.common.excel import parse
-from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import TMP_DIR
+from tasks.base import GzipToFtp, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -25,33 +22,21 @@ class Row:
     court_decision_date = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'bankrupt.conf')
-add_config_path(config_path)
+url = 'http://kgd.gov.kz/mobile_api/services/taxpayers_unreliable_exportexcel/BANKRUPT/KZ_ALL/fileName/list_BANKRUPT_KZ_ALL.xlsx'
 
 
-class kgd_bankrupt(BaseConfig):
-    url = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class BankruptParse(ParseWebExcelFile):
-    def run(self):
-        rows = parse(self.input().path, Row, skiprows=self.skiptop)
-        save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
-
-
-@requires(BankruptParse)
+@requires(WebExcelFileParsingToCsv)
 class GzipBankruptToFtp(GzipToFtp):
     pass
 
 
 class Bankrupt(luigi.WrapperTask):
     def requires(self):
-        return GzipBankruptToFtp(url=kgd_bankrupt().url,
-                                 name=kgd_bankrupt().name(),
-                                 skiptop=kgd_bankrupt().skiptop)
+        return GzipBankruptToFtp(url=url,
+                                 name='kgd_bunkrupt',
+                                 directory=TMP_DIR,
+                                 struct=Row,
+                                 skiptop=3)
 
 
 if __name__ == '__main__':

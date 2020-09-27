@@ -7,8 +7,8 @@ from luigi.util import requires
 
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows
-from settings import CONFIG_DIR
-from tasks.base import GzipToFtp, BaseConfig, ParseWebExcelFile
+from settings import CONFIG_DIR, TMP_DIR
+from tasks.base import GzipToFtp, BaseConfig, WebExcelFileCustomParsingToCsv, WebExcelFileParsingToCsv
 
 
 @attr.s
@@ -25,34 +25,28 @@ class Row:
     court_decision_date = attr.ib(default='')
 
 
-config_path = os.path.join(CONFIG_DIR, 'invregistration.conf')
-add_config_path(config_path)
+url = 'http://kgd.gov.kz/mobile_api/services/taxpayers_unreliable_exportexcel/INVALID_REGISTRATION/KZ_ALL/fileName/list_INVALID_REGISTRATION_KZ_ALL.xlsx'
 
 
-class kgd_invregistration(BaseConfig):
-    url = luigi.Parameter(default='')
-    # name = luigi.Parameter(default='')
-    skiptop = luigi.IntParameter(default=0)
-    skipbottom = luigi.IntParameter(default=0)
-    usecolumns = luigi.Parameter(default='')
-
-
-class InvregistrationParse(ParseWebExcelFile):
+class InvregistrationParse(WebExcelFileCustomParsingToCsv):
     def run(self):
         rows = parse(self.input().path, Row, skiprows=self.skiptop)
         save_csvrows(self.output().path, [attr.astuple(r) for r in rows])
 
 
-@requires(InvregistrationParse)
-class GzipDebtorsToFtp(GzipToFtp):
+@requires(WebExcelFileParsingToCsv)
+class GzipInvregistrationToFtp(GzipToFtp):
     pass
 
 
 class Invregistration(luigi.WrapperTask):
     def requires(self):
-        return GzipDebtorsToFtp(url=kgd_invregistration().url,
-                                name=kgd_invregistration().name(),
-                                skiptop=kgd_invregistration().skiptop)
+        return GzipInvregistrationToFtp(url=url,
+                                        name='kgd_invregistration',
+                                        struct=Row,
+                                        directory=TMP_DIR,
+                                        skiptop=3
+                                        )
 
 
 if __name__ == '__main__':

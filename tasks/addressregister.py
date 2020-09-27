@@ -7,13 +7,9 @@ from luigi.configuration.core import add_config_path
 from luigi.util import requires
 
 
-from tasks.base import GzipDataGovToFtp, GzipDgovBigToFtp, GzipToFtp
+from tasks.base import GzipDataGovToFtp, GzipToFtp
 from tasks.elastic import BigDataElasticApiParsingToCsv, DATE_FORMAT
 from tcomapi.common.dates import previous_month_as_str, month_as_dates_range
-from tcomapi.common.utils import parsed_fpath, read_lines, success_fpath
-from tcomapi.dgov.api import parse_dgovbig
-
-from settings import CONFIG_DIR, DGOV_API_KEY
 
 
 @attr.s
