@@ -247,7 +247,7 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
             data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
-            cnt += 1
+            cnt += self.limit
             self.set_progress_percentage(round((cnt * 100)/total))
             self.set_status_message(str(cnt))
 
