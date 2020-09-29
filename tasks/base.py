@@ -59,7 +59,7 @@ class LoadingDataIntoCsvFile(LoadingDataIntoFile):
         return luigi.LocalTarget(os.path.join(directory, fname))
 
     def run(self):
-        open(self.output().path, 'a').close()
+        open(self.output().path, 'a', encoding="utf-8").close()
 
 
 class WebDataFileDownloading(luigi.Task):

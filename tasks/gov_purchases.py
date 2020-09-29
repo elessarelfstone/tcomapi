@@ -13,7 +13,7 @@ from tcomapi.common.utils import dict_to_csvrow, save_csvrows
 
 
 @attr.s
-class GovernmentPurchasesRow:
+class GovernmentPurchasesCompanyRow:
     pid = attr.ib(default='')
     bin = attr.ib(default='')
     iin = attr.ib(default='')
@@ -54,7 +54,77 @@ class GovernmentPurchasesRow:
     index_date = attr.ib(default='')
 
 
-class GovernmentPurchasesParsingToCsv(GraphQlParsing):
+@attr.s
+class GovernmentPurchasesContractRow:
+    id = attr.ib(default='')
+    parent_id = attr.ib(default='')
+    root_id = attr.ib(default='')
+    trd_buy_id = attr.ib(default='')
+    trd_buy_number_anno = attr.ib(default='')
+    trd_buy_name_ru = attr.ib(default='')
+    trd_buy_name_kz = attr.ib(default='')
+    ref_contract_status_id = attr.ib(default='')
+    deleted = attr.ib(default='')
+    crdate = attr.ib(default='')
+    last_update_date = attr.ib(default='')
+    supplier_id = attr.ib(default='')
+    supplier_biin = attr.ib(default='')
+    supplier_bik = attr.ib(default='')
+    supplier_iik = attr.ib(default='')
+    supplier_bank_name_kz = attr.ib(default='')
+    supplier_bank_name_ru = attr.ib(default='')
+    supplier_legal_address = attr.ib(default='')
+    supplier_bill_id = attr.ib(default='')
+    contract_number = attr.ib(default='')
+    sign_reason_doc_name = attr.ib(default='')
+    sign_reason_doc_date = attr.ib(default='')
+    trd_buy_itogi_date_public = attr.ib(default='')
+    customer_id = attr.ib(default='')
+    customer_bin = attr.ib(default='')
+    customer_bik = attr.ib(default='')
+    customer_iik = attr.ib(default='')
+    customer_bill_id = attr.ib(default='')
+    customer_bank_name_kz = attr.ib(default='')
+    customer_bank_name_ru = attr.ib(default='')
+    customer_legal_address = attr.ib(default='')
+    contract_number_sys = attr.ib(default='')
+    payments_terms_ru = attr.ib(default='')
+    payments_terms_kz = attr.ib(default='')
+    ref_subject_type_id = attr.ib(default='')
+    ref_subject_types_id = attr.ib(default='')
+    is_gu = attr.ib(default='')
+    fin_year = attr.ib(default='')
+    ref_contract_agr_form_id = attr.ib(default='')
+    ref_contract_year_type_id = attr.ib(default='')
+    ref_finsource_id = attr.ib(default='')
+    ref_currency_code = attr.ib(default='')
+    exchange_rate = attr.ib(default='')
+    contract_sum = attr.ib(default='')
+    contract_sum_wnds = attr.ib(default='')
+    sign_date = attr.ib(default='')
+    ec_end_date = attr.ib(default='')
+    plan_exec_date = attr.ib(default='')
+    fakt_exec_date = attr.ib(default='')
+    fakt_sum = attr.ib(default='')
+    fakt_sum_wnds = attr.ib(default='')
+    contract_end_date = attr.ib(default='')
+    ref_contract_cancel_id = attr.ib(default='')
+    ref_contract_type_id = attr.ib(default='')
+    description_kz = attr.ib(default='')
+    description_ru = attr.ib(default='')
+    fakt_trade_methods_id = attr.ib(default='')
+    ec_customer_approve = attr.ib(default='')
+    ec_supplier_approve = attr.ib(default='')
+    contract_ms = attr.ib(default='')
+    treasure_req_num = attr.ib(default='')
+    treasure_req_date = attr.ib(default='')
+    treasure_not_num = attr.ib(default='')
+    treasure_not_date = attr.ib(default='')
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+
+
+class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = 100
@@ -65,7 +135,7 @@ class GovernmentPurchasesParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        header = tuple(f.name for f in attr.fields(GovernmentPurchasesRow))
+        header = tuple(f.name for f in attr.fields(GovernmentPurchasesCompanyRow))
         save_csvrows(self.output().path, [header], sep=self.sep)
 
         while True:
@@ -83,12 +153,12 @@ class GovernmentPurchasesParsingToCsv(GraphQlParsing):
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
-@requires(GovernmentPurchasesParsingToCsv)
-class GzipGovernmentPurchasesParsingToCsv(GzipToFtp):
+@requires(GovernmentPurchasesCompaniesParsingToCsv)
+class GzipGovernmentPurchasesCompaniesParsingToCsv(GzipToFtp):
     pass
 
 
-class GovernmentPurchases(luigi.WrapperTask):
+class GovernmentPurchasesCompanies(luigi.WrapperTask):
 
     def requires(self):
         query = """
@@ -135,14 +205,141 @@ class GovernmentPurchases(luigi.WrapperTask):
           }
         }
 """
-        return GzipGovernmentPurchasesParsingToCsv(
+        return GzipGovernmentPurchasesCompaniesParsingToCsv(
             directory=TMP_DIR,
             sep=',',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,
             name='goszakup_companies',
-            struct=GovernmentPurchasesRow
+            struct=GovernmentPurchasesCompanyRow
+        )
+
+
+class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
+    # start_date = luigi.Parameter(default='1991-01-01')
+    # end_date = luigi.Parameter(default='2020-09-30')
+    limit = 200
+
+    def run(self):
+        client = self.get_client()
+        query = gql(self.query)
+        start_from = None
+        params = {'limit': self.limit}
+
+        header = tuple(f.name for f in attr.fields(GovernmentPurchasesContractRow))
+        save_csvrows(self.output().path, [header], sep=self.sep)
+        total = 8221266
+        cnt = 0
+        self.set_status_message(cnt)
+        self.set_progress_percentage(round((cnt * 100)/total))
+        while True:
+            p = params
+            if start_from:
+                p["after"] = start_from
+
+            data = client.execute(query, variable_values=p)
+            if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
+                break
+
+            last_id = data.get('Contract', [])[-1]['id']
+            start_from = last_id
+            data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
+            save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+
+            cnt += 1
+            self.set_progress_percentage(round((cnt * 100)/total))
+            self.set_status_message(str(cnt))
+
+
+@requires(GovernmentPurchasesContractsParsingToCsv)
+class GzipGovernmentPurchasesContractsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GovernmentPurchasesContracts(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getContracts($limit: Int, $after: Int){
+          Contract(limit: $limit, after: $after) {
+            id
+            parent_id: parentId
+            root_id: rootId
+            trd_buy_id: trdBuyId
+            trd_buy_number_anno: trdBuyNumberAnno
+            trd_buy_name_ru: trdBuyNameRu
+            trd_buy_name_kz: trdBuyNameKz
+            ref_contract_status_id: refContractStatusId
+            deleted
+            crdate
+            last_update_date: lastUpdateDate
+            supplier_id: supplierId
+            supplier_biin: supplierBiin
+            supplier_bik: supplierBik
+            supplier_iik: supplierIik
+            supplier_bank_name_kz: supplierBankNameKz
+            supplier_bank_name_ru: supplierBankNameRu
+            supplier_legal_address: supplierLegalAddress
+            supplier_bill_id: supplierBillId
+            contract_number: contractNumber
+            sign_reason_doc_name: signReasonDocName
+            sign_reason_doc_date: signReasonDocDate
+            trd_buy_itogi_date_public: trdBuyItogiDatePublic
+            customer_id: customerId
+            customer_bin: customerBin
+            customer_bik: customerBik
+            customer_iik: customerIik
+            customer_bill_id: customerBillId
+            customer_bank_name_kz: customerBankNameKz
+            customer_bank_name_ru: customerBankNameRu
+            customer_legal_address: customerLegalAddress
+            contract_number_sys: contractNumberSys
+            payments_terms_ru: paymentsTermsRu
+            payments_terms_kz: paymentsTermsKz
+            ref_subject_type_id: refSubjectTypeId
+            ref_subject_types_id: refSubjectTypesId
+            is_gu: isGu
+            fin_year: finYear
+            ref_contract_agr_form_id: refContractAgrFormId
+            ref_contract_year_type_id: refContractYearTypeId
+            ref_finsource_id: refFinsourceId
+            ref_currency_code: refCurrencyCode
+            exchange_rate: exchangeRate
+            contract_sum: contractSum
+            contract_sum_wnds: contractSumWnds
+            sign_date: signDate
+            ec_end_date: ecEndDate
+            plan_exec_date: planExecDate
+            fakt_exec_date: faktExecDate
+            fakt_sum: faktSum
+            fakt_sum_wnds: faktSumWnds
+            contract_end_date: contractEndDate
+            ref_contract_cancel_id: refContractCancelId
+            ref_contract_type_id: refContractTypeId
+            description_kz: descriptionKz
+            description_ru: descriptionRu
+            fakt_trade_methods_id: faktTradeMethodsId
+            ec_customer_approve: ecCustomerApprove
+            ec_supplier_approve: ecSupplierApprove
+            contract_ms: contractMs
+            treasure_req_num: treasureReqNum
+            treasure_req_date: treasureReqDate
+            treasure_not_num: treasureNotNum
+            treasure_not_date: treasureNotDate
+            system_id: systemId
+            index_date: indexDate
+          }
+        }
+        """
+        return GzipGovernmentPurchasesContractsParsingToCsv(
+            directory=TMP_DIR,
+            sep=',',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
+            query=query,
+            name='goszakup_contracts',
+            struct=GovernmentPurchasesContractRow
         )
 
 
