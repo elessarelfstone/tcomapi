@@ -4,6 +4,7 @@ import luigi
 from box import Box
 from gql import gql
 from luigi.util import requires
+from time import sleep
 
 from settings import TMP_DIR
 from tasks.base import GzipToFtp
@@ -229,7 +230,7 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
 
         header = tuple(f.name for f in attr.fields(GovernmentPurchasesContractRow))
         save_csvrows(self.output().path, [header], sep=self.sep)
-        total = 8221266
+        total = 8223199
         cnt = 0
         self.set_status_message(cnt)
         self.set_progress_percentage(round((cnt * 100)/total))
@@ -250,6 +251,7 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
             cnt += self.limit
             self.set_progress_percentage(round((cnt * 100)/total))
             self.set_status_message(str(cnt))
+            sleep(10)
 
 
 @requires(GovernmentPurchasesContractsParsingToCsv)

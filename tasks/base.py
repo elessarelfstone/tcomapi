@@ -338,7 +338,3 @@ class ParseWebExcelFileFromArchive(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
 
-# class CommonExcelFileParsingToCsv(WebExcelFileParsingToCsv):
-#
-#     def output(self):
-#         parse
