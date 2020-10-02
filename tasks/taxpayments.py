@@ -23,7 +23,6 @@ from tcomapi.common.exceptions import NoBinsToParseTaxPayments
 from tcomapi.common.dataflow import last_file_with_bins
 from tcomapi.common.utils import (build_fpath, append_file, gziped_fname,
                                   date_for_fname, gzip_file)
-from dates import previous_month
 
 IN_FILENAME = 'kgd.bins'
 IN_FILENAME_TMPL = 'export_kgdgovkz_bins'

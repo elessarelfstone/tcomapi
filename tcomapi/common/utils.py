@@ -10,9 +10,7 @@ import shutil
 import socket
 import subprocess as subp
 from collections import namedtuple, Counter
-from datetime import datetime
 from os.path import basename
-from subprocess import CalledProcessError
 from urllib.parse import urlparse
 
 import attr
@@ -37,14 +35,6 @@ def date_for_fname(dt, date_format=FILE_SUFF_DATE_FORMAT, for_month=False):
     else:
         _dt = dt
     return _dt.strftime(date_format)
-
-
-def curr_date():
-    return datetime.today().strftime('%Y-%m-%d')
-
-
-def curr_date_time():
-    return datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
 
 
 def read_lines(fpath):
@@ -118,7 +108,6 @@ def dict_to_csvrow(raw_dict, struct):
     """ Convert given dict into tuple using
     given structure(attr class)."""
 
-    # print(raw_dict)
     # cast each keys's name of dict to lower case
     __raw_dict = {k.lower(): v for k, v in raw_dict.items() if k.lower()}
 
@@ -194,6 +183,20 @@ def get(url: str, headers=None, timeout=None) -> str:
     # cause we don't use certificate into
     # Kazakhtelecom network
     r = requests.get(url, verify=False, headers=headers, timeout=timeout)
+    # try:
+    if r.status_code != 200:
+        r.raise_for_status()
+    # except :
+    #     raise ExternalSourceError()
+    return r.text
+
+
+def post(url: str, request: str,  headers=None, timeout=None) -> str:
+
+    # we always specify verify to False
+    # cause we don't use certificate into
+    # Kazakhtelecom network
+    r = requests.post(url, request, verify=False, headers=headers, timeout=timeout)
     # try:
     if r.status_code != 200:
         r.raise_for_status()
@@ -378,12 +381,6 @@ def download(url, fpath):
         raise ExternalSourceError('Could not download file {}'.format(fpath))
 
 
-def swap_elements(values, pos1, pos2):
-    _lst = list(values)
-    _lst[pos1], _lst[pos2] = _lst[pos2], _lst[pos1]
-    return tuple(_lst)
-
-
 def get_stata(c: Counter):
     return ' '.join(('{}:{}'.format(k, v) for k, v in c.items()))
 
@@ -405,12 +402,17 @@ def apply_filter_to_dict(d: Dict, column_filter: Dict) -> Dict:
     return _d
 
 
-def run_and_redirect(output_fpath, args, **kwargs):
-    try:
-        with open(output_fpath, 'w') as outf:
-            out_bytes = subp.call(args, shell=True, stdout=outf, **kwargs)
-        return out_bytes.decode('utf-8')
-    except CalledProcessError as e:
-        return e.output.decode('utf-8')
+def get_lastrow_ncolumn_value_in_csv(fpath, column_num: int, sep=';'):
+    if os.path.exists(fpath) and (os.stat(fpath).st_size != 0):
+        r = subp.check_output("awk -F'{}' 'END{{print $1}}' {}".format(sep, fpath))
+        return r.split()[column_num].decode(encoding='utf-8')
+
+    return None
 
 
+def get_file_lines_count(fpath: int):
+    if os.path.exists(fpath):
+        r = subp.check_output("wc -l {}".format(fpath))
+        return int(r.decode(encoding='utf-8').split()[0])
+
+    return None

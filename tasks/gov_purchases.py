@@ -1,16 +1,23 @@
+import json
+import os
+from urllib.parse import urlparse
+
 
 import attr
 import luigi
 from box import Box
 from gql import gql
+from gql.transport.exceptions import TransportServerError
 from luigi.util import requires
 from time import sleep
 
 from settings import TMP_DIR
-from tasks.base import GzipToFtp
-from tasks.grql import GraphQlParsing
+from tasks.base import GzipToFtp, LoadingDataIntoCsvFile, BigDataToCsv
+from tasks.grql import GraphQlParsing, GraphQlBigDataParsing
 from tcomapi.common.dates import previous_date_as_str
-from tcomapi.common.utils import dict_to_csvrow, save_csvrows
+from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, get,
+                                  get_lastrow_ncolumn_value_in_csv, read_lines,
+                                  append_file, get_file_lines_count)
 
 
 @attr.s
@@ -125,6 +132,83 @@ class GovernmentPurchasesContractRow:
     index_date = attr.ib(default='')
 
 
+def get_total(url: str, headers: str):
+    r = get(url, headers=headers)
+    return Box(json.loads(r)).total
+
+
+class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
+
+    url = luigi.Parameter()
+    token = luigi.Parameter()
+    # headers = luigi.DictParameter(default={})
+    timeout = luigi.IntParameter(default=10)
+    limit = luigi.IntParameter(default=500)
+
+    def run(self):
+        error_timeout = self.timeout * 3
+        headers = dict()
+        headers['Authorization'] = self.token
+
+        url = f'{self.url}?limit={self.limit}'
+        host = '{uri.scheme}://{uri.netloc}'.format(uri=urlparse(url))
+
+        # we store parsed blocks of data as uris
+        # in case reruning we parse last uri
+        if os.path.exists(self.parsed_fpath):
+            uri = read_lines(self.parsed_fpath).pop()
+            url = f'{host}{uri}'
+
+        total = 0
+        parsed_count = get_file_lines_count(self.output().path)
+
+        while url:
+            try:
+                r = get(url, headers=headers, timeout=self.timeout)
+            except Exception:
+                sleep(error_timeout)
+            else:
+                response = Box(json.loads(r))
+                if response.next_page:
+                    url = f'{self.url}?{response.next_page}'
+                    append_file(self.parsed_fpath, response.next_page)
+                else:
+                    url = None
+
+                total = response.total
+                raw_items = list(response['items'])
+                # data = dict_to_csvrow(raw_items, self.struct)
+                data = [dict_to_csvrow(d, self.struct) for d in raw_items]
+                save_csvrows(self.output().path, data, quoter="\"")
+                parsed_count += self.limit
+                sleep(self.timeout)
+
+            self.set_status_message(f'Total: {total}. Parsed: {parsed_count}')
+            self.set_progress_percentage(round((parsed_count * 100)/total))
+
+        stat = dict(total=total, parsed=parsed_count)
+        append_file(self.success_fpath, stat)
+
+
+class GoszakupContractsAllParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupContractsAllParsingToCsv)
+class GzipGoszakupContractsAllParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupContractsAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupContractsAllParsingToCsv(directory=TMP_DIR,
+                                                    sep=';',
+                                                    url='https://ows.goszakup.gov.kz/v3/contract/all',
+                                                    token='Bearer 61b536c8271157ab23f71c745b925133',
+                                                    name='goszakup_contracts',
+                                                    struct=GovernmentPurchasesContractRow)
+
+
 class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
@@ -217,44 +301,51 @@ class GovernmentPurchasesCompanies(luigi.WrapperTask):
         )
 
 
-class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
+class GovernmentPurchasesContractsParsingToCsvAll(GraphQlBigDataParsing):
     # start_date = luigi.Parameter(default='1991-01-01')
     # end_date = luigi.Parameter(default='2020-09-30')
-    limit = 200
 
     def run(self):
         client = self.get_client()
         query = gql(self.query)
-        start_from = None
+
+        start_from = get_lastrow_ncolumn_value_in_csv(self.output().path, 0, ',')
+        print(start_from)
+        if start_from:
+            start_from = int(start_from.strip('"'))
         params = {'limit': self.limit}
 
-        header = tuple(f.name for f in attr.fields(GovernmentPurchasesContractRow))
-        save_csvrows(self.output().path, [header], sep=self.sep)
-        total = 8223199
+        total = get_total(self.url, self.headers)
+        print(total)
         cnt = 0
         self.set_status_message(cnt)
         self.set_progress_percentage(round((cnt * 100)/total))
         while True:
             p = params
-            if start_from:
-                p["after"] = start_from
+            p["after"] = start_from
+            try:
+                data = client.execute(query, variable_values=p)
+            except Exception as e:
+                sleep(60)
+                total = get_total(self.url, self.headers)
+                sleep(5)
+            else:
+                if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
+                    break
+                last_id = data.get('Contract', [])[-1]['id']
+                start_from = last_id
+                data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
+                save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
-            data = client.execute(query, variable_values=p)
-            if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
-                break
+                cnt += self.limit
 
-            last_id = data.get('Contract', [])[-1]['id']
-            start_from = last_id
-            data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
-            save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+                self.set_progress_percentage(round((cnt * 100)/total))
+                self.set_status_message(str(cnt))
 
-            cnt += self.limit
-            self.set_progress_percentage(round((cnt * 100)/total))
-            self.set_status_message(str(cnt))
-            sleep(10)
+            sleep(30)
 
 
-@requires(GovernmentPurchasesContractsParsingToCsv)
+@requires(GovernmentPurchasesContractsParsingToCsvAll)
 class GzipGovernmentPurchasesContractsParsingToCsv(GzipToFtp):
     pass
 
