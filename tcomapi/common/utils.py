@@ -413,6 +413,6 @@ def get_lastrow_ncolumn_value_in_csv(fpath, column_num: int, sep=';'):
 def get_file_lines_count(fpath: int):
     if os.path.exists(fpath):
         r = subp.check_output("wc -l {}".format(fpath))
-        return int(r.decode(encoding='utf-8').split()[0])
+        return int(r.decode(encoding='utf-8').split()[0]) if r else 0
 
     return None

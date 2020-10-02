@@ -5,6 +5,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+PRODUCTION_HOST = os.getenv('PRODUCTION_HOST')
+PRODUCTION_USER = os.getenv('PRODUCTION_USER')
+PRODUCTION_PASS = os.getenv('PRODUCTION_PASS')
+
+
 KGD_API_TOKEN = os.getenv('KGD_API_TOKEN')
 DGOV_API_KEY = os.getenv('DGOV_API_KEY')
 
