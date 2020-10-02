@@ -67,9 +67,9 @@ class KgdTaxPaymentParser(BidsHandler):
     notax_payments_errorcode = 10
     notax_file_ext = 'notaxes'
 
-    def __init__(self, name, bids_fpath, output_fpath, parsed_fpath,  notaxes_fpath, date_range,
+    def __init__(self, name, bids_fpath, output_fpath, parsed_fpath, notaxes_fpath, date_range,
                  token, struct, timeout, limit_outputfsize=None):
-        super().__init__(name, bids_fpath, parsed_fpath)
+        super().__init__(bids_fpath, output_fpath, parsed_fpath)
         # TODO rid off BidsBigDataToCsvHandler inheritance
         self.output_fpath = output_fpath
         self.parsed_fpath = parsed_fpath
@@ -184,6 +184,6 @@ class KgdTaxPaymentParser(BidsHandler):
         else:
             r = ''
         curr = 'Total: {}. Parsed:{}. {} in {} {}'.format(self._source_bids_count, self._parsed_bids_count,
-                                                          bid, self.output, r)
+                                                          bid, self.output_fpath, r)
         stata = ' '.join(f'{k}:{v}' for k, v in self._stat.items())
         return curr + ' ' + stata

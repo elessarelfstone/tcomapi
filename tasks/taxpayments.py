@@ -112,7 +112,11 @@ class KgdTaxPaymentsParsing(BigDataToCsv):
 
         date_range = self.start_date, self.end_date
 
-        parser = KgdTaxPaymentParser(self.name, bids_fpath, date_range,
+        parser = KgdTaxPaymentParser(self.name,
+                                     bids_fpath,
+                                     self.output()[2].path, self.parsed_fpath,
+                                     self.notaxes_fpath,
+                                     date_range,
                                      KGD_API_TOKEN, self.struct, self.timeout)
 
         # until the last bid
