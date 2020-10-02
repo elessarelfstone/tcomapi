@@ -11,7 +11,7 @@ from gql.transport.exceptions import TransportServerError
 from luigi.util import requires
 from time import sleep
 
-from settings import TMP_DIR
+from settings import TMP_DIR, BIGDATA_TMP_DIR
 from tasks.base import GzipToFtp, LoadingDataIntoCsvFile, BigDataToCsv
 from tasks.grql import GraphQlParsing, GraphQlBigDataParsing
 from tcomapi.common.dates import previous_date_as_str
@@ -161,6 +161,7 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
         total = 0
         parsed_count = get_file_lines_count(self.output().path)
+        parsed_count = 0 if not parsed_count  else parsed_count
 
         while url:
             try:
@@ -201,7 +202,7 @@ class GzipGoszakupContractsAllParsingToCsv(GzipToFtp):
 
 class GoszakupContractsAll(luigi.WrapperTask):
     def requires(self):
-        return GzipGoszakupContractsAllParsingToCsv(directory=TMP_DIR,
+        return GzipGoszakupContractsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
                                                     sep=';',
                                                     url='https://ows.goszakup.gov.kz/v3/contract/all',
                                                     token='Bearer 61b536c8271157ab23f71c745b925133',
