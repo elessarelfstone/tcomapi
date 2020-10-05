@@ -100,8 +100,8 @@ class GovernmentPurchasesContractRow:
     payments_terms_kz = attr.ib(default='')
     ref_subject_type_id = attr.ib(default='')
     ref_subject_types_id = attr.ib(default='')
-    is_gu = attr.ib(default='')
-    fin_year = attr.ib(default='')
+    is_gu = attr.ib(default='') # integer
+    fin_year = attr.ib(default='') # integer
     ref_contract_agr_form_id = attr.ib(default='')
     ref_contract_year_type_id = attr.ib(default='')
     ref_finsource_id = attr.ib(default='')
@@ -302,51 +302,36 @@ class GovernmentPurchasesCompanies(luigi.WrapperTask):
         )
 
 
-class GovernmentPurchasesContractsParsingToCsvAll(GraphQlBigDataParsing):
-    # start_date = luigi.Parameter(default='1991-01-01')
-    # end_date = luigi.Parameter(default='2020-09-30')
+class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
+
+    start_date = luigi.Parameter(default=previous_date_as_str(1))
+    end_date = luigi.Parameter(default=previous_date_as_str(1))
 
     def run(self):
         client = self.get_client()
         query = gql(self.query)
+        start_from = None
+        params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        start_from = get_lastrow_ncolumn_value_in_csv(self.output().path, 0, ',')
-        print(start_from)
-        if start_from:
-            start_from = int(start_from.strip('"'))
-        params = {'limit': self.limit}
+        header = tuple(f.name for f in attr.fields(GovernmentPurchasesContractRow))
+        save_csvrows(self.output().path, [header], sep=self.sep)
 
-        total = get_total(self.url, self.headers)
-        print(total)
-        cnt = 0
-        self.set_status_message(cnt)
-        self.set_progress_percentage(round((cnt * 100)/total))
         while True:
             p = params
-            p["after"] = start_from
-            try:
-                data = client.execute(query, variable_values=p)
-            except Exception as e:
-                sleep(60)
-                total = get_total(self.url, self.headers)
-                sleep(5)
-            else:
-                if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
-                    break
-                last_id = data.get('Contract', [])[-1]['id']
-                start_from = last_id
-                data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
-                save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+            if start_from:
+                p["after"] = start_from
 
-                cnt += self.limit
+            data = client.execute(query, variable_values=p)
+            if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
+                break
 
-                self.set_progress_percentage(round((cnt * 100)/total))
-                self.set_status_message(str(cnt))
-
-            sleep(30)
+            last_id = data.get('Contract', [])[-1]['id']
+            start_from = last_id
+            data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
+            save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
-@requires(GovernmentPurchasesContractsParsingToCsvAll)
+@requires(GovernmentPurchasesContractsParsingToCsv)
 class GzipGovernmentPurchasesContractsParsingToCsv(GzipToFtp):
     pass
 
@@ -355,8 +340,8 @@ class GovernmentPurchasesContracts(luigi.WrapperTask):
 
     def requires(self):
         query = """
-        query getContracts($limit: Int, $after: Int){
-          Contract(limit: $limit, after: $after) {
+        query getContracts($from: String, $to: String, $limit: Int, $after: Int){
+          Contract(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
             id
             parent_id: parentId
             root_id: rootId
@@ -428,7 +413,7 @@ class GovernmentPurchasesContracts(luigi.WrapperTask):
         """
         return GzipGovernmentPurchasesContractsParsingToCsv(
             directory=TMP_DIR,
-            sep=',',
+            sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,
