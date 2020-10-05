@@ -313,9 +313,6 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        header = tuple(f.name for f in attr.fields(GovernmentPurchasesContractRow))
-        save_csvrows(self.output().path, [header], sep=self.sep)
-
         while True:
             p = params
             if start_from:
