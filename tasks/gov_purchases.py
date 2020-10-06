@@ -213,7 +213,7 @@ class GoszakupContractsAll(luigi.WrapperTask):
 class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
-    limit = 100
+    limit = luigi.IntParameter(default=200)
 
     def run(self):
         client = self.get_client()
@@ -306,6 +306,7 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
 
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
+    limit = luigi.IntParameter(default=200)
 
     def run(self):
         client = self.get_client()
