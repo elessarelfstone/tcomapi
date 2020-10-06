@@ -11,7 +11,7 @@ from gql.transport.exceptions import TransportServerError
 from luigi.util import requires
 from time import sleep
 
-from settings import TMP_DIR, BIGDATA_TMP_DIR
+from settings import TMP_DIR, BIGDATA_TMP_DIR, GOSZAKUP_TOKEN
 from tasks.base import GzipToFtp, LoadingDataIntoCsvFile, BigDataToCsv
 from tasks.grql import GraphQlParsing, GraphQlBigDataParsing
 from tcomapi.common.dates import previous_date_as_str
@@ -21,7 +21,7 @@ from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, get,
 
 
 @attr.s
-class GovernmentPurchasesCompanyRow:
+class GoszakupCompanyRow:
     pid = attr.ib(default='')
     bin = attr.ib(default='')
     iin = attr.ib(default='')
@@ -63,7 +63,7 @@ class GovernmentPurchasesCompanyRow:
 
 
 @attr.s
-class GovernmentPurchasesContractRow:
+class GoszakupContractRow:
     id = attr.ib(default='')
     parent_id = attr.ib(default='')
     root_id = attr.ib(default='')
@@ -132,6 +132,18 @@ class GovernmentPurchasesContractRow:
     index_date = attr.ib(default='')
 
 
+@attr.s
+class GoszakupUntrustedSupplierRow:
+    pid = attr.ib(default='')
+    supplier_biin = attr.ib(default='')
+    supplier_innunp = attr.ib(default='')
+    supplier_name_ru = attr.ib(default='')
+    supplier_name_kz = attr.ib(default='')
+    kato_list = attr.ib(default='')
+    index_date = attr.ib(default='')
+    system_id = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -140,7 +152,7 @@ def get_total(url: str, headers: str):
 class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
-    token = luigi.Parameter()
+    token = luigi.Parameter(default=GOSZAKUP_TOKEN)
     # headers = luigi.DictParameter(default={})
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=500)
@@ -188,7 +200,7 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
             self.set_progress_percentage(round((parsed_count * 100)/total))
 
         stat = dict(total=total, parsed=parsed_count)
-        append_file(self.success_fpath, stat)
+        append_file(self.success_fpath, str(stat))
 
 
 class GoszakupContractsAllParsingToCsv(GoszakupAllRowsParsing):
@@ -205,9 +217,26 @@ class GoszakupContractsAll(luigi.WrapperTask):
         return GzipGoszakupContractsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
                                                     sep=';',
                                                     url='https://ows.goszakup.gov.kz/v3/contract/all',
-                                                    token='Bearer 61b536c8271157ab23f71c745b925133',
                                                     name='goszakup_contracts',
-                                                    struct=GovernmentPurchasesContractRow)
+                                                    struct=GoszakupContractRow)
+
+
+class GoszakupUntrustedSuppliersAllParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupUntrustedSuppliersAllParsingToCsv)
+class GzipGoszakupUntrustedSuppliersAllParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupContractsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                    sep=';',
+                                                    url='https://ows.goszakup.gov.kz/v3/rnu',
+                                                    name='goszakup_untrusted',
+                                                    struct=GoszakupUntrustedSupplierRow)
 
 
 class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
@@ -221,7 +250,7 @@ class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        header = tuple(f.name for f in attr.fields(GovernmentPurchasesCompanyRow))
+        header = tuple(f.name for f in attr.fields(GoszakupCompanyRow))
         save_csvrows(self.output().path, [header], sep=self.sep)
 
         while True:
@@ -295,10 +324,9 @@ class GovernmentPurchasesCompanies(luigi.WrapperTask):
             directory=TMP_DIR,
             sep=',',
             url='https://ows.goszakup.gov.kz/v3/graphql',
-            headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,
             name='goszakup_companies',
-            struct=GovernmentPurchasesCompanyRow
+            struct=GoszakupCompanyRow
         )
 
 
@@ -413,10 +441,9 @@ class GovernmentPurchasesContracts(luigi.WrapperTask):
             directory=TMP_DIR,
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
-            headers={'Authorization': 'Bearer 61b536c8271157ab23f71c745b925133'},
             query=query,
             name='goszakup_contracts',
-            struct=GovernmentPurchasesContractRow
+            struct=GoszakupContractRow
         )
 
 

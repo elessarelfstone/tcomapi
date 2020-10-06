@@ -2,20 +2,24 @@ import luigi
 from gql import Client, AIOHTTPTransport, RequestsHTTPTransport
 
 from tasks.base import LoadingDataIntoCsvFile, BigDataToCsv
+from settings import GOSZAKUP_TOKEN
 
 
 class GraphQlParsing(LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
-    headers = luigi.DictParameter(default=None)
+    # headers = luigi.DictParameter(default=dict())
     query = luigi.Parameter()
+    token = luigi.Parameter(default=GOSZAKUP_TOKEN)
 
     def get_client(self):
+        headers = dict()
+        headers['Authorization'] = self.token
         sample_transport = RequestsHTTPTransport(
             url=str(self.url),
             verify=False,
             retries=3,
-            headers=self.headers,
+            headers=headers,
         )
         # transport = AIOHTTPTransport(url=str(self.url), headers=self.headers, ssl=False)
         client = Client(transport=sample_transport, fetch_schema_from_transport=True)

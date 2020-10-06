@@ -12,7 +12,7 @@ PRODUCTION_PASS = os.getenv('PRODUCTION_PASS')
 
 KGD_API_TOKEN = os.getenv('KGD_API_TOKEN')
 DGOV_API_KEY = os.getenv('DGOV_API_KEY')
-
+GOSZAKUP_TOKEN = os.getenv('GOSZAKUP_TOKEN')
 
 # TMP_DIR = gettempdir()
 TMP_DIR = os.path.join(os.path.expanduser('~'), 'data')
