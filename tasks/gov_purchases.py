@@ -239,7 +239,7 @@ class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
                                                     struct=GoszakupUntrustedSupplierRow)
 
 
-class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
+class GoszakupCompaniesParsingToCsv(GraphQlParsing):
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = luigi.IntParameter(default=200)
@@ -268,12 +268,12 @@ class GovernmentPurchasesCompaniesParsingToCsv(GraphQlParsing):
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
-@requires(GovernmentPurchasesCompaniesParsingToCsv)
-class GzipGovernmentPurchasesCompaniesParsingToCsv(GzipToFtp):
+@requires(GoszakupCompaniesParsingToCsv)
+class GzipGoszakupCompaniesParsingToCsv(GzipToFtp):
     pass
 
 
-class GovernmentPurchasesCompanies(luigi.WrapperTask):
+class GoszakupCompanies(luigi.WrapperTask):
 
     def requires(self):
         query = """
@@ -320,7 +320,7 @@ class GovernmentPurchasesCompanies(luigi.WrapperTask):
           }
         }
 """
-        return GzipGovernmentPurchasesCompaniesParsingToCsv(
+        return GzipGoszakupCompaniesParsingToCsv(
             directory=TMP_DIR,
             sep=',',
             url='https://ows.goszakup.gov.kz/v3/graphql',
@@ -330,7 +330,7 @@ class GovernmentPurchasesCompanies(luigi.WrapperTask):
         )
 
 
-class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
+class GoszakupContractsParsingToCsv(GraphQlParsing):
 
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
@@ -357,12 +357,12 @@ class GovernmentPurchasesContractsParsingToCsv(GraphQlParsing):
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
-@requires(GovernmentPurchasesContractsParsingToCsv)
-class GzipGovernmentPurchasesContractsParsingToCsv(GzipToFtp):
+@requires(GoszakupContractsParsingToCsv)
+class GzipGoszakupContractsParsingToCsv(GzipToFtp):
     pass
 
 
-class GovernmentPurchasesContracts(luigi.WrapperTask):
+class GoszakupContracts(luigi.WrapperTask):
 
     def requires(self):
         query = """
@@ -437,7 +437,7 @@ class GovernmentPurchasesContracts(luigi.WrapperTask):
           }
         }
         """
-        return GzipGovernmentPurchasesContractsParsingToCsv(
+        return GzipGoszakupContractsParsingToCsv(
             directory=TMP_DIR,
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
