@@ -7,16 +7,15 @@ import attr
 import luigi
 from box import Box
 from gql import gql
-from gql.transport.exceptions import TransportServerError
 from luigi.util import requires
 from time import sleep
 
 from settings import TMP_DIR, BIGDATA_TMP_DIR, GOSZAKUP_TOKEN
 from tasks.base import GzipToFtp, LoadingDataIntoCsvFile, BigDataToCsv
-from tasks.grql import GraphQlParsing, GraphQlBigDataParsing
+from tasks.grql import GraphQlParsing
 from tcomapi.common.dates import previous_date_as_str
-from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, get,
-                                  get_lastrow_ncolumn_value_in_csv, read_lines,
+from tcomapi.common.utils import (dict_to_csvrow, save_csvrows,
+                                  get, read_lines,
                                   append_file, get_file_lines_count)
 
 
@@ -153,7 +152,6 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
     token = luigi.Parameter(default=GOSZAKUP_TOKEN)
-    # headers = luigi.DictParameter(default={})
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=500)
 
@@ -232,11 +230,12 @@ class GzipGoszakupUntrustedSuppliersAllParsingToCsv(GzipToFtp):
 
 class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
     def requires(self):
-        return GzipGoszakupContractsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
-                                                    sep=';',
-                                                    url='https://ows.goszakup.gov.kz/v3/rnu',
-                                                    name='goszakup_untrusted',
-                                                    struct=GoszakupUntrustedSupplierRow)
+        return GzipGoszakupUntrustedSuppliersAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                             sep=';',
+                                                             url='https://ows.goszakup.gov.kz/v3/rnu',
+                                                             name='goszakup_untrusted',
+                                                             monthly=True,
+                                                             struct=GoszakupUntrustedSupplierRow)
 
 
 class GoszakupCompaniesParsingToCsv(GraphQlParsing):
