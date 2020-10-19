@@ -150,7 +150,7 @@ class KgdTaxPaymentsParsing(BigDataToCsv):
         stata = dict(total=parser.source_bids_count,
                      parsed_count=parser.parsed_bids_count)
 
-        append_file(parser.success_fpath, json.dumps(stata))
+        append_file(self.success_fpath, json.dumps(stata))
 
 
 @requires(KgdTaxPaymentsParsing)
