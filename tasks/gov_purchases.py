@@ -354,6 +354,7 @@ class GoszakupContractsParsingToCsv(GraphQlParsing):
             start_from = last_id
             data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+            sleep(self.timeout)
 
 
 @requires(GoszakupContractsParsingToCsv)
