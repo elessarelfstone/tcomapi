@@ -338,3 +338,10 @@ class ParseWebExcelFileFromArchive(luigi.Task):
         return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
 
+class BaseRunner(luigi.WrapperTask):
+    pass
+
+
+@BaseRunner.event_handler(luigi.Event.FAILURE)
+def handler():
+    pass

@@ -9,7 +9,7 @@ from typing import Dict
 from tcomapi.common.excel import parse
 from tcomapi.common.utils import save_csvrows
 from tcomapi.common.correctors import basic_corrector
-from settings import CONFIG_DIR, TMP_DIR
+from settings import CONFIG_DIR, TMP_DIR, BIGDATA_TMP_DIR
 from tasks.base import (GzipToFtp, BaseConfig, ParseWebExcelFileFromArchive, GzipDataGovToFtp,
                         GzipDgovBigToFtp, ParseDgovBig, WebDataExcelFileFromArchiveParsingToCsv)
 
@@ -88,7 +88,8 @@ class GzipDgovKatoToFtp(GzipToFtp):
 
 class DgovKato(luigi.WrapperTask):
     def requires(self):
-        return GzipDgovKatoToFtp(monthly=True,
+        return GzipDgovKatoToFtp(directory=BIGDATA_TMP_DIR,
+                                 monthly=True,
                                  name='dgov_kato',
                                  struct=RowDgovKato,
                                  version='data',
