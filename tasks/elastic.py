@@ -1,6 +1,6 @@
 import luigi
 import os
-from datetime import datetime
+from time import sleep
 from luigi.util import requires
 
 
@@ -51,6 +51,7 @@ class BigDataElasticApiParsingToCsv(BigDataToCsv, ElasticApiParsing):
                                     progress_callback=self.progress
                                     )
             stat += str(s) + os.linesep
+            sleep(4)
 
         append_file(self.success_fpath, stat)
 

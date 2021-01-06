@@ -227,8 +227,8 @@ class ParseBigElasticApi(BigDataToCsv):
     struct = luigi.Parameter(default=None)
     columns_filter = luigi.DictParameter(default=None)
 
-    def output(self):
-        return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
+    # def output(self):
+    #     return luigi.LocalTarget(build_fpath(BIGDATA_TMP_DIR, self.name, 'csv'))
 
 
 class ParseElasticApi(luigi.Task):
@@ -242,8 +242,8 @@ class ParseElasticApi(luigi.Task):
     struct = luigi.Parameter(default=None)
     columns_filter = luigi.DictParameter(default=None)
 
-    # def output(self):
-    #     return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
+    def output(self):
+        return luigi.LocalTarget(build_fpath(TMP_DIR, self.name, 'csv'))
 
     def run(self):
         query = '{' + QUERY_TMPL.format(0, self.chunk_size) + '}'
