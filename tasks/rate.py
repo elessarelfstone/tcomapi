@@ -26,7 +26,7 @@ class Rates(luigi.WrapperTask):
 
     def requires(self):
         # versions = load_versions('https://data.egov.kz/datasets/view?index=nbrk_currency_rates1')
-        return GzipElasticApiParsingToCsv(name='rates',
+        return GzipElasticApiParsingToCsv(name='dgov_rates',
                                           versions=('v16',),
                                           report_name='nbrk_currency_rates1',
                                           struct=Rate)
