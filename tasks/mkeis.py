@@ -24,6 +24,7 @@ class GzipMkeisToFtp(GzipToFtp):
 class Mkeis(luigi.WrapperTask):
     def requires(self):
         return GzipMkeisToFtp(url=url,
+                              monthly=True,
                               name='sgov_mkeis',
                               struct=Row,
                               directory=TMP_DIR,

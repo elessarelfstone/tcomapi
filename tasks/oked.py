@@ -61,6 +61,7 @@ class GzipOkedToFtp(GzipToFtp):
 class Oked(luigi.WrapperTask):
     def requires(self):
         return GzipOkedToFtp(url=url,
+                             monthly=True,
                              name='sgov_oked',
                              struct=Row,
                              directory=TMP_DIR,
