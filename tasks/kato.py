@@ -101,6 +101,7 @@ class Kato(luigi.WrapperTask):
     def requires(self):
         return GzipKatoToFtp(directory=TMP_DIR,
                              url=sgov_kato().url,
+                             monthly=True,
                              fnames=sgov_kato().fnames,
                              name=sgov_kato().name(),
                              skiptop=sgov_kato().skiptop,

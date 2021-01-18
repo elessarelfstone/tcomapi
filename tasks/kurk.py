@@ -32,6 +32,7 @@ class Kurk(luigi.WrapperTask):
     def requires(self):
         return GzipKurkToFtp(url=url,
                              name='sgov_kurk',
+                             monthly=True,
                              struct=Row,
                              directory=TMP_DIR,
                              skiptop=3)

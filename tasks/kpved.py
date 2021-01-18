@@ -26,6 +26,7 @@ class Kpved(luigi.WrapperTask):
     def requires(self):
         return GzipKpvedToFtp(url=url,
                               name='sgov_kpved',
+                              monthly=True,
                               struct=Row,
                               directory=TMP_DIR,
                               skiptop=3)
