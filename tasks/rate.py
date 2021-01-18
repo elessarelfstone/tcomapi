@@ -92,6 +92,7 @@ class NbRates(luigi.WrapperTask):
         return GzipNbRates(name='nb_rates',
                            url='https://nationalbank.kz/ru/exchangerates/ezhednevnye-oficialnye-rynochnye-kursy-valyut',
                            directory=TMP_DIR,
+                           ftp_directory='rates',
                            struct=Rate)
 
 
