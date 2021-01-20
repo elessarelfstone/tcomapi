@@ -34,6 +34,7 @@ class Bankrupt(luigi.WrapperTask):
     def requires(self):
         return GzipBankruptToFtp(url=url,
                                  name='kgd_bunkrupt',
+                                 monthly=True,
                                  directory=TMP_DIR,
                                  struct=Row,
                                  skiptop=3)

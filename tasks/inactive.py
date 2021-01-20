@@ -35,6 +35,7 @@ class Inactive(luigi.WrapperTask):
     def requires(self):
         return GzipInactiveToFtp(url=url,
                                  name='kgd_inactive',
+                                 monthly=True,
                                  directory=TMP_DIR,
                                  struct=Row,
                                  skiptop=3)

@@ -35,6 +35,7 @@ class GzipTaxViolatorsToFtp(GzipToFtp):
 class TaxViolators(luigi.WrapperTask):
     def requires(self):
         return GzipTaxViolatorsToFtp(url=url,
+                                     monthly=True,
                                      name='kgd_taxviolators',
                                      struct=Row,
                                      directory=TMP_DIR,

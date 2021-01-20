@@ -35,6 +35,7 @@ class Jwaddress(luigi.WrapperTask):
     def requires(self):
         return GzipJwaddressToFtp(url=url,
                                   name='kgd_jwaddress',
+                                  monthly=True,
                                   directory=TMP_DIR,
                                   struct=Row,
                                   skiptop=3)

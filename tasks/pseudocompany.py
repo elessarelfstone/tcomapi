@@ -35,6 +35,7 @@ class Pseudocompany(luigi.WrapperTask):
     def requires(self):
         return GzipPseudocompanyToFtp(url=url,
                                       name='kgd_pseudocompany',
+                                      monthly=True,
                                       struct=Row,
                                       directory=TMP_DIR,
                                       skiptop=3)

@@ -45,7 +45,9 @@ class GzipMrpToFtp(GzipToFtp):
 
 class Mrp(luigi.WrapperTask):
     def requires(self):
-        return GzipMrpToFtp(url=kgd_mrp().url, name=kgd_mrp().name(),
+        return GzipMrpToFtp(url=kgd_mrp().url,
+                            name=kgd_mrp().name(),
+                            monthly=True,
                             pattern=kgd_mrp().pattern)
 
 

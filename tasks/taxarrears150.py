@@ -44,6 +44,7 @@ class GzipDebtorsToFtp(GzipToFtp):
 class TaxArrears150(luigi.WrapperTask):
     def requires(self):
         return GzipDebtorsToFtp(url=url, name='kgd_taxarrears150',
+                                monthly=True,
                                 struct=Row, sheets=(0, 1),
                                 directory=TMP_DIR, skiptop=6)
 

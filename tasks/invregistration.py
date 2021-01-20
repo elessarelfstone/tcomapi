@@ -43,6 +43,7 @@ class Invregistration(luigi.WrapperTask):
     def requires(self):
         return GzipInvregistrationToFtp(url=url,
                                         name='kgd_invregistration',
+                                        monthly=True,
                                         struct=Row,
                                         directory=TMP_DIR,
                                         skiptop=3
