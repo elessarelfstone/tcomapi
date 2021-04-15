@@ -13,7 +13,7 @@ from aiohttp.http_exceptions import HttpProcessingError
 from box import Box
 from requests import ConnectionError, HTTPError, Timeout
 
-
+from settings import STATGOV_TIMEOUT
 from tcomapi.common.correctors import common_corrector, bool_corrector
 from tcomapi.common.exceptions import ExternalSourceError
 from tcomapi.common.data_file_helper import DataFileHelper
@@ -104,8 +104,12 @@ class SgovRCutParser:
                               'stringForMD5': 'string',
                               'cutId': self.curr_cut_id})
 
+        print(request)
+        print(self.request_url)
         # return order number
         r = requests.post(self.request_url, headers=headers, data=request)
+
+        print(r.text)
         return r.json()['obj']
 
     def get_file_guid(self, order_no):
@@ -127,7 +131,7 @@ class SgovRCutParser:
 
         rcut_guid = None
         while rcut_guid is None:
-            sleep(90)
+            sleep(STATGOV_TIMEOUT)
             rcut_guid = self.get_file_guid(order_id)
         # sleep(1)
         return self.rcut_download_url_tmpl.format(self.host, rcut_guid)
