@@ -59,7 +59,7 @@ class KgdTaxPaymentParser(BidsHandler):
             os.path.join(os.path.dirname(__file__))), 'request.xml'
         )
     )
-    host = 'data.egov.kz'
+    host = 'open.egov.kz'
     url_template = "https://{}/proxy2/culs_payments?token={}"
     headers = {'user-agent': 'Apache-HttpClient/4.1.1 (java 1.5)',
                'content-type': 'text/xml'}
