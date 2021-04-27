@@ -12,3 +12,7 @@ class BadDataType(Exception):
 
 class ServerError(Exception):
     pass
+
+
+class FtpDirectoryNotExists(Exception):
+    pass
