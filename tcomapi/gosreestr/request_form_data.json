@@ -1,0 +1,4 @@
+{"pager-page-index_search-GrObjectsHeadRevisions": "0",
+ "__RequestVerificationToken": "3pryUOiM7Njcl/5ikr8yzVfluNAZsgo53GgCphJ1Z3aCs5RZStR2q4b aI5ErKV6FktJh2Al54t2TZrYae0ivH9YJpe1DeugE3K4x9XCz/E5h3wK7gTm8uUjDDD X8R2GVuTbPvQL4fcvRcacDeBVuHamoM=",
+ "query-structure-search-GrObjectsHeadRevisions":"<LogicGroup GroupOperatorValue=\"And\" GroupOperatorText=\"И\" ><Condition IsStaticCondition=\"True\" FieldName=\"tbGrObjects_flBlock\" FieldText=\"Блокировка\" ConditionOperatorValue=\"In\" ConditionOperatorText=\"Входит в\" Value="" ValueText="Слияние; Банкротство; Свободно; Ликвидация; Реабилитация; Остаток; Продан и неоформлена продажа; Сегментация; Акционирование; Преобразование в гп; Перевод в коммунальную собственность; Перевод в номинальное держание; Перевод в республиканскую собственность; Преобразование в тоо; Залоговый фонд" /></LogicGroup>'
+}
