@@ -42,6 +42,10 @@ class BaseTask(luigi.Task):
     name = luigi.Parameter(default='')
     struct = luigi.Parameter(default=None)
 
+    def set_status(self, status: str, percent: int):
+        self.set_status_message(status)
+        self.set_progress_percentage(percent)
+
 
 class LoadingDataIntoFile(BaseTask):
     """ Base class for tasks that loads data into file"""
