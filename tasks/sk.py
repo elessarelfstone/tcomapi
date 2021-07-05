@@ -179,6 +179,7 @@ class SkSuppliersForDate(luigi.WrapperTask):
     def requires(self):
         return GzipSkSuppliersForDateToCsv(
             directory=TMP_DIR,
+            ftp_directory='samruk/suppliers',
             after=self.after,
             sep=';',
             uri='suppliers/supplierList',
