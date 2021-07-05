@@ -16,3 +16,4 @@ openpyxl
 sqlalchemy
 lxml
 requests-html
+requests-oauthlib

@@ -14,7 +14,8 @@ from os.path import basename
 from urllib.parse import urlparse
 
 import attr
-from requests import ConnectionError, HTTPError, ConnectTimeout
+from requests import ConnectionError, HTTPError
+from requests.exceptions import ConnectTimeout
 
 from tcomapi.common.correctors import clean_for_csv
 from tcomapi.common.constants import CSV_SEP

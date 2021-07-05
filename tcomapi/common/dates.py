@@ -29,8 +29,6 @@ def yesterday_as_str(dt_format=FILENAME_DATE_FORMAT) -> str:
     return yesterday.strftime(dt_format)
 
 
-
-
 def month_as_range(month: str) -> Tuple[date, date]:
     _date = datetime.strptime(month, PERIOD_MONTH_FORMAT)
     return first_dayof_month(_date), last_dayof_month(_date)

@@ -13,7 +13,7 @@ def check_id(_id):
 
 
 class BidsHandler:
-    """ bid - buisiness id"""
+    """ bid - business id"""
     def __init__(self, bids_fpath, output_fpath, parsed_fpath):
         self.failed_bids = deque([])
         self.output_fpath = output_fpath

@@ -15,6 +15,8 @@ def clean_for_csv(value: str):
 
 
 def basic_corrector(value):
+    if value is None:
+        return ''
     return sep_clean(value).rstrip().replace('"', "'").replace('\n', '')
 
 
