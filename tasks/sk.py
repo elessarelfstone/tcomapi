@@ -20,18 +20,18 @@ BASE_URL = 'https://integr.skc.kz/data/'
 
 @attr.s
 class SkSuppliers:
-    id = attr.ib(default='')
-    identifier = attr.ib(default='')
+    id = attr.ib(converter=basic_corrector, default='')
+    identifier = attr.ib(converter=basic_corrector, default='')
     name_kk = attr.ib(converter=basic_corrector, default='')
     name_ru = attr.ib(converter=basic_corrector, default='')
-    country_id = attr.ib(default='')
-    begin_date = attr.ib(default='')
-    end_date = attr.ib(default='')
+    country_id = attr.ib(converter=basic_corrector, default='')
+    begin_date = attr.ib(converter=basic_corrector, default='')
+    end_date = attr.ib(converter=basic_corrector, default='')
     first_name = attr.ib(converter=basic_corrector, default='')
-    iin = attr.ib(default='')
+    iin = attr.ib(converter=basic_corrector, default='')
     last_name = attr.ib(converter=basic_corrector, default='')
     middle_name = attr.ib(converter=basic_corrector, default='')
-    company_id = attr.ib(default='')
+    company_id = attr.ib(converter=basic_corrector, default='')
     position_kk = attr.ib(converter=basic_corrector, default='')
     position_ru = attr.ib(converter=basic_corrector, default='')
     email = attr.ib(converter=basic_corrector, default='')
@@ -43,9 +43,9 @@ class SkSuppliers:
     building = attr.ib(converter=basic_corrector, default='')
     city = attr.ib(converter=basic_corrector, default='')
     flat = attr.ib(converter=basic_corrector, default='')
-    postcode = attr.ib(default='')
+    postcode = attr.ib(converter=basic_corrector, default='')
     street = attr.ib(converter=basic_corrector, default='')
-    kato_id = attr.ib(default='')
+    kato_id = attr.ib(converter=basic_corrector, default='')
 
 
 class SKAllRowsParsing(BigDataToCsv):
