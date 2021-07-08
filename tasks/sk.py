@@ -18,9 +18,14 @@ from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, append_file)
 BASE_URL = 'https://integr.skc.kz/data/'
 
 
+def num_corrector(value):
+    if value is None:
+        return ''
+    return value
+
 @attr.s
 class SkSuppliers:
-    id = attr.ib(converter=basic_corrector, default='')
+    id = attr.ib(converter=num_corrector,default='')
     identifier = attr.ib(converter=basic_corrector, default='')
     name_kk = attr.ib(converter=basic_corrector, default='')
     name_ru = attr.ib(converter=basic_corrector, default='')
@@ -31,7 +36,7 @@ class SkSuppliers:
     iin = attr.ib(converter=basic_corrector, default='')
     last_name = attr.ib(converter=basic_corrector, default='')
     middle_name = attr.ib(converter=basic_corrector, default='')
-    company_id = attr.ib(converter=basic_corrector, default='')
+    company_id = attr.ib(converter=num_corrector, default='')
     position_kk = attr.ib(converter=basic_corrector, default='')
     position_ru = attr.ib(converter=basic_corrector, default='')
     email = attr.ib(converter=basic_corrector, default='')
@@ -45,7 +50,7 @@ class SkSuppliers:
     flat = attr.ib(converter=basic_corrector, default='')
     postcode = attr.ib(converter=basic_corrector, default='')
     street = attr.ib(converter=basic_corrector, default='')
-    kato_id = attr.ib(converter=basic_corrector, default='')
+    kato_id = attr.ib(converter=num_corrector, default='')
 
 
 class SKAllRowsParsing(BigDataToCsv):
@@ -174,7 +179,8 @@ class GzipSkSuppliersForDateToCsv(GzipToFtp):
 
 class SkSuppliersForDate(luigi.WrapperTask):
 
-    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
+    # after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
+    after = luigi.Parameter(default='2021-07-07')
 
     def requires(self):
         return GzipSkSuppliersForDateToCsv(
