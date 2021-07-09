@@ -18,14 +18,15 @@ from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, append_file)
 BASE_URL = 'https://integr.skc.kz/data/'
 
 
-def num_corrector(value):
+def default_corrector(value):
     if value is None:
         return ''
     return value
 
+
 @attr.s
 class SkSuppliers:
-    id = attr.ib(converter=num_corrector,default='')
+    id = attr.ib(converter=default_corrector, default='')
     identifier = attr.ib(converter=basic_corrector, default='')
     name_kk = attr.ib(converter=basic_corrector, default='')
     name_ru = attr.ib(converter=basic_corrector, default='')
@@ -36,7 +37,7 @@ class SkSuppliers:
     iin = attr.ib(converter=basic_corrector, default='')
     last_name = attr.ib(converter=basic_corrector, default='')
     middle_name = attr.ib(converter=basic_corrector, default='')
-    company_id = attr.ib(converter=num_corrector, default='')
+    company_id = attr.ib(converter=default_corrector, default='')
     position_kk = attr.ib(converter=basic_corrector, default='')
     position_ru = attr.ib(converter=basic_corrector, default='')
     email = attr.ib(converter=basic_corrector, default='')
@@ -50,7 +51,35 @@ class SkSuppliers:
     flat = attr.ib(converter=basic_corrector, default='')
     postcode = attr.ib(converter=basic_corrector, default='')
     street = attr.ib(converter=basic_corrector, default='')
-    kato_id = attr.ib(converter=num_corrector, default='')
+    kato_id = attr.ib(converter=default_corrector, default='')
+
+
+@attr.s
+class SkPurchases:
+    id = attr.ib(converter=default_corrector, default='')
+    row_number = attr.ib(converter=default_corrector, default='')
+    plan_id = attr.ib(converter=default_corrector, default='')
+    plan_item_group_id = attr.ib(converter=default_corrector, default='')
+    count = attr.ib(converter=default_corrector, default='')
+    price = attr.ib(converter=default_corrector, default='')
+    ext_id = attr.ib(converter=default_corrector, default='')
+    lot_id = attr.ib(converter=default_corrector, default='')
+    advert_id = attr.ib(converter=default_corrector, default='')
+    lot_count = attr.ib(converter=default_corrector, default='')
+    lot_price = attr.ib(converter=default_corrector, default='')
+    lot_sum_tru_nds = attr.ib(converter=default_corrector, default='')
+    lot_sum_tru_no_nds = attr.ib(converter=default_corrector, default='')
+    number = attr.ib(converter=default_corrector, default='')
+    acceptance_begin_date_time = attr.ib(converter=default_corrector, default='')
+    acceptance_end_date_time = attr.ib(converter=default_corrector, default='')
+    name_ru = attr.ib(converter=default_corrector, default='')
+    advert_tender_priority = attr.ib(converter=default_corrector, default='')
+    jhi_comment = attr.ib(converter=default_corrector, default='')
+    status = attr.ib(converter=default_corrector, default='')
+    status_date_time = attr.ib(converter=default_corrector, default='')
+    company_id = attr.ib(converter=default_corrector, default='')
+    sum = attr.ib(converter=default_corrector, default='')
+    advert_status = attr.ib(converter=default_corrector, default='')
 
 
 class SKAllRowsParsing(BigDataToCsv):
@@ -61,6 +90,7 @@ class SKAllRowsParsing(BigDataToCsv):
 
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=100)
+    login = luigi.Parameter(default='')
 
     def run(self):
         error_timeout = self.timeout * 3
@@ -68,6 +98,8 @@ class SKAllRowsParsing(BigDataToCsv):
         # headers['Authorization'] = self.token
 
         url = f'{BASE_URL}{self.uri}?size={self.limit}'
+        if self.login:
+            url += f'&login={self.login}'
         page = 0
         total = 0
         parsed_count = 0
@@ -82,6 +114,8 @@ class SKAllRowsParsing(BigDataToCsv):
                 if response.content:
                     page += 1
                     url = f'{BASE_URL}{self.uri}?size={self.limit}&page={page}'
+                    if self.login:
+                        url += f'&login={self.login}'
                 else:
                     url = None
 
@@ -109,6 +143,7 @@ class SKAfterDateRowsParsing(BigDataToCsv):
 
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=100)
+    login = luigi.Parameter(default='')
 
     def run(self):
         error_timeout = self.timeout * 3
@@ -116,6 +151,8 @@ class SKAfterDateRowsParsing(BigDataToCsv):
         # headers['Authorization'] = self.token
 
         url = f'{BASE_URL}{self.uri}?size={self.limit}&after={self.after}'
+        if self.login:
+            url += f'&login={self.login}'
         page = 0
         total = 100
         parsed_count = 0
@@ -137,6 +174,8 @@ class SKAfterDateRowsParsing(BigDataToCsv):
                 if response.totalElements > parsed_count:
                     page += 1
                     url = f'{BASE_URL}{self.uri}?size={self.limit}&after={self.after}&page={page}'
+                    if self.login:
+                        url += f'&login={self.login}'
                 else:
                     url = None
 
@@ -155,6 +194,15 @@ class GzipSkAllSuppliersToCsv(GzipToFtp):
     pass
 
 
+class SkAllPurchasesToCsv(SKAllRowsParsing):
+    pass
+
+
+@requires(SkAllPurchasesToCsv)
+class GzipSkAllPurchasesToCsv(GzipToFtp):
+    pass
+
+
 class SkAllSuppliers(luigi.WrapperTask):
     def requires(self):
         return GzipSkAllSuppliersToCsv(
@@ -168,6 +216,20 @@ class SkAllSuppliers(luigi.WrapperTask):
         )
 
 
+class SkAllPurchases(luigi.WrapperTask):
+    def requires(self):
+        return GzipSkAllPurchasesToCsv(
+            directory=TMP_DIR,
+            sep=';',
+            uri='purchases/purchaseList',
+            name='sk_purchases',
+            struct=SkPurchases,
+            user=SK_USER,
+            password=SK_PASSWORD,
+            login=SK_USER
+        )
+
+
 class SkSuppliersForDateToCsv(SKAfterDateRowsParsing):
     pass
 
@@ -177,15 +239,24 @@ class GzipSkSuppliersForDateToCsv(GzipToFtp):
     pass
 
 
+class SkPurchasesForDateToCsv(SKAfterDateRowsParsing):
+    pass
+
+
+@requires(SkPurchasesForDateToCsv)
+class GzipSkPurchasesForDateToCsv(GzipToFtp):
+    pass
+
+
 class SkSuppliersForDate(luigi.WrapperTask):
 
-    # after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-    after = luigi.Parameter(default='2021-07-07')
+    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
+    # after = luigi.Parameter(default='2021-07-05')
 
     def requires(self):
         return GzipSkSuppliersForDateToCsv(
             directory=TMP_DIR,
-            ftp_directory='samruk',
+            # ftp_directory='samruk',
             after=self.after,
             sep=';',
             uri='suppliers/supplierList',
@@ -193,6 +264,26 @@ class SkSuppliersForDate(luigi.WrapperTask):
             struct=SkSuppliers,
             user=SK_USER,
             password=SK_PASSWORD
+        )
+
+
+class SkPurchasesForDate(luigi.WrapperTask):
+
+    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
+    # after = luigi.Parameter(default='2021-07-05')
+
+    def requires(self):
+        return GzipSkPurchasesForDateToCsv(
+            directory=TMP_DIR,
+            ftp_directory='samruk',
+            after=self.after,
+            sep=';',
+            uri='purchases/purchaseList',
+            name='sk_purchases',
+            struct=SkPurchases,
+            user=SK_USER,
+            password=SK_PASSWORD,
+            login=SK_USER
         )
 
 
