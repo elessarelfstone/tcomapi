@@ -200,6 +200,7 @@ class SKAfterDateRowsParsing(BigDataToCsv):
         parsed_count = 0
         while url:
             try:
+                print(url)
                 r = requests.get(url, timeout=self.timeout,
                                  auth=HTTPBasicAuth(self.user, self.password))
             except Exception:
