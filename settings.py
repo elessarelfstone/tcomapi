@@ -56,3 +56,4 @@ TELECOM_API_URL_PATTERN = f'https://{TELECOM_API_HOST}/api/v1/citizen/phone-veri
 
 SK_USER = os.getenv('SK_USER')
 SK_PASSWORD = os.getenv('SK_PASSWORD')
+SK_TCOM_COMPANY_ID = os.getenv('SK_TCOM_COMPANY_ID')

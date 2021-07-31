@@ -178,8 +178,3 @@ class RunBmgVerif(luigi.WrapperTask):
 if __name__ == '__main__':
     luigi.run()
 
-
-
-
-
-
