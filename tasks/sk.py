@@ -30,7 +30,7 @@ class SkSuppliers:
     identifier = attr.ib(converter=basic_corrector, default='')
     name_kk = attr.ib(converter=basic_corrector, default='')
     name_ru = attr.ib(converter=basic_corrector, default='')
-    country_id = attr.ib(converter=basic_corrector, default='')
+    country_id = attr.ib(converter=default_corrector, default='')
     begin_date = attr.ib(converter=basic_corrector, default='')
     end_date = attr.ib(converter=basic_corrector, default='')
     first_name = attr.ib(converter=basic_corrector, default='')
