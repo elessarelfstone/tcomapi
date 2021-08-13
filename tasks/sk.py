@@ -121,6 +121,17 @@ class SkKztContracts:
     supplier_bank_name_ru = attr.ib(converter=default_corrector, default='')
 
 
+@attr.s
+class SkBadSuppliers:
+    bin_iin = attr.ib(converter=default_corrector, default='')
+    name_ru = attr.ib(converter=default_corrector, default='')
+    full_name_ru = attr.ib(converter=default_corrector, default='')
+    reason_ru = attr.ib(converter=default_corrector, default='')
+    created_date = attr.ib(converter=default_corrector, default='')
+    start_date = attr.ib(converter=default_corrector, default='')
+    end_date = attr.ib(converter=default_corrector, default='')
+
+
 class SKAllRowsParsing(BigDataToCsv):
 
     uri = luigi.Parameter()
@@ -255,6 +266,20 @@ class GzipSkAllKztContractsToCsv(GzipToFtp):
     pass
 
 
+@requires(SkAllKztContractsToCsv)
+class GzipSkAllKztContractsToCsv(GzipToFtp):
+    pass
+
+
+class SkAllBadSuppliers(SKAllRowsParsing):
+    pass
+
+
+@requires(SkAllBadSuppliers)
+class GzipSkAllBadSuppliers(GzipToFtp):
+    pass
+
+
 class SkAllSuppliers(luigi.WrapperTask):
     def requires(self):
         return GzipSkAllSuppliersToCsv(
@@ -292,6 +317,20 @@ class SkKztAllContracts(luigi.WrapperTask):
             add_par=f'companyIdentifier={SK_TCOM_COMPANY_ID}',
             name='sk_kzt_contracts',
             struct=SkKztContracts,
+            user=SK_USER,
+            password=SK_PASSWORD,
+            login=SK_USER
+        )
+
+
+class SkKztAllBadSuppliers(luigi.WrapperTask):
+    def requires(self):
+        return GzipSkAllBadSuppliers(
+            directory=TMP_DIR,
+            sep=';',
+            uri='bad-supplier/badSupplierList',
+            name='sk_bad_suppliers',
+            struct=SkBadSuppliers,
             user=SK_USER,
             password=SK_PASSWORD,
             login=SK_USER
