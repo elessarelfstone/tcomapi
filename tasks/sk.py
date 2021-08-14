@@ -364,6 +364,15 @@ class GzipSkAllKztContractsForDateToCsv(GzipToFtp):
     pass
 
 
+class SkBadSuppliersForDateToCsv(SKAfterDateRowsParsing):
+    pass
+
+
+@requires(SkBadSuppliersForDateToCsv)
+class GzipSkBadSuppliersForDateToCsv(GzipToFtp):
+    pass
+
+
 class SkSuppliersForDate(luigi.WrapperTask):
 
     after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
@@ -417,6 +426,24 @@ class SkKztContractsForDate(luigi.WrapperTask):
             add_par=f'companyIdentifier={SK_TCOM_COMPANY_ID}',
             name='sk_kzt_contracts',
             struct=SkKztContracts,
+            user=SK_USER,
+            password=SK_PASSWORD
+        )
+
+
+class SkBadSuppliersForDate(luigi.WrapperTask):
+
+    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
+
+    def requires(self):
+        return GzipSkAllKztContractsForDateToCsv(
+            directory=TMP_DIR,
+            # ftp_directory='samruk',
+            after=self.after,
+            sep=';',
+            uri='bad-supplier/badSupplierList',
+            name='sk_bad_suppliers',
+            struct=SkBadSuppliers,
             user=SK_USER,
             password=SK_PASSWORD
         )
