@@ -438,7 +438,7 @@ class SkBadSuppliersForDate(luigi.WrapperTask):
     def requires(self):
         return GzipSkBadSuppliersForDateToCsv(
             directory=TMP_DIR,
-            # ftp_directory='samruk',
+            ftp_directory='samruk',
             after=self.after,
             sep=';',
             uri='bad-supplier/badSupplierList',
