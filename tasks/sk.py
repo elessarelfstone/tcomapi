@@ -436,7 +436,7 @@ class SkBadSuppliersForDate(luigi.WrapperTask):
     after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
 
     def requires(self):
-        return GzipSkAllKztContractsForDateToCsv(
+        return GzipSkBadSuppliersForDateToCsv(
             directory=TMP_DIR,
             # ftp_directory='samruk',
             after=self.after,
