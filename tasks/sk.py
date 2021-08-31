@@ -392,7 +392,7 @@ class SkSuppliersForDate(luigi.WrapperTask):
         )
 
 
-class SkPurchasesForDate(luigi.WrapperTask):
+class SkKztPurchasesForDate(luigi.WrapperTask):
 
     after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
     # after = luigi.Parameter(default='2021-07-05')
