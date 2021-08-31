@@ -248,12 +248,12 @@ class GzipSkAllSuppliersToCsv(GzipToFtp):
     pass
 
 
-class SkAllPurchasesToCsv(SKAllRowsParsing):
+class SkAllKztPurchasesToCsv(SKAllRowsParsing):
     pass
 
 
-@requires(SkAllPurchasesToCsv)
-class GzipSkAllPurchasesToCsv(GzipToFtp):
+@requires(SkAllKztPurchasesToCsv)
+class GzipSkAllKztPurchasesToCsv(GzipToFtp):
     pass
 
 
@@ -293,13 +293,13 @@ class SkAllSuppliers(luigi.WrapperTask):
         )
 
 
-class SkAllPurchases(luigi.WrapperTask):
+class SkAllKztPurchases(luigi.WrapperTask):
     def requires(self):
-        return GzipSkAllPurchasesToCsv(
+        return GzipSkAllKztPurchasesToCsv(
             directory=TMP_DIR,
             sep=';',
             uri='purchases/purchaseList',
-            name='sk_purchases',
+            name='sk_kzt_purchases',
             struct=SkPurchases,
             user=SK_USER,
             password=SK_PASSWORD,
@@ -346,12 +346,12 @@ class GzipSkSuppliersForDateToCsv(GzipToFtp):
     pass
 
 
-class SkPurchasesForDateToCsv(SKAfterDateRowsParsing):
+class SkKztPurchasesForDateToCsv(SKAfterDateRowsParsing):
     pass
 
 
-@requires(SkPurchasesForDateToCsv)
-class GzipSkPurchasesForDateToCsv(GzipToFtp):
+@requires(SkKztPurchasesForDateToCsv)
+class GzipSkKztPurchasesForDateToCsv(GzipToFtp):
     pass
 
 
@@ -398,13 +398,13 @@ class SkPurchasesForDate(luigi.WrapperTask):
     # after = luigi.Parameter(default='2021-07-05')
 
     def requires(self):
-        return GzipSkPurchasesForDateToCsv(
+        return GzipSkKztPurchasesForDateToCsv(
             directory=TMP_DIR,
             ftp_directory='samruk',
             after=self.after,
             sep=';',
             uri='purchases/purchaseList',
-            name='sk_purchases',
+            name='sk_kzt_purchases',
             struct=SkPurchases,
             user=SK_USER,
             password=SK_PASSWORD,
