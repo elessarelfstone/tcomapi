@@ -66,6 +66,7 @@ class Oked(luigi.WrapperTask):
                              struct=Row,
                              directory=TMP_DIR,
                              skiptop=3,
+                             usecolumns='A:C',
                              transform_callback=update_rows)
 
 
