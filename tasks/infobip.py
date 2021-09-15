@@ -327,6 +327,7 @@ class InfobipAgents(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipAgentsToCsv(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             uri='agents',
             limit=999,
@@ -341,6 +342,7 @@ class InfobipQueues(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipQueuesToCsv(
             directory=TMP_DIR,
+            monthly=True,
             sep=';',
             uri='queues',
             limit=999,
@@ -355,6 +357,7 @@ class InfobipConversations(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipConversationsToCsv(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             uri='conversations',
             limit=999,
@@ -372,6 +375,7 @@ class InfobipConversationsForDate(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipConversationsToCsv(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             uri='conversations',
             limit=999,
@@ -391,6 +395,7 @@ class InfobipConvMessagesForDate(luigi.WrapperTask):
         # return GzipInfobipConversationsToCsv(
         return GzipInfobipConvMessagesParsing(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             limit=999,
             name='infobip_messages',
@@ -409,6 +414,7 @@ class InfobipConvTagsForDate(luigi.WrapperTask):
         # return GzipInfobipConversationsToCsv(
         return GzipInfobipConvTagsParsing(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             limit=999,
             name='infobip_tags',
