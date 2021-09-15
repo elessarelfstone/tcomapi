@@ -1,3 +1,5 @@
+from time import sleep
+
 import attr
 import luigi
 from box import Box
@@ -5,7 +7,7 @@ from box import Box
 from luigi.util import requires
 import requests
 from requests.auth import HTTPBasicAuth
-from time import sleep
+
 
 from settings import TMP_DIR, SK_USER, SK_PASSWORD, SK_TCOM_COMPANY_ID
 from tasks.base import GzipToFtp, BigDataToCsv
@@ -15,7 +17,7 @@ from tcomapi.common.correctors import basic_corrector
 from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT
 from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, append_file)
 
-BASE_URL = 'https://integr.skc.kz/data/'
+SK_BASE_URL = 'https://integr.skc.kz/data/'
 
 
 def default_corrector(value):
@@ -148,7 +150,7 @@ class SKAllRowsParsing(BigDataToCsv):
         error_timeout = self.timeout * 3
         # headers = dict()
         # headers['Authorization'] = self.token
-        url = f'{BASE_URL}{self.uri}?{self.add_par}&size={self.limit}'
+        url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}'
         if self.login:
             url += f'&login={self.login}'
         page = 0
@@ -164,7 +166,7 @@ class SKAllRowsParsing(BigDataToCsv):
                 response = Box(r.json())
                 if response.content:
                     page += 1
-                    url = f'{BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&page={page}'
+                    url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&page={page}'
                     if self.login:
                         url += f'&login={self.login}'
                 else:
@@ -203,7 +205,7 @@ class SKAfterDateRowsParsing(BigDataToCsv):
         # headers = dict()
         # headers['Authorization'] = self.token
 
-        url = f'{BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}'
+        url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}'
         if self.login:
             url += f'&login={self.login}'
         page = 0
@@ -227,7 +229,7 @@ class SKAfterDateRowsParsing(BigDataToCsv):
 
                 if response.totalElements > parsed_count:
                     page += 1
-                    url = f'{BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}&page={page}'
+                    url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}&page={page}'
                     if self.login:
                         url += f'&login={self.login}'
                 else:
