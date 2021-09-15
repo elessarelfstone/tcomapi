@@ -342,6 +342,7 @@ class InfobipQueues(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipQueuesToCsv(
             directory=TMP_DIR,
+            ftp_directory='infobip',
             monthly=True,
             sep=';',
             uri='queues',
