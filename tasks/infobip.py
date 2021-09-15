@@ -94,7 +94,7 @@ class InfobipDictParsing(BigDataToCsv):
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=100)
 
-    parse_date = luigi.Parameter()
+    parse_date = luigi.Parameter(default=None)
 
     def daily_params(self):
         t = datetime.fromisoformat(self.parse_date)
