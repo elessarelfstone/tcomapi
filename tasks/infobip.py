@@ -205,7 +205,7 @@ class InfobipConvMessagesParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=10)
+    timeout = luigi.IntParameter(default=6)
     limit = luigi.IntParameter(default=100)
 
     def add_contenttext(self, d):
@@ -253,7 +253,8 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                     else:
                         url = None
 
-                self.set_status(c_id, floor((i * 100)/sz))
+            self.set_status(c_id, floor((i * 100)/sz))
+            sleep(self.timeout)
 
         append_file(self.success_fpath, str('good'))
 
