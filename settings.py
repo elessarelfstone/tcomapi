@@ -54,11 +54,13 @@ TELECOM_API_USER_NAME = os.getenv('TELECOM_API_USER_NAME')
 TELECOM_API_PASSWORD = os.getenv('TELECOM_API_PASSWORD')
 TELECOM_API_URL_PATTERN = f'https://{TELECOM_API_HOST}/api/v1/citizen/phone-verification-state/{{}}/{{}}'
 
+
 SK_USER = os.getenv('SK_USER')
 SK_PASSWORD = os.getenv('SK_PASSWORD')
 SK_TCOM_COMPANY_ID = os.getenv('SK_TCOM_COMPANY_ID')
 
+
 INFOBIP_API_URL = 'https://9rrrjd.api.infobip.com/ccaas/1/'
-INFOBIP_API_USER = 'Azimut'
-INFOBIP_API_PASS = '%WgqT:!@_z>_ts1'
+INFOBIP_API_USER = os.getenv('INFOBIP_API_USER')
+INFOBIP_API_PASS = os.getenv('INFOBIP_API_PASS')
 

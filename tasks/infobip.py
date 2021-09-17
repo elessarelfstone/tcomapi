@@ -1,5 +1,6 @@
 import os
 import json
+from math import floor
 from time import sleep
 from datetime import datetime, timedelta
 
@@ -125,6 +126,7 @@ class InfobipDictParsing(BigDataToCsv):
             else:
 
                 raw = r.json()
+                print(raw)
                 raw_items = raw[entity]
                 data = [dict_to_csvrow(d, self.struct) for d in raw_items]
                 save_csvrows(self.output().path, data)
@@ -228,8 +230,8 @@ class InfobipConvMessagesParsing(BigDataToCsv):
     def run(self):
         csv_rows = read_lines(self.input().path)
         conv_ids = [row.split(self.sep)[0] for row in csv_rows]
-
-        for c_id in conv_ids:
+        sz = len(conv_ids)
+        for i, c_id in enumerate(conv_ids):
             page = 0
             url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}'
             while url:
@@ -242,6 +244,7 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                     raise
                 else:
                     raw = r.json()
+                    print(raw)
                     raw_items = raw['messages']
                     raw_items = [self.add_contenttext(r) for r in raw_items]
                     data = [dict_to_csvrow(d, self.struct) for d in raw_items]
@@ -251,6 +254,8 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                         url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}&page={page}'
                     else:
                         url = None
+
+                self.set_status(c_id, floor((i * 100)/sz))
 
         append_file(self.success_fpath, str('good'))
 
@@ -358,7 +363,7 @@ class InfobipConversations(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipConversationsToCsv(
             directory=TMP_DIR,
-            ftp_directory='infobip',
+            # ftp_directory='infobip',
             sep=';',
             uri='conversations',
             limit=999,
