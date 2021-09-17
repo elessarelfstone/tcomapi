@@ -126,7 +126,6 @@ class InfobipDictParsing(BigDataToCsv):
             else:
 
                 raw = r.json()
-                print(raw)
                 raw_items = raw[entity]
                 data = [dict_to_csvrow(d, self.struct) for d in raw_items]
                 save_csvrows(self.output().path, data)
@@ -244,7 +243,6 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                     raise
                 else:
                     raw = r.json()
-                    print(raw)
                     raw_items = raw['messages']
                     raw_items = [self.add_contenttext(r) for r in raw_items]
                     data = [dict_to_csvrow(d, self.struct) for d in raw_items]
