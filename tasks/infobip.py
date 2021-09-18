@@ -16,7 +16,7 @@ from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT
 from tcomapi.common.utils import dict_to_csvrow, save_csvrows, append_file, read_lines
 from tasks.base import BigDataToCsv, GzipToFtp
-from settings import TMP_DIR, INFOBIP_API_URL, INFOBIP_API_PASS, INFOBIP_API_USER
+from settings import TMP_DIR, BIGDATA_TMP_DIR, INFOBIP_API_URL, INFOBIP_API_PASS, INFOBIP_API_USER
 
 
 def default_corrector(value):
@@ -229,6 +229,14 @@ class InfobipConvMessagesParsing(BigDataToCsv):
     def run(self):
         csv_rows = read_lines(self.input().path)
         conv_ids = [row.split(self.sep)[0] for row in csv_rows]
+
+        last_id = None
+        if os.path.exists(self.parsed_fpath):
+            last_id = read_lines(self.parsed_fpath)[-1]
+
+        if last_id:
+            conv_ids = conv_ids[conv_ids.index(last_id)+1:]
+
         sz = len(conv_ids)
         for i, c_id in enumerate(conv_ids):
             page = 0
@@ -247,6 +255,7 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                     raw_items = [self.add_contenttext(r) for r in raw_items]
                     data = [dict_to_csvrow(d, self.struct) for d in raw_items]
                     save_csvrows(self.output().path, data)
+                    append_file(self.parsed_fpath, c_id)
                     page += 1
                     if raw_items:
                         url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}&page={page}'
@@ -361,8 +370,8 @@ class InfobipQueues(luigi.WrapperTask):
 class InfobipConversations(luigi.WrapperTask):
     def requires(self):
         return GzipInfobipConversationsToCsv(
-            directory=TMP_DIR,
-            # ftp_directory='infobip',
+            directory=BIGDATA_TMP_DIR,
+            ftp_directory='infobip',
             sep=';',
             uri='conversations',
             limit=999,
@@ -399,7 +408,7 @@ class InfobipConvMessagesForDate(luigi.WrapperTask):
     def requires(self):
         # return GzipInfobipConversationsToCsv(
         return GzipInfobipConvMessagesParsing(
-            directory=TMP_DIR,
+            directory=BIGDATA_TMP_DIR,
             ftp_directory='infobip',
             sep=';',
             limit=999,
