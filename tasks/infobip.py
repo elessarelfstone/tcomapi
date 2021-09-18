@@ -415,8 +415,8 @@ class InfobipConvMessagesForDate(luigi.WrapperTask):
             name='infobip_messages',
             struct=InfobipConvMessagesRow,
             user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS,
-            parse_date=self.date
+            password=INFOBIP_API_PASS
+            # parse_date=self.date
         )
 
 
