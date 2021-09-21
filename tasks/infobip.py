@@ -430,7 +430,7 @@ class InfobipConvTagsForDate(luigi.WrapperTask):
     def requires(self):
         # return GzipInfobipConversationsToCsv(
         return GzipInfobipConvTagsParsing(
-            directory=TMP_DIR,
+            directory=BIGDATA_TMP_DIR,
             ftp_directory='infobip',
             sep=';',
             limit=999,
