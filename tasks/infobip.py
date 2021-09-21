@@ -304,8 +304,8 @@ class InfobipConvTagsParsing(BigDataToCsv):
     def run(self):
         csv_rows = read_lines(self.input().path)
         conv_ids = [row.split(self.sep)[0] for row in csv_rows]
-
-        for c_id in conv_ids:
+        sz = len(conv_ids)
+        for i, c_id in enumerate(conv_ids):
             page = 0
             url = f'{INFOBIP_API_URL}tags?limit={self.limit}'
             while url:
@@ -327,6 +327,9 @@ class InfobipConvTagsParsing(BigDataToCsv):
                         url = f'{INFOBIP_API_URL}tags?limit={self.limit}&page={page}'
                     else:
                         url = None
+
+            self.set_status(c_id, floor((i * 100) / sz))
+            sleep(self.timeout)
 
         append_file(self.success_fpath, str('good'))
 
