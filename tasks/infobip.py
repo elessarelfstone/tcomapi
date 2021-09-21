@@ -280,7 +280,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=10)
+    timeout = luigi.IntParameter(default=4)
     limit = luigi.IntParameter(default=100)
 
     def add_conv_id(self, d, conv_id):
