@@ -304,6 +304,14 @@ class InfobipConvTagsParsing(BigDataToCsv):
     def run(self):
         csv_rows = read_lines(self.input().path)
         conv_ids = [row.split(self.sep)[0] for row in csv_rows]
+
+        last_id = None
+        if os.path.exists(self.parsed_fpath):
+            last_id = read_lines(self.parsed_fpath)[-1]
+
+        if last_id:
+            conv_ids = conv_ids[conv_ids.index(last_id) + 1:]
+
         sz = len(conv_ids)
         for i, c_id in enumerate(conv_ids):
             page = 0
