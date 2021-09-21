@@ -434,8 +434,8 @@ class InfobipConvTagsForDate(luigi.WrapperTask):
             name='infobip_tags',
             struct=InfobipConvTagsRow,
             user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS,
-            parse_date=self.date
+            password=INFOBIP_API_PASS
+            # parse_date=self.date
         )
 
 
