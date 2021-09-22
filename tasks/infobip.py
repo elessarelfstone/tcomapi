@@ -256,13 +256,12 @@ class InfobipConvMessagesParsing(BigDataToCsv):
                     raw_items = [self.add_contenttext(r) for r in raw_items]
                     data = [dict_to_csvrow(d, self.struct) for d in raw_items]
                     save_csvrows(self.output().path, data)
-                    append_file(self.parsed_fpath, c_id)
                     page += 1
                     if raw_items:
                         url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}&page={page}'
                     else:
                         url = None
-
+            append_file(self.parsed_fpath, c_id)
             self.set_status(c_id, floor((i * 100)/sz))
             sleep(self.timeout)
 
@@ -281,7 +280,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=10)
+    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
     limit = luigi.IntParameter(default=100)
 
     def add_conv_id(self, d, conv_id):
