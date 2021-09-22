@@ -12,7 +12,8 @@ PRODUCTION_PASS = os.getenv('PRODUCTION_PASS')
 
 KGD_API_TOKEN = os.getenv('KGD_API_TOKEN')
 DGOV_API_KEY = os.getenv('DGOV_API_KEY')
-GOSZAKUP_TOKEN = os.getenv('GOSZAKUP_TOKEN')
+GOSZAKUP_GQL_TOKEN = os.getenv('GOSZAKUP_GQL_TOKEN')
+GOSZAKUP_REST_TOKEN = os.getenv('GOSZAKUP_REST_TOKEN')
 
 # TMP_DIR = gettempdir()
 TMP_DIR = os.path.join(os.path.expanduser('~'), 'data')
@@ -63,4 +64,5 @@ SK_TCOM_COMPANY_ID = os.getenv('SK_TCOM_COMPANY_ID')
 INFOBIP_API_URL = 'https://9rrrjd.api.infobip.com/ccaas/1/'
 INFOBIP_API_USER = os.getenv('INFOBIP_API_USER')
 INFOBIP_API_PASS = os.getenv('INFOBIP_API_PASS')
+INFOBIP_API_TIMEOUT = os.getenv('INFOBIP_API_TIMEOUT')
 

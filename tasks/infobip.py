@@ -16,7 +16,8 @@ from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT
 from tcomapi.common.utils import dict_to_csvrow, save_csvrows, append_file, read_lines
 from tasks.base import BigDataToCsv, GzipToFtp
-from settings import TMP_DIR, BIGDATA_TMP_DIR, INFOBIP_API_URL, INFOBIP_API_PASS, INFOBIP_API_USER
+from settings import (TMP_DIR, BIGDATA_TMP_DIR, INFOBIP_API_URL,
+                      INFOBIP_API_PASS, INFOBIP_API_USER, INFOBIP_API_TIMEOUT)
 
 
 def default_corrector(value):
@@ -92,7 +93,7 @@ class InfobipDictParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=10)
+    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
     limit = luigi.IntParameter(default=100)
 
     parse_date = luigi.Parameter(default=None)
@@ -205,7 +206,7 @@ class InfobipConvMessagesParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=4)
+    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
     limit = luigi.IntParameter(default=100)
 
     def add_contenttext(self, d):
