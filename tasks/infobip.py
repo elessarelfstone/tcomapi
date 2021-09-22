@@ -280,7 +280,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=6)
+    timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=100)
 
     def add_conv_id(self, d, conv_id):
@@ -330,6 +330,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
                     raw_items = [self.add_conv_id(r, c_id) for r in raw_items]
                     data = [dict_to_csvrow(d, self.struct) for d in raw_items]
                     save_csvrows(self.output().path, data)
+                    append_file(self.parsed_fpath, c_id)
                     page += 1
                     if raw_items:
                         url = f'{INFOBIP_API_URL}tags?limit={self.limit}&page={page}'
