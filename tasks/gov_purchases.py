@@ -267,8 +267,8 @@ class GoszakupCompaniesParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        header = tuple(f.name for f in attr.fields(GoszakupCompanyRow))
-        save_csvrows(self.output().path, [header], sep=self.sep)
+        # header = tuple(f.name for f in attr.fields(GoszakupCompanyRow))
+        # save_csvrows(self.output().path, [header], sep=self.sep)
 
         while True:
             p = params
