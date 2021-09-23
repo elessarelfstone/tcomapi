@@ -1,8 +1,11 @@
 import luigi
-from gql import Client, AIOHTTPTransport, RequestsHTTPTransport
+from gql import Client
+from gql.transport.requests import RequestsHTTPTransport
+from gql.transport.aiohttp import AIOHTTPTransport
+
 
 from tasks.base import LoadingDataIntoCsvFile, BigDataToCsv
-from settings import GOSZAKUP_TOKEN
+from settings import GOSZAKUP_GQL_TOKEN
 
 
 class GraphQlParsing(LoadingDataIntoCsvFile):
@@ -10,7 +13,7 @@ class GraphQlParsing(LoadingDataIntoCsvFile):
     url = luigi.Parameter()
     # headers = luigi.DictParameter(default=dict())
     query = luigi.Parameter()
-    token = luigi.Parameter(default=GOSZAKUP_TOKEN)
+    token = luigi.Parameter(default=GOSZAKUP_GQL_TOKEN)
     timeout = luigi.IntParameter(default=60)
 
     def get_client(self):
