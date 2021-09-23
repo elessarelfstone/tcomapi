@@ -10,7 +10,7 @@ from gql import gql
 from luigi.util import requires
 from time import sleep
 
-from settings import TMP_DIR, BIGDATA_TMP_DIR, GOSZAKUP_TOKEN
+from settings import TMP_DIR, BIGDATA_TMP_DIR, GOSZAKUP_GQL_TOKEN, GOSZAKUP_REST_TOKEN
 from tasks.base import GzipToFtp, LoadingDataIntoCsvFile, BigDataToCsv
 from tasks.grql import GraphQlParsing
 from tcomapi.common.dates import previous_date_as_str
@@ -151,7 +151,7 @@ def get_total(url: str, headers: str):
 class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
-    token = luigi.Parameter(default=GOSZAKUP_TOKEN)
+    token = luigi.Parameter(default=GOSZAKUP_REST_TOKEN)
     timeout = luigi.IntParameter(default=10)
     limit = luigi.IntParameter(default=500)
 
@@ -199,6 +199,24 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
         stat = dict(total=total, parsed=parsed_count)
         append_file(self.success_fpath, str(stat))
+
+
+class GoszakupCompaniesAllParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupCompaniesAllParsingToCsv)
+class GzipGoszakupCompaniesAllParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupCompaniesAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupCompaniesAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                    sep=';',
+                                                    url='https://ows.goszakup.gov.kz/v3/subject/all',
+                                                    name='goszakup_companies',
+                                                    struct=GoszakupCompanyRow)
 
 
 class GoszakupContractsAllParsingToCsv(GoszakupAllRowsParsing):
@@ -331,8 +349,10 @@ class GoszakupCompanies(luigi.WrapperTask):
 
 class GoszakupContractsParsingToCsv(GraphQlParsing):
 
-    start_date = luigi.Parameter(default=previous_date_as_str(1))
-    end_date = luigi.Parameter(default=previous_date_as_str(1))
+    # start_date = luigi.Parameter(default=previous_date_as_str(1))
+    start_date = luigi.Parameter(default='2021-02-12')
+    # end_date = luigi.Parameter(default=previous_date_as_str(1))
+    end_date = luigi.Parameter(default='2021-09-22')
     limit = luigi.IntParameter(default=200)
 
     def run(self):
