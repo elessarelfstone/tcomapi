@@ -339,6 +339,7 @@ class GoszakupCompanies(luigi.WrapperTask):
 """
         return GzipGoszakupCompaniesParsingToCsv(
             directory=TMP_DIR,
+            ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
