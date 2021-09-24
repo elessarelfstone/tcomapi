@@ -344,8 +344,8 @@ class InfobipConvTagsParsing(BigDataToCsv):
                         url = None
 
             parsed_count += 1
-            status = f'Total{sz}. Parsed count: {parsed_count}'
-            self.set_status(c_id, floor((i * 100) / sz))
+            status = f'{c_id}. Total{sz}. Parsed count: {parsed_count}'
+            self.set_status(status, floor((i * 100) / sz))
             sleep(self.timeout)
 
         append_file(self.success_fpath, str('good'))
