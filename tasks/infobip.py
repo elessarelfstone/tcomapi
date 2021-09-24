@@ -8,6 +8,7 @@ import attr
 import luigi
 import requests
 from box import Box
+from requests import Session
 from luigi.util import requires
 from requests.auth import HTTPBasicAuth
 from requests import Session
@@ -304,6 +305,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
     def run(self):
         csv_rows = read_lines(self.input().path)
         conv_ids = [row.split(self.sep)[0] for row in csv_rows]
+        _sz = len(conv_ids)
 
         last_id = None
         if os.path.exists(self.parsed_fpath):
@@ -312,15 +314,18 @@ class InfobipConvTagsParsing(BigDataToCsv):
         if last_id:
             conv_ids = conv_ids[conv_ids.index(last_id) + 1:]
 
+        session = Session()
+
         sz = len(conv_ids)
+        parsed_count = _sz - sz
         for i, c_id in enumerate(conv_ids):
             page = 0
             url = f'{INFOBIP_API_URL}tags?limit={self.limit}'
             while url:
                 try:
 
-                    r = requests.get(url, timeout=self.timeout,
-                                     auth=HTTPBasicAuth(self.user, self.password))
+                    r = session.get(url, timeout=self.timeout,
+                                    auth=HTTPBasicAuth(self.user, self.password))
 
                 except Exception:
                     raise
@@ -332,11 +337,14 @@ class InfobipConvTagsParsing(BigDataToCsv):
                     save_csvrows(self.output().path, data)
                     append_file(self.parsed_fpath, c_id)
                     page += 1
+
                     if raw_items:
                         url = f'{INFOBIP_API_URL}tags?limit={self.limit}&page={page}'
                     else:
                         url = None
 
+            parsed_count += 1
+            status = f'Total{sz}. Parsed count: {parsed_count}'
             self.set_status(c_id, floor((i * 100) / sz))
             sleep(self.timeout)
 
