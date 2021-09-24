@@ -93,7 +93,7 @@ class InfobipDictParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
+    timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
     limit = luigi.IntParameter(default=100)
 
     parse_date = luigi.Parameter(default=None)
@@ -206,7 +206,7 @@ class InfobipConvMessagesParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
+    timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
     limit = luigi.IntParameter(default=100)
 
     def add_contenttext(self, d):
@@ -280,7 +280,7 @@ class InfobipConvTagsParsing(BigDataToCsv):
     user = luigi.Parameter(default='')
     password = luigi.Parameter(default='')
 
-    timeout = luigi.IntParameter(default=INFOBIP_API_TIMEOUT)
+    timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
     limit = luigi.IntParameter(default=100)
 
     def add_conv_id(self, d, conv_id):
