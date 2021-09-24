@@ -258,6 +258,8 @@ class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
 
 class GoszakupCompaniesParsingToCsv(GraphQlParsing):
     start_date = luigi.Parameter(default=previous_date_as_str(1))
+    # start_date = luigi.Parameter(default='2021-09-23')
+    # end_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = luigi.IntParameter(default=200)
 
@@ -350,10 +352,10 @@ class GoszakupCompanies(luigi.WrapperTask):
 
 class GoszakupContractsParsingToCsv(GraphQlParsing):
 
-    # start_date = luigi.Parameter(default=previous_date_as_str(1))
-    start_date = luigi.Parameter(default='2021-02-12')
-    # end_date = luigi.Parameter(default=previous_date_as_str(1))
-    end_date = luigi.Parameter(default='2021-09-22')
+    start_date = luigi.Parameter(default=previous_date_as_str(1))
+    # start_date = luigi.Parameter(default='2021-09-23')
+    end_date = luigi.Parameter(default=previous_date_as_str(1))
+    # end_date = luigi.Parameter(default='2021-09-23')
     limit = luigi.IntParameter(default=200)
 
     def run(self):
