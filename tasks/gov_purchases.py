@@ -249,6 +249,7 @@ class GzipGoszakupUntrustedSuppliersAllParsingToCsv(GzipToFtp):
 class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
     def requires(self):
         return GzipGoszakupUntrustedSuppliersAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                             ftp_directory='goszakup',
                                                              sep=';',
                                                              url='https://ows.goszakup.gov.kz/v3/rnu',
                                                              name='goszakup_untrusted',
@@ -271,7 +272,7 @@ class GoszakupCompaniesParsingToCsv(GraphQlParsing):
 
         # header = tuple(f.name for f in attr.fields(GoszakupCompanyRow))
         # save_csvrows(self.output().path, [header], sep=self.sep)
-
+        super().run()
         while True:
             p = params
             if start_from:
@@ -341,7 +342,7 @@ class GoszakupCompanies(luigi.WrapperTask):
 """
         return GzipGoszakupCompaniesParsingToCsv(
             directory=TMP_DIR,
-            ftp_directory='goszakup',
+            # ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
@@ -364,6 +365,7 @@ class GoszakupContractsParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
+        super().run()
         while True:
             p = params
             if start_from:
