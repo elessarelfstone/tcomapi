@@ -65,4 +65,3 @@ INFOBIP_API_URL = 'https://9rrrjd.api.infobip.com/ccaas/1/'
 INFOBIP_API_USER = os.getenv('INFOBIP_API_USER')
 INFOBIP_API_PASS = os.getenv('INFOBIP_API_PASS')
 INFOBIP_API_TIMEOUT = os.getenv('INFOBIP_API_TIMEOUT')
-
