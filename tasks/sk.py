@@ -422,6 +422,7 @@ class SkKztAllPlans(luigi.WrapperTask):
     def requires(self):
         return GzipSkAllKztPlans(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='proxy/planproxy/esb-api/plan',
             name='sk_kzt_plans',
