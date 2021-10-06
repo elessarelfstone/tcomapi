@@ -54,6 +54,12 @@ def read_file(fpath):
     return data
 
 
+def write_in_file(fpath, data):
+    """ Rewrite file with new data"""
+    with open(fpath, 'w', encoding="utf8") as f:
+        f.write(data + '\n')
+
+
 def append_file(fpath, data):
     """ Add new line to file"""
     with open(fpath, 'a+', encoding="utf8") as f:
@@ -109,8 +115,21 @@ def dict_to_csvrow(raw_dict, struct):
     """ Convert given dict into tuple using
     given structure(attr class)."""
 
+    reserved_fields_names = ['from']
+
     # cast each keys's name of dict to lower case
     __raw_dict = {k.lower(): v for k, v in raw_dict.items() if k.lower()}
+
+    _raw_dict = {}
+
+    # we can't use python reserved words as
+    # attributes in attr classes
+    for k, v in __raw_dict.items():
+        if k in reserved_fields_names:
+            key = f'{k}_'
+            _raw_dict[key] = v
+        else:
+            _raw_dict[k] = v
 
     # get fields of structure
     keys = [a.name for a in attr.fields(struct)]
@@ -118,8 +137,10 @@ def dict_to_csvrow(raw_dict, struct):
     _dict = {}
     # build new dict with fields specified in struct
     for k in keys:
-        if k in __raw_dict.keys():
-            _dict[k] = __raw_dict[k]
+        _key = k
+
+        if k in _raw_dict.keys():
+            _dict[k] = _raw_dict[k]
 
     # _dict = {k: _dict[k] for k in keys}
 
@@ -417,3 +438,29 @@ def get_file_lines_count(fpath: int):
         return int(r.decode(encoding='utf-8').split()[0]) if r else 0
 
     return None
+
+
+def flatten_json(nested_json):
+    """
+        Flatten json object with nested keys into a single level.
+        Args:
+            nested_json: A nested json object.
+        Returns:
+            The flattened json object if successful, None otherwise.
+    """
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + '_')
+        elif type(x) is list:
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + '_')
+                i += 1
+        else:
+            out[name[:-1].lower()] = x
+
+    flatten(nested_json)
+    return out

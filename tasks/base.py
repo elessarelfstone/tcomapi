@@ -18,12 +18,11 @@ from tcomapi.common.excel import parse_excel_rect_area_to_csv
 
 from tcomapi.common.utils import (build_fpath, save_webfile,
                                   gziped_fname, gzip_file, date_for_fname, parsed_fpath,
-                                  save_csvrows, build_fname)
+                                  save_csvrows, build_fname, write_in_file)
 
 from tcomapi.common.unpacking import unpack
 from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
-
 
 
 @attr.s
@@ -35,6 +34,16 @@ class BaseConfig(luigi.Config):
     @classmethod
     def name(cls):
         return cls.__name__.lower()
+
+
+class ExternalLocalTarget(luigi.ExternalTask):
+
+    name = luigi.Parameter()
+    directory = luigi.Parameter(default=TMP_DIR)
+
+    def output(self):
+        name = f'{self.name}.csv'
+        return luigi.LocalTarget(os.path.join(self.directory, name))
 
 
 class BaseTask(luigi.Task):
@@ -192,10 +201,24 @@ class BigDataToCsv(LoadingDataIntoCsvFile):
     # name = luigi.Parameter(default='')
     parsed_fext = luigi.Parameter(default='prs')
     success_fext = luigi.Parameter(default='success')
+    lock_fext = luigi.Parameter(default='lock')
 
     @property
     def success_fpath(self):
         return build_fpath(self.directory, self.name, self.success_fext)
+
+    @property
+    def lock_fpath(self):
+        return build_fpath(self.directory, self.name, self.lock_fext)
+
+    def lock(self, data):
+        write_in_file(self.lock_fpath, data)
+
+    def success(self, data):
+        if os.path.exists(self.lock_fpath):
+            os.remove(self.lock_fpath)
+
+        write_in_file(self.success_fpath, data)
 
     @property
     def parsed_fpath(self):

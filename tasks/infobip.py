@@ -1,22 +1,18 @@
-import os
 import json
-from math import floor
-from time import sleep
+import os
+from collections import namedtuple
 from datetime import datetime, timedelta
+from math import floor
 
 import attr
 import luigi
-import requests
 from box import Box
-from requests import Session
 from luigi.util import requires
-from requests.auth import HTTPBasicAuth
-from requests import Session
 
-from tcomapi.common.constants import CSV_SEP
-from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT
-from tcomapi.common.utils import dict_to_csvrow, save_csvrows, append_file, read_lines
-from tasks.base import BigDataToCsv, GzipToFtp
+from tcomapi.common.dates import yesterday_as_str, DEFAULT_DATE_FORMAT
+from tcomapi.infobip.parser import InfobipApiParser
+from tcomapi.common.utils import dict_to_csvrow, save_csvrows, append_file, read_lines, read_file
+from tasks.base import BigDataToCsv, GzipToFtp, ExternalLocalTarget
 from settings import (TMP_DIR, BIGDATA_TMP_DIR, INFOBIP_API_URL,
                       INFOBIP_API_PASS, INFOBIP_API_USER, INFOBIP_API_TIMEOUT)
 
@@ -46,8 +42,8 @@ class InfobipConversationRow:
     summary = attr.ib(default='', converter=default_corrector)
     status = attr.ib(default='', converter=default_corrector)
     priority = attr.ib(default='', converter=default_corrector)
-    queueId = attr.ib(default='', converter=default_corrector)
-    agentId = attr.ib(default='', converter=default_corrector)
+    queueid = attr.ib(default='', converter=default_corrector)
+    agentid = attr.ib(default='', converter=default_corrector)
     createdat = attr.ib(default='', converter=default_corrector)
     updatedat = attr.ib(default='', converter=default_corrector)
     closedat = attr.ib(default='', converter=default_corrector)
@@ -63,8 +59,7 @@ class InfobipConvMessagesRow:
     conversationid = attr.ib(default='')
     createdat = attr.ib(default='')
     updatedat = attr.ib(default='')
-    contentext = attr.ib(default='')
-    contentype = attr.ib(default='')
+    contenttype = attr.ib(default='')
 
 
 @attr.s
@@ -88,92 +83,59 @@ class InfobipQueueRow:
     deletedat = attr.ib(default='', converter=default_corrector)
 
 
-class InfobipDictParsing(BigDataToCsv):
+class InfobipApiParsing(BigDataToCsv):
 
-    uri = luigi.Parameter(default='')
-    user = luigi.Parameter(default='')
-    password = luigi.Parameter(default='')
+    entity = luigi.Parameter(default='')
+
+    limit = luigi.IntParameter(default=100)
+    dates_range = luigi.TupleParameter(default=None)
+
+    user = luigi.Parameter(default=INFOBIP_API_USER)
+    password = luigi.Parameter(default=INFOBIP_API_PASS)
 
     timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
-    limit = luigi.IntParameter(default=100)
 
-    parse_date = luigi.Parameter(default=None)
+    def url(self):
+        url = f'{INFOBIP_API_URL}{self.entity}'
+        return url
 
-    def daily_params(self):
-        t = datetime.fromisoformat(self.parse_date)
-        before_iso = t.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + ".000UTC"
-        t = t - timedelta(days=1)
-        after_iso = t.replace(hour=0, minute=0, second=0, microsecond=0).isoformat() + ".000UTC"
+    def prepare_dates(self):
+        DatesRange = namedtuple('DatesRange', 'begin, end')
+        d = DatesRange(*tuple(self.dates_range))
+        begin = datetime.fromisoformat(d.begin)
+        end = datetime.fromisoformat(d.end)
+        end = end.replace(hour=23, minute=59, second=59)
+        return begin.isoformat() + '.000UTC', end.isoformat() + '.000UTC'
 
-        return f'updatedAfter={after_iso}&updatedBefore={before_iso}'
+    def params(self):
 
-    def run(self):
-        page = 0
-        data = []
-        cnt = 0
-        if not self.parse_date:
-            url = f'{INFOBIP_API_URL}{self.uri}?limit={self.limit}'
-        else:
-            url = f'{INFOBIP_API_URL}{self.uri}?limit={self.limit}&page={page}&{self.daily_params()}'
+        # initializing parameters
+        params = Box()
+        params.page = 0
+        params.limit = self.limit
 
-        entity = str(self.name).split('_')[1]
+        # parse for specific period
+        if self.dates_range:
+            params.updatedAfter, params.updatedBefore = self.prepare_dates()
 
-        while url:
-            try:
-                r = requests.get(url, timeout=self.timeout,
-                                 auth=HTTPBasicAuth(self.user, self.password))
-
-            except Exception:
-                raise
-            else:
-
-                raw = r.json()
-                raw_items = raw[entity]
-                data = [dict_to_csvrow(d, self.struct) for d in raw_items]
-                save_csvrows(self.output().path, data)
-                page += 1
-                if raw_items:
-                    if not self.parse_date:
-                        url = f'{INFOBIP_API_URL}{self.uri}?limit={self.limit}&page={page}'
-                    else:
-                        url = f'{INFOBIP_API_URL}{self.uri}?limit={self.limit}&page={page}&{self.daily_params()}'
-                else:
-                    url = None
-
-        append_file(self.success_fpath, str(len(data)))
-
-
-class InfobipMessagesParsing(BigDataToCsv):
-
-    conv_uri = luigi.Parameter(default='conversations')
-    tags_uri = luigi.Parameter(default='tags')
-    messages_uri = luigi.Parameter(default='messages')
-
-    def output(self):
-        return [
-            luigi.LocalTarget(os.path.join(self.directory, 'infobip_conversations.csv')),
-            luigi.LocalTarget(os.path.join(self.directory, 'infobip_messages.csv')),
-            luigi.LocalTarget(os.path.join(self.directory, 'infobip_tags.csv'))
-        ]
+        return params
 
     def run(self):
 
-        conv_url_pattern = f'{INFOBIP_API_URL}{self.uri}?limit={self.limit}'
-        conv_page = 0
-        conv_url = f'{conv_url_pattern}&page={conv_page}'
-        while conv_url:
-            try:
+        params = self.params()
+        parser = InfobipApiParser(self.url(), self.entity,
+                                  self.timeout, self.user, self.password,
+                                  params.to_dict())
 
-                r = requests.get(conv_url, timeout=self.timeout,
-                                 auth=HTTPBasicAuth(self.user, self.password))
+        for rows in parser:
+            data = [dict_to_csvrow(d, self.struct) for d in rows]
+            save_csvrows(self.output().path, data)
+            self.set_status(parser.status_message, parser.percent_done)
 
-            except Exception:
-                raise
-            else:
-                pass
+        append_file(self.success_fpath, 'good')
 
 
-class InfobipAgentsToCsv(InfobipDictParsing):
+class InfobipAgentsToCsv(InfobipApiParsing):
     pass
 
 
@@ -182,7 +144,20 @@ class GzipInfobipAgentsToCsv(GzipToFtp):
     pass
 
 
-class InfobipQueuesToCsv(InfobipDictParsing):
+class InfobipAgents(luigi.WrapperTask):
+    def requires(self):
+
+        return GzipInfobipAgentsToCsv(
+            entity=f'agents',
+            directory=TMP_DIR,
+            ftp_directory='infobip',
+            limit=999,
+            name='infobip_agents',
+            struct=InfobipAgentsRow
+        )
+
+
+class InfobipQueuesToCsv(InfobipApiParsing):
     pass
 
 
@@ -191,7 +166,18 @@ class GzipInfobipQueuesToCsv(GzipToFtp):
     pass
 
 
-class InfobipConversationsToCsv(InfobipDictParsing):
+class InfobipQueues(luigi.WrapperTask):
+    def requires(self):
+        return GzipInfobipQueuesToCsv(
+            entity='queues',
+            directory=TMP_DIR,
+            limit=999,
+            name='infobip_queues',
+            struct=InfobipQueueRow
+        )
+
+
+class InfobipConversationsToCsv(InfobipApiParsing):
     pass
 
 
@@ -200,264 +186,177 @@ class GzipInfobipConversationsToCsv(GzipToFtp):
     pass
 
 
-class InfobipConvMessagesParsing(BigDataToCsv):
+class InfobipConversations(luigi.WrapperTask):
 
-    parse_date = luigi.Parameter(default=None)
-
-    user = luigi.Parameter(default='')
-    password = luigi.Parameter(default='')
-
-    timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
-    limit = luigi.IntParameter(default=100)
-
-    def add_contenttext(self, d):
-        _d = d
-        _d['contentext'] = _d.get('content').get('text')
-        return _d
+    date = luigi.Parameter(default=yesterday_as_str(dt_format=DEFAULT_DATE_FORMAT))
 
     def requires(self):
-        return InfobipConversationsToCsv(
+
+        return GzipInfobipConversationsToCsv(
+            entity='conversations',
             directory=TMP_DIR,
-            sep=';',
-            uri='conversations',
+            ftp_directory='infobip',
+            dates_range=(self.date, self.date),
             limit=999,
             name='infobip_conversations',
-            struct=InfobipConversationRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS,
-            parse_date=self.parse_date
+            struct=InfobipConversationRow
         )
 
-    def run(self):
-        csv_rows = read_lines(self.input().path)
-        conv_ids = [row.split(self.sep)[0] for row in csv_rows]
 
-        last_id = None
-        if os.path.exists(self.parsed_fpath):
-            last_id = read_lines(self.parsed_fpath)[-1]
+class InfobipApiConversationsDetailsParsing(InfobipApiParsing):
 
-        if last_id:
-            conv_ids = conv_ids[conv_ids.index(last_id)+1:]
-
-        sz = len(conv_ids)
-        for i, c_id in enumerate(conv_ids):
-            page = 0
-            url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}'
-            while url:
-                try:
-
-                    r = requests.get(url, timeout=self.timeout,
-                                     auth=HTTPBasicAuth(self.user, self.password))
-
-                except Exception:
-                    raise
-                else:
-                    raw = r.json()
-                    raw_items = raw['messages']
-                    raw_items = [self.add_contenttext(r) for r in raw_items]
-                    data = [dict_to_csvrow(d, self.struct) for d in raw_items]
-                    save_csvrows(self.output().path, data)
-                    page += 1
-                    if raw_items:
-                        url = f'{INFOBIP_API_URL}conversations/{c_id}/messages?limit={self.limit}&page={page}'
-                    else:
-                        url = None
-            append_file(self.parsed_fpath, c_id)
-            self.set_status(c_id, floor((i * 100)/sz))
-            sleep(self.timeout)
-
-        append_file(self.success_fpath, str('good'))
-
-
-@requires(InfobipConvMessagesParsing)
-class GzipInfobipConvMessagesParsing(GzipToFtp):
-    pass
-
-
-class InfobipConvTagsParsing(BigDataToCsv):
-
-    parse_date = luigi.Parameter(default=None)
-
-    user = luigi.Parameter(default='')
-    password = luigi.Parameter(default='')
-
-    timeout = luigi.IntParameter(default=int(INFOBIP_API_TIMEOUT))
-    limit = luigi.IntParameter(default=100)
-
-    def add_conv_id(self, d, conv_id):
-        _d = d
-        _d['conversationid'] = conv_id
-        return _d
+    # buffers
+    conversation_id = None
+    failed_page = None
+    total_parsed_count = 0
 
     def requires(self):
-        return InfobipConversationsToCsv(
-            directory=TMP_DIR,
-            sep=';',
-            uri='conversations',
-            limit=999,
-            name='infobip_conversations',
-            struct=InfobipConversationRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS,
-            parse_date=self.parse_date
-        )
+        return ExternalLocalTarget('infobip_conversations')
 
-    def run(self):
-        csv_rows = read_lines(self.input().path)
-        conv_ids = [row.split(self.sep)[0] for row in csv_rows]
-        _sz = len(conv_ids)
+    def lock_data(self):
+
+        data = Box()
+
+        if os.path.exists(self.lock_fpath):
+            # raw = read_file(self.lock_fpath)
+            # raw = raw.replace("'", '"')
+            # data = json.loads(raw)
+            data = Box().from_json(filename=self.lock_fpath)
+
+        return data
+
+    def params(self):
+        params = super().params()
+        if self.entity == 'tags':
+            params.conversationId = self.conversation_id
+
+        if self.failed_page:
+            params.page = self.failed_page
+
+        return params
+
+    def conversation_ids(self):
+        # build list of conversations ids from
+        # csv file with conversations assuming
+        # it's first column in each row
+        rows = read_lines(self.input().path)
+        conv_ids = [row.split(self.sep)[0] for row in rows]
+
+        # get meta data
+        d = self.lock_data()
 
         last_id = None
-        if os.path.exists(self.parsed_fpath):
-            last_id = read_lines(self.parsed_fpath)[-1]
 
+        # get conversation id which was last id
+        # we successfully parsed
+        if d:
+            last_id = d.last_id
+
+        # slice rest of conversations ids
+        # to get list of ids we haven't processed
         if last_id:
             conv_ids = conv_ids[conv_ids.index(last_id) + 1:]
 
-        session = Session()
+        return conv_ids
 
-        sz = len(conv_ids)
-        parsed_count = _sz - sz
-        for i, c_id in enumerate(conv_ids):
-            page = 0
-            url = f'{INFOBIP_API_URL}tags?limit={self.limit}'
-            while url:
-                try:
+    def status(self):
+        # TODO implement override it with additional info about curr conv id and count of left ids ot parse
+        return f'Current conversation ID:{self.conversation_id}. Total parsed count: {self.total_parsed_count}'
 
-                    r = session.get(url, timeout=self.timeout,
-                                    auth=HTTPBasicAuth(self.user, self.password))
+    def run(self):
 
-                except Exception:
-                    raise
-                else:
-                    raw = r.json()
-                    raw_items = raw['tags']
-                    raw_items = [self.add_conv_id(r, c_id) for r in raw_items]
-                    data = [dict_to_csvrow(d, self.struct) for d in raw_items]
-                    save_csvrows(self.output().path, data)
-                    append_file(self.parsed_fpath, c_id)
-                    page += 1
+        conversation_ids = self.conversation_ids()
 
-                    if raw_items:
-                        url = f'{INFOBIP_API_URL}tags?limit={self.limit}&page={page}'
-                    else:
-                        url = None
+        meta = self.lock_data()
 
-            parsed_count += 1
-            status = f'{c_id}. Total{sz}. Parsed count: {parsed_count}'
-            self.set_status(status, floor((i * 100) / sz))
-            sleep(self.timeout)
+        # page for last successfully parsed conversation
+        if meta:
+            self.failed_page = meta.page
 
-        append_file(self.success_fpath, str('good'))
+        parsed_convs_count = 0
+        parsed_total_items = 0
+        conversations_total = len(conversation_ids)
+
+        for c_id in conversation_ids:
+            self.conversation_id = c_id
+            params = self.params()
+            parser = InfobipApiParser(self.url(), self.entity,
+                                      self.timeout, self.user, self.password,
+                                      params.to_dict())
+
+            for rows in parser:
+                _rows = []
+                for d in rows:
+                    _rows.append({**d, **{'conversationid': c_id}})
+
+                data = [dict_to_csvrow(d, self.struct) for d in _rows]
+                save_csvrows(self.output().path, data)
+                meta.page, meta.last_id = parser.curr_page, c_id
+                self.lock(meta.to_json())
+
+                parsed_total_items += len(rows)
+                status = f'Total conversation IDs: {len(conversation_ids)}.'
+                status += f' Parsed conversation IDs: {parsed_convs_count} ' + '\n'
+                status += f'Current conversation ID: {c_id}. Total parsed items: {parsed_total_items}. '
+                status = status + '\n' + parser.status_message
+                percentage = floor((parsed_convs_count * 100) / conversations_total)
+                self.set_status(status, percentage)
+
+            parsed_convs_count += 1
+
+        self.success('good')
 
 
-@requires(InfobipConvTagsParsing)
-class GzipInfobipConvTagsParsing(GzipToFtp):
+class InfobipApiMessagesParsing(InfobipApiConversationsDetailsParsing):
+
+    def url(self):
+        return f'{INFOBIP_API_URL}conversations/{self.conversation_id}/{self.entity}'
+
+
+@requires(InfobipApiMessagesParsing)
+class GzipInfobipApiMessagesParsing(GzipToFtp):
     pass
 
 
-class InfobipAgents(luigi.WrapperTask):
+class InfobipMessages(luigi.WrapperTask):
     def requires(self):
-        return GzipInfobipAgentsToCsv(
+        return GzipInfobipApiMessagesParsing(
+            entity='messages',
             directory=TMP_DIR,
-            ftp_directory='infobip',
-            sep=';',
-            uri='agents',
-            limit=999,
-            name='infobip_agents',
-            struct=InfobipAgentsRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS
-        )
-
-
-class InfobipQueues(luigi.WrapperTask):
-    def requires(self):
-        return GzipInfobipQueuesToCsv(
-            directory=TMP_DIR,
-            ftp_directory='infobip',
-            monthly=True,
-            sep=';',
-            uri='queues',
-            limit=999,
-            name='infobip_queues',
-            struct=InfobipQueueRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS
-        )
-
-
-class InfobipConversations(luigi.WrapperTask):
-    def requires(self):
-        return GzipInfobipConversationsToCsv(
-            directory=BIGDATA_TMP_DIR,
-            ftp_directory='infobip',
-            sep=';',
-            uri='conversations',
-            limit=999,
-            name='infobip_conversations',
-            struct=InfobipConversationRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS
-        )
-
-
-class InfobipConversationsForDate(luigi.WrapperTask):
-
-    date = luigi.Parameter(today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-
-    def requires(self):
-        return GzipInfobipConversationsToCsv(
-            directory=TMP_DIR,
-            ftp_directory='infobip',
-            sep=';',
-            uri='conversations',
-            limit=999,
-            name='infobip_conversations',
-            struct=InfobipConversationRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS,
-            parse_date=self.date
-        )
-
-
-class InfobipConvMessagesForDate(luigi.WrapperTask):
-
-    date = luigi.Parameter(today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-
-    def requires(self):
-        # return GzipInfobipConversationsToCsv(
-        return GzipInfobipConvMessagesParsing(
-            directory=BIGDATA_TMP_DIR,
-            ftp_directory='infobip',
-            sep=';',
+            # ftp_directory='infobip',
             limit=999,
             name='infobip_messages',
-            struct=InfobipConvMessagesRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS
-            # parse_date=self.date
+            struct=InfobipConvMessagesRow
         )
 
 
-class InfobipConvTagsForDate(luigi.WrapperTask):
+class InfobipApiTagsParsing(InfobipApiConversationsDetailsParsing):
+    pass
 
-    date = luigi.Parameter(today_as_str(dt_format=DEFAULT_DATE_FORMAT))
 
+@requires(InfobipApiTagsParsing)
+class GzipInfobipApiTagsParsing(GzipToFtp):
+    pass
+
+
+class InfobipTags(luigi.WrapperTask):
     def requires(self):
-        # return GzipInfobipConversationsToCsv(
-        return GzipInfobipConvTagsParsing(
-            directory=BIGDATA_TMP_DIR,
-            ftp_directory='infobip',
-            sep=';',
+        return GzipInfobipApiTagsParsing(
+            entity='tags',
+            directory=TMP_DIR,
+            # ftp_directory='infobip',
             limit=999,
             name='infobip_tags',
-            struct=InfobipConvTagsRow,
-            user=INFOBIP_API_USER,
-            password=INFOBIP_API_PASS
-            # parse_date=self.date
+            struct=InfobipConvTagsRow
         )
 
 
 if __name__ == '__main__':
     luigi.run()
+
+
+
+
+
+
+
