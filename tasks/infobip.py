@@ -171,6 +171,7 @@ class InfobipQueues(luigi.WrapperTask):
         return GzipInfobipQueuesToCsv(
             entity='queues',
             directory=TMP_DIR,
+            ftp_directory='infobip',
             limit=999,
             name='infobip_queues',
             struct=InfobipQueueRow
