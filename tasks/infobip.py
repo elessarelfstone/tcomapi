@@ -323,7 +323,7 @@ class InfobipMessages(luigi.WrapperTask):
         return GzipInfobipApiMessagesParsing(
             entity='messages',
             directory=TMP_DIR,
-            # ftp_directory='infobip',
+            ftp_directory='infobip',
             limit=999,
             name='infobip_messages',
             struct=InfobipConvMessagesRow
@@ -344,7 +344,7 @@ class InfobipTags(luigi.WrapperTask):
         return GzipInfobipApiTagsParsing(
             entity='tags',
             directory=TMP_DIR,
-            # ftp_directory='infobip',
+            ftp_directory='infobip',
             limit=999,
             name='infobip_tags',
             struct=InfobipConvTagsRow
