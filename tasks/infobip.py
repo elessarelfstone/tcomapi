@@ -196,7 +196,7 @@ class InfobipConversations(luigi.WrapperTask):
         return GzipInfobipConversationsToCsv(
             entity='conversations',
             directory=TMP_DIR,
-            # ftp_directory='infobip',
+            ftp_directory='infobip',
             dates_range=(self.date, self.date),
             limit=999,
             name='infobip_conversations',
