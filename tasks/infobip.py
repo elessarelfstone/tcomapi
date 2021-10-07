@@ -102,8 +102,8 @@ class InfobipApiParsing(BigDataToCsv):
     def prepare_dates(self):
         DatesRange = namedtuple('DatesRange', 'begin, end')
         d = DatesRange(*tuple(self.dates_range))
-        begin = datetime.fromisoformat(d.begin)
-        end = datetime.fromisoformat(d.end)
+        begin = datetime.strptime(d.begin, DEFAULT_DATE_FORMAT)
+        end = datetime.strptime(d.end, DEFAULT_DATE_FORMAT)
         end = end.replace(hour=23, minute=59, second=59)
         return begin.isoformat() + '.000UTC', end.isoformat() + '.000UTC'
 
@@ -196,7 +196,7 @@ class InfobipConversations(luigi.WrapperTask):
         return GzipInfobipConversationsToCsv(
             entity='conversations',
             directory=TMP_DIR,
-            ftp_directory='infobip',
+            # ftp_directory='infobip',
             dates_range=(self.date, self.date),
             limit=999,
             name='infobip_conversations',
