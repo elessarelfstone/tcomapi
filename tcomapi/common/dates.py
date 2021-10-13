@@ -1,3 +1,4 @@
+import enum
 from calendar import monthrange
 from datetime import datetime, date, timedelta
 from typing import Tuple
@@ -5,6 +6,24 @@ from typing import Tuple
 FILENAME_DATE_FORMAT = '%Y%m%d'
 DEFAULT_DATE_FORMAT = '%Y-%m-%d'
 PERIOD_MONTH_FORMAT = '%Y-%m'
+
+
+class LastPeriod(enum.Enum):
+    a = -1
+    t = 0
+    ld = 1
+    lw = 2
+    lm = 3
+
+    @classmethod
+    def get_period(cls, val):
+        if val == cls.t:
+            # t = today_as_str(DEFAULT_DATE_FORMAT)
+            t = datetime.today()
+            return t, t
+        # TODO implement other periods
+        else:
+            return None
 
 
 def first_dayof_month(dt: date) -> date:

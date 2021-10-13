@@ -1,3 +1,4 @@
+import enum
 import os
 import shutil
 from datetime import datetime, timedelta, date
@@ -9,7 +10,9 @@ import attr
 import luigi
 from luigi.contrib.ftp import RemoteTarget
 from luigi.util import requires, inherits
+from luigi.parameter import ParameterVisibility
 
+from tcomapi.common.dates import LastPeriod
 from tcomapi.dgov.api import (parse_dgovbig, build_url_for_report_page,
                               load_versions, build_url_for_data_page, load_data,
                               QUERY_TMPL, CHUNK_SIZE)
@@ -23,6 +26,9 @@ from tcomapi.common.utils import (build_fpath, save_webfile,
 from tcomapi.common.unpacking import unpack
 from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
                       FTP_HOST, FTP_USER, FTP_PASS, DGOV_API_KEY)
+
+
+
 
 
 @attr.s
@@ -49,7 +55,7 @@ class ExternalLocalTarget(luigi.ExternalTask):
 class BaseTask(luigi.Task):
     """ Base root class for all tasks"""
     name = luigi.Parameter(default='')
-    struct = luigi.Parameter(default=None)
+    struct = luigi.Parameter(default=None, visibility=ParameterVisibility.HIDDEN)
 
     def set_status(self, status: str, percent: int):
         self.set_status_message(status)
@@ -58,13 +64,13 @@ class BaseTask(luigi.Task):
 
 class LoadingDataIntoFile(BaseTask):
     """ Base class for tasks that loads data into file"""
-    directory = luigi.Parameter(default=None)
+    directory = luigi.Parameter(default=None, visibility=ParameterVisibility.HIDDEN)
 
 
 class LoadingDataIntoCsvFile(LoadingDataIntoFile):
 
-    ext = luigi.Parameter(default='csv')
-    sep = luigi.Parameter(default=';')
+    ext = luigi.Parameter(default='csv', visibility=ParameterVisibility.HIDDEN)
+    sep = luigi.Parameter(default=';', visibility=ParameterVisibility.HIDDEN )
 
     def output(self):
         directory = str(self.directory)
@@ -148,11 +154,11 @@ class GzipToFtp(luigi.Task):
     date = luigi.DateParameter(default=datetime.today())
     ftp_directory = luigi.Parameter(default=None)
     monthly = luigi.Parameter(default=False)
-    ftp_host = luigi.Parameter(default=FTP_HOST)
-    ftp_user = luigi.Parameter(default=FTP_USER)
-    ftp_pass = luigi.Parameter(default=FTP_PASS)
-    ftp_path = luigi.Parameter(default=FTP_PATH)
-    ftp_os_sep = luigi.Parameter(default='/')
+    ftp_host = luigi.Parameter(default=FTP_HOST, visibility=ParameterVisibility.HIDDEN)
+    ftp_user = luigi.Parameter(default=FTP_USER, visibility=ParameterVisibility.HIDDEN)
+    ftp_pass = luigi.Parameter(default=FTP_PASS, visibility=ParameterVisibility.HIDDEN)
+    ftp_path = luigi.Parameter(default=FTP_PATH, visibility=ParameterVisibility.HIDDEN)
+    ftp_os_sep = luigi.Parameter(default='/', visibility=ParameterVisibility.HIDDEN)
 
     def output(self):
         # convert luigi.Parameter to string
@@ -199,9 +205,9 @@ class ParseJavaScript(luigi.Task):
 class BigDataToCsv(LoadingDataIntoCsvFile):
 
     # name = luigi.Parameter(default='')
-    parsed_fext = luigi.Parameter(default='prs')
-    success_fext = luigi.Parameter(default='success')
-    lock_fext = luigi.Parameter(default='lock')
+    parsed_fext = luigi.Parameter(default='prs', visibility=ParameterVisibility.HIDDEN)
+    success_fext = luigi.Parameter(default='success', visibility=ParameterVisibility.HIDDEN)
+    lock_fext = luigi.Parameter(default='lock', visibility=ParameterVisibility.HIDDEN)
 
     @property
     def success_fpath(self):
@@ -366,9 +372,6 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
 
 class BaseRunner(luigi.WrapperTask):
-    pass
 
+    last_period = luigi.EnumParameter(enum=LastPeriod)
 
-@BaseRunner.event_handler(luigi.Event.FAILURE)
-def handler():
-    pass

@@ -1,21 +1,23 @@
-from time import sleep
+import os
+from math import floor
+
 
 import attr
 import luigi
 from box import Box
 
 from luigi.util import requires
-import requests
-from requests.auth import HTTPBasicAuth
+from luigi.parameter import ParameterVisibility
 
+from settings import (TMP_DIR, BIGDATA_TMP_DIR, SAMRUK_API_HOST, SAMRUK_API_USER, SAMRUK_API_PASSWORD,
+                      SAMRUK_API_TIMEOUT, SAMRUK_API_TCOM_ID)
+from tasks.base import GzipToFtp, BigDataToCsv, ExternalLocalTarget, BaseRunner
 
-from settings import TMP_DIR, SK_USER, SK_PASSWORD, SK_TCOM_COMPANY_ID
-from tasks.base import GzipToFtp, BigDataToCsv
-
-
+from tcomapi.samruk.parser import SamrukApiParser, SamrukPlansApiParser
 from tcomapi.common.correctors import basic_corrector
-from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT
-from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, append_file)
+from tcomapi.common.dates import today_as_str, DEFAULT_DATE_FORMAT, LastPeriod
+from tcomapi.common.utils import (dict_to_csvrow, save_csvrows,
+                                  append_file, read_lines, build_fpath)
 
 SK_BASE_URL = 'https://integr.skc.kz/'
 
@@ -27,7 +29,7 @@ def default_corrector(value):
 
 
 @attr.s
-class SkSuppliers:
+class SamrukSupplierRow:
     id = attr.ib(converter=default_corrector, default='')
     identifier = attr.ib(converter=basic_corrector, default='')
     name_kk = attr.ib(converter=basic_corrector, default='')
@@ -57,7 +59,7 @@ class SkSuppliers:
 
 
 @attr.s
-class SkPurchases:
+class SamrukPurchaseRow:
     id = attr.ib(converter=default_corrector, default='')
     row_number = attr.ib(converter=default_corrector, default='')
     plan_id = attr.ib(converter=default_corrector, default='')
@@ -85,7 +87,7 @@ class SkPurchases:
 
 
 @attr.s
-class SkKztContracts:
+class SamrukContractRow:
     id = attr.ib(converter=default_corrector, default='')
     contract_id = attr.ib(converter=default_corrector, default='')
     created_date = attr.ib(converter=default_corrector, default='')
@@ -124,7 +126,7 @@ class SkKztContracts:
 
 
 @attr.s
-class SkBadSuppliers:
+class SamrukBadSupplierRow:
     bin_iin = attr.ib(converter=default_corrector, default='')
     name_ru = attr.ib(converter=default_corrector, default='')
     full_name_ru = attr.ib(converter=default_corrector, default='')
@@ -135,7 +137,7 @@ class SkBadSuppliers:
 
 
 @attr.s
-class SkKztPlanRow:
+class SamrukKztPlanRow:
     id = attr.ib(converter=default_corrector, default='')
     year = attr.ib(converter=default_corrector, default='')
     type = attr.ib(converter=default_corrector, default='')
@@ -182,365 +184,360 @@ class SkKztContractSubjectsRow:
     sum_no_nds_year = attr.ib(converter=default_corrector, default='')
 
 
-class SKAllRowsParsing(BigDataToCsv):
+@attr.s
+class SamrukKztPlanItemRow:
+    id = attr.ib(converter=default_corrector, default='')
+    plan_id = attr.ib(converter=default_corrector, default='')
+    tenderpriority = attr.ib(converter=default_corrector, default='')
+    rownumber = attr.ib(converter=default_corrector, default='')
+    extid = attr.ib(converter=default_corrector, default='')
+    tendersubjecttype = attr.ib(converter=default_corrector, default='')
+    mkeicode = attr.ib(converter=default_corrector, default='')
+    price = attr.ib(converter=default_corrector, default='')
+    priceconfidenceto = attr.ib(converter=default_corrector, default='')
+    priceaverage = attr.ib(converter=default_corrector, default='')
+    prevpriceconfidenceto = attr.ib(converter=default_corrector, default='')
+    prevpriceaverage = attr.ib(converter=default_corrector, default='')
+    priceexceeded = attr.ib(converter=default_corrector, default='')
+    count = attr.ib(converter=default_corrector, default='')
+    sumtrunonds = attr.ib(converter=default_corrector, default='')
+    sumtrunds = attr.ib(converter=default_corrector, default='')
+    tendertype = attr.ib(converter=default_corrector, default='')
+    localcontent = attr.ib(converter=default_corrector, default='')
+    katocode = attr.ib(converter=default_corrector, default='')
+    tenderlocation = attr.ib(converter=default_corrector, default='')
+    durationmonth = attr.ib(converter=default_corrector, default='')
+    incotermsconditioncode = attr.ib(converter=default_corrector, default='')
+    deliverycountrycode = attr.ib(converter=default_corrector, default='')
+    deliverylocation = attr.ib(converter=default_corrector, default='')
+    deliverykatocode = attr.ib(converter=default_corrector, default='')
+    deleted = attr.ib(converter=default_corrector, default='')
+    hidden = attr.ib(converter=default_corrector, default='')
+    nonds = attr.ib(converter=default_corrector, default='')
+    transienttender = attr.ib(converter=default_corrector, default='')
+    trucode = attr.ib(converter=default_corrector, default='')
+    organizerbin = attr.ib(converter=default_corrector, default='')
+    subdivision = attr.ib(converter=default_corrector, default='')
+    sort = attr.ib(converter=default_corrector, default='')
+    addattributeru = attr.ib(converter=default_corrector, default='')
+    addattributekk = attr.ib(converter=default_corrector, default='')
+    singlesourcereason = attr.ib(converter=default_corrector, default='')
+    createddate = attr.ib(converter=default_corrector, default='')
+    createduser = attr.ib(converter=default_corrector, default='')
+    lastmodifieddate = attr.ib(converter=default_corrector, default='')
+    lastmodifieduser = attr.ib(converter=default_corrector, default='')
+    executioncount = attr.ib(converter=default_corrector, default='')
+    executionsumnonds = attr.ib(converter=default_corrector, default='')
+    prevcontractcardstatushistory = attr.ib(converter=default_corrector, default='')
+    contractcardtype = attr.ib(converter=default_corrector, default='')
+    checkedskb = attr.ib(converter=default_corrector, default='')
+
+
+class SamrukBaseRunner(BaseRunner):
+    @property
+    def get_after(self):
+        p = LastPeriod.get_period(self.last_period)
+        if p:
+            return p[0]
+        return p
+
+
+class SamrukParsing(BigDataToCsv):
 
     uri = luigi.Parameter()
-    user = luigi.Parameter()
-    password = luigi.Parameter()
 
-    timeout = luigi.IntParameter(default=10)
+    entity = luigi.Parameter(default='content')
+
     limit = luigi.IntParameter(default=100)
-    login = luigi.Parameter(default='')
+    after = luigi.DateParameter(default=None)
 
-    add_par = luigi.Parameter(default='')
+    user = luigi.Parameter(default=SAMRUK_API_USER,
+                           visibility=ParameterVisibility.HIDDEN)
+    password = luigi.Parameter(default=SAMRUK_API_PASSWORD,
+                               visibility=ParameterVisibility.HIDDEN)
+
+    timeout = luigi.IntParameter(default=int(SAMRUK_API_TIMEOUT))
+
+    @property
+    def url(self):
+        return f'{SAMRUK_API_HOST}{self.uri}'
+
+    @property
+    def params(self):
+
+        # initializing parameters
+        params = Box()
+        params.page = 0
+        params.size = self.limit
+
+        # samruk api doesn't have full support
+        # for retrieving data for some period
+        # it's only after parameter
+        if self.after:
+            params.after = str(self.after)
+
+        return params
 
     def run(self):
-        error_timeout = self.timeout * 3
-        # headers = dict()
-        # headers['Authorization'] = self.token
-        url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}'
-        if self.login:
-            url += f'&login={self.login}'
-        page = 0
-        total = 0
-        parsed_count = 0
-        while url:
-            try:
-                r = requests.get(url, timeout=self.timeout,
-                                 auth=HTTPBasicAuth(self.user, self.password))
-            except Exception:
-                sleep(error_timeout)
-            else:
-                # print(url)
-                response = Box(r.json())
-                if response.content:
-                    page += 1
-                    url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&page={page}'
-                    if self.login:
-                        url += f'&login={self.login}'
-                else:
-                    url = None
+        params = self.params
+        parser = SamrukApiParser(self.url, self.entity,
+                                 self.timeout, self.user, self.password,
+                                 params.to_dict())
 
-                total = response.totalElements
-                raw_items = response.content
-                # data = dict_to_csvrow(raw_items, self.struct)
-                data = [dict_to_csvrow(d, self.struct) for d in raw_items]
-                save_csvrows(self.output().path, data)
-                parsed_count += len(raw_items)
-                sleep(self.timeout)
+        for rows in parser:
+            data = [dict_to_csvrow(d, self.struct) for d in rows]
+            save_csvrows(self.output().path, data)
+            self.set_status(parser.status_message, parser.percent_done)
 
-            self.set_status_message(f'Total: {total}. Parsed: {parsed_count}')
-            self.set_progress_percentage(round((parsed_count * 100)/total))
-
-        stat = dict(total=total, parsed=parsed_count)
-        append_file(self.success_fpath, str(stat))
+        append_file(self.success_fpath, 'good')
 
 
-class SKAfterDateRowsParsing(BigDataToCsv):
-
-    uri = luigi.Parameter()
-    after = luigi.Parameter()
-    user = luigi.Parameter()
-    password = luigi.Parameter()
-
-    timeout = luigi.IntParameter(default=10)
-    limit = luigi.IntParameter(default=100)
-    login = luigi.Parameter(default='')
-
-    add_par = luigi.Parameter(default='')
-
-    def run(self):
-        error_timeout = self.timeout * 3
-        # headers = dict()
-        # headers['Authorization'] = self.token
-
-        url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}'
-        if self.login:
-            url += f'&login={self.login}'
-        page = 0
-        total = 100
-        parsed_count = 0
-        while url:
-            try:
-
-                r = requests.get(url, timeout=self.timeout,
-                                 auth=HTTPBasicAuth(self.user, self.password))
-            except Exception:
-                sleep(error_timeout)
-            else:
-                print(r.json())
-                response = Box(r.json())
-
-                raw_items = response.content
-                # data = dict_to_csvrow(raw_items, self.struct)
-                data = [dict_to_csvrow(d, self.struct) for d in raw_items]
-                save_csvrows(self.output().path, data)
-                parsed_count += len(raw_items)
-
-                if response.totalElements > parsed_count:
-                    page += 1
-                    url = f'{SK_BASE_URL}{self.uri}?{self.add_par}&size={self.limit}&after={self.after}&page={page}'
-                    if self.login:
-                        url += f'&login={self.login}'
-                else:
-                    url = None
-
-                sleep(self.timeout)
-
-        stat = dict(total=total, parsed=parsed_count)
-        append_file(self.success_fpath, str(stat))
-
-
-class SkAllSuppliersToCsv(SKAllRowsParsing):
+class SamrukSuppliersParsingToCsv(SamrukParsing):
     pass
 
 
-@requires(SkAllSuppliersToCsv)
-class GzipSkAllSuppliersToCsv(GzipToFtp):
+@requires(SamrukSuppliersParsingToCsv)
+class SamrukSuppliersUpload(GzipToFtp):
     pass
 
 
-class SkAllKztPurchasesToCsv(SKAllRowsParsing):
-    pass
-
-
-@requires(SkAllKztPurchasesToCsv)
-class GzipSkAllKztPurchasesToCsv(GzipToFtp):
-    pass
-
-
-class SkAllKztContractsToCsv(SKAllRowsParsing):
-    pass
-
-
-@requires(SkAllKztContractsToCsv)
-class GzipSkAllKztContractsToCsv(GzipToFtp):
-    pass
-
-
-class SkAllKztContractSubjectsToCsv(SKAllRowsParsing):
-    pass
-
-
-@requires(SkAllKztContractSubjectsToCsv)
-class GzipSkAllKztContractSubjectsToCsv(GzipToFtp):
-    pass
-
-
-class SkAllBadSuppliers(SKAllRowsParsing):
-    pass
-
-
-@requires(SkAllBadSuppliers)
-class GzipSkAllBadSuppliers(GzipToFtp):
-    pass
-
-
-class SkAllKztPlans(SKAllRowsParsing):
-    pass
-
-
-@requires(SkAllKztPlans)
-class GzipSkAllKztPlans(GzipToFtp):
-    pass
-
-
-class SkAllSuppliers(luigi.WrapperTask):
+class SamrukSuppliers(SamrukBaseRunner):
     def requires(self):
-        return GzipSkAllSuppliersToCsv(
+
+        return SamrukSuppliersUpload(
             directory=TMP_DIR,
             sep=';',
             uri='data/suppliers/supplierList',
-            name='sk_suppliers',
-            struct=SkSuppliers,
-            user=SK_USER,
-            password=SK_PASSWORD
+            name='samruk_suppliers',
+            struct=SamrukSupplierRow,
+            after=self.get_after
         )
 
 
-class SkAllKztPurchases(luigi.WrapperTask):
-    def requires(self):
-        return GzipSkAllKztPurchasesToCsv(
-            directory=TMP_DIR,
-            sep=';',
-            uri='data/purchases/purchaseList',
-            name='sk_kzt_purchases',
-            struct=SkPurchases,
-            user=SK_USER,
-            password=SK_PASSWORD,
-            login=SK_USER
-        )
+class SamrukBadSuppliersParsingToCsv(SamrukParsing):
+    pass
 
 
-class SkKztAllContracts(luigi.WrapperTask):
+@requires(SamrukBadSuppliersParsingToCsv)
+class SamrukBadSuppliersUpload(GzipToFtp):
+    pass
+
+
+class SamrukBadSuppliers(SamrukBaseRunner):
     def requires(self):
 
-        return GzipSkAllKztContractsToCsv(
-            directory=TMP_DIR,
-            sep=';',
-            uri='data/contract/contractList',
-            add_par=f'companyIdentifier={SK_TCOM_COMPANY_ID}',
-            name='sk_kzt_contracts',
-            struct=SkKztContracts,
-            user=SK_USER,
-            password=SK_PASSWORD,
-            login=SK_USER
-        )
-
-
-class SkKztAllContractSubjects(luigi.WrapperTask):
-    def requires(self):
-
-        return GzipSkAllKztContractSubjectsToCsv(
-            directory=TMP_DIR,
-            sep=';',
-            uri='data/contract/contractSubjectList',
-            add_par=f'companyIdentifier={SK_TCOM_COMPANY_ID}',
-            name='sk_kzt_contract_subjects',
-            struct=SkKztContracts,
-            user=SK_USER,
-            password=SK_PASSWORD,
-            login=SK_USER
-        )
-
-
-class SkKztAllBadSuppliers(luigi.WrapperTask):
-    def requires(self):
-        return GzipSkAllBadSuppliers(
+        return SamrukBadSuppliersUpload(
             directory=TMP_DIR,
             sep=';',
             uri='data/bad-supplier/badSupplierList',
-            name='sk_bad_suppliers',
-            struct=SkBadSuppliers,
-            user=SK_USER,
-            password=SK_PASSWORD,
-            login=SK_USER
+            name='samruk_bad_suppliers',
+            struct=SamrukBadSupplierRow,
+            after=self.get_after
         )
 
 
-class SkKztAllPlans(luigi.WrapperTask):
+class SamrukKztPurchasesParsingToCsv(SamrukParsing):
+
+    @property
+    def params(self):
+        params = super().params
+        params.login = self.user
+        return params
+
+
+@requires(SamrukKztPurchasesParsingToCsv)
+class SamrukKztPurchasesUpload(GzipToFtp):
+    pass
+
+
+class SamrukKztPurchases(SamrukBaseRunner):
     def requires(self):
-        return GzipSkAllKztPlans(
+        return SamrukKztPurchasesUpload(
             directory=TMP_DIR,
-            ftp_directory='samruk',
+            sep=';',
+            uri='data/purchases/purchaseList',
+            name='samruk_kzt_purchases',
+            struct=SamrukPurchaseRow,
+            after=self.get_after
+        )
+
+
+class SamrukKztContractsParsingToCsv(SamrukParsing):
+
+    company_id = luigi.Parameter(visibility=ParameterVisibility.HIDDEN)
+
+    @property
+    def params(self):
+        params = super().params
+        params.login = self.user
+        params.companyIdentifier = self.company_id
+        return params
+
+
+@requires(SamrukKztContractsParsingToCsv)
+class SamrukKztContractsUpload(GzipToFtp):
+    pass
+
+
+class SamrukKztContracts(SamrukBaseRunner):
+    def requires(self):
+        return SamrukKztContractsUpload(
+            directory=TMP_DIR,
+            sep=';',
+            uri='data/contract/contractList',
+            name='samruk_kzt_contracts',
+            struct=SamrukContractRow,
+            company_id=SAMRUK_API_TCOM_ID,
+            after=self.get_after
+        )
+
+
+class SamrukPlansParsing(SamrukParsing):
+    def run(self):
+        params = self.params
+        parser = SamrukPlansApiParser(self.url, self.entity,
+                                      self.timeout, self.user, self.password,
+                                      params.to_dict())
+
+        for rows in parser:
+            data = [dict_to_csvrow(d, self.struct) for d in rows]
+            save_csvrows(self.output().path, data)
+            self.set_status(parser.status_message, parser.percent_done)
+
+        append_file(self.success_fpath, 'good')
+
+
+class SamrukKztPlansParsingToCsv(SamrukPlansParsing):
+    pass
+
+
+@requires(SamrukKztPlansParsingToCsv)
+class SamrukKztPlansUpload(GzipToFtp):
+    pass
+
+
+class SamrukKztPlans(luigi.WrapperTask):
+    def requires(self):
+        return SamrukKztPlansUpload(
+            directory=TMP_DIR,
             sep=';',
             uri='proxy/planproxy/esb-api/plan',
-            name='sk_kzt_plans',
-            struct=SkKztPlanRow,
-            user=SK_USER,
-            password=SK_PASSWORD
+            name='samruk_kzt_plans',
+            struct=SamrukKztPlanRow
         )
 
 
-class SkSuppliersForDateToCsv(SKAfterDateRowsParsing):
-    pass
+class SamrukPlanItemsParsing(SamrukParsing):
 
-
-@requires(SkSuppliersForDateToCsv)
-class GzipSkSuppliersForDateToCsv(GzipToFtp):
-    pass
-
-
-class SkKztPurchasesForDateToCsv(SKAfterDateRowsParsing):
-    pass
-
-
-@requires(SkKztPurchasesForDateToCsv)
-class GzipSkKztPurchasesForDateToCsv(GzipToFtp):
-    pass
-
-
-class SkAllKztContractsForDateToCsv(SKAfterDateRowsParsing):
-    pass
-
-
-@requires(SkAllKztContractsForDateToCsv)
-class GzipSkAllKztContractsForDateToCsv(GzipToFtp):
-    pass
-
-
-class SkBadSuppliersForDateToCsv(SKAfterDateRowsParsing):
-    pass
-
-
-@requires(SkBadSuppliersForDateToCsv)
-class GzipSkBadSuppliersForDateToCsv(GzipToFtp):
-    pass
-
-
-class SkSuppliersForDate(luigi.WrapperTask):
-
-    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-    # after = luigi.Parameter(default='2021-07-05')
+    # buffers
+    plan_id = None
+    failed_page = None
+    total_parsed_count = 0
 
     def requires(self):
-        return GzipSkSuppliersForDateToCsv(
-            directory=TMP_DIR,
-            ftp_directory='samruk',
-            after=self.after,
-            sep=';',
-            uri='data/suppliers/supplierList',
-            name='sk_suppliers',
-            struct=SkSuppliers,
-            user=SK_USER,
-            password=SK_PASSWORD
-        )
+        return ExternalLocalTarget('samruk_kzt_plans')
+
+    def lock_data(self):
+
+        data = Box()
+
+        if os.path.exists(self.lock_fpath):
+            # raw = read_file(self.lock_fpath)
+            # raw = raw.replace("'", '"')
+            # data = json.loads(raw)
+            data = Box().from_json(filename=self.lock_fpath)
+
+        return data
+
+    @property
+    def params(self):
+        params = super().params
+        params.planId = self.plan_id
+
+        if self.failed_page:
+            params.page = self.failed_page
+
+        return params
+
+    def plans_ids(self):
+
+        rows = read_lines(self.input().path)
+        plan_ids = [row.split(self.sep)[0] for row in rows]
+
+        # get meta data
+        d = self.lock_data()
+
+        last_id = None
+
+        if d:
+            last_id = d.last_id
+
+        return plan_ids
+
+    def status(self):
+        # TODO implement override it with additional info about curr conv id and count of left ids ot parse
+        return f'Current conversation ID:{self.plan_id}. Total parsed count: {self.total_parsed_count}'
+
+    def run(self):
+
+        plans_ids = self.plans_ids()
+
+        meta = self.lock_data()
+
+        # page for last successfully parsed conversation
+        if meta:
+            self.failed_page = meta.page + 1
+
+        parsed_plans_count = 0
+        parsed_total_items = 0
+        plans_total = len(plans_ids)
+
+        for p_id in plans_ids:
+            self.plan_id = p_id
+            params = self.params
+            parser = SamrukPlansApiParser(self.url, self.entity, self.timeout,
+                                          self.user, self.password, params.to_dict())
+
+            for rows in parser:
+                _rows = []
+                for d in rows:
+                    _rows.append({**d, **{'planId': p_id}})
+
+                data = [dict_to_csvrow(d, self.struct) for d in _rows]
+                save_csvrows(self.output().path, data)
+                meta.page, meta.last_id = parser.page, p_id
+                self.lock(meta.to_json())
+
+                parsed_total_items += len(rows)
+                status = f'Total conversation IDs: {len(plans_ids)}.'
+                status += f' Parsed plan IDs: {parsed_plans_count} ' + '\n'
+                status += f'Current conversation ID: {p_id}. Total parsed items: {parsed_total_items}. '
+                status = status + '\n' + parser.status_message
+                percentage = floor((parsed_plans_count * 100) / plans_total)
+                self.set_status(status, percentage)
+
+            parsed_plans_count += 1
+
+        self.success('good')
 
 
-class SkKztPurchasesForDate(luigi.WrapperTask):
+class SamrukKztPlanItemsParsingToCsv(SamrukPlanItemsParsing):
+    pass
 
-    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-    # after = luigi.Parameter(default='2021-07-05')
 
+@requires(SamrukKztPlanItemsParsingToCsv)
+class SamrukKztPlanItemsUpload(GzipToFtp):
+    pass
+
+
+class SamrukKztPlanItems(luigi.WrapperTask):
     def requires(self):
-        return GzipSkKztPurchasesForDateToCsv(
+        return SamrukKztPlanItemsUpload(
             directory=TMP_DIR,
-            ftp_directory='samruk',
-            after=self.after,
             sep=';',
-            uri='data/purchases/purchaseList',
-            name='sk_kzt_purchases',
-            struct=SkPurchases,
-            user=SK_USER,
-            password=SK_PASSWORD,
-            login=SK_USER
-        )
-
-
-class SkKztContractsForDate(luigi.WrapperTask):
-
-    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-
-    def requires(self):
-        return GzipSkAllKztContractsForDateToCsv(
-            directory=TMP_DIR,
-            ftp_directory='samruk',
-            after=self.after,
-            sep=';',
-            uri='data/contract/contractList',
-            add_par=f'companyIdentifier={SK_TCOM_COMPANY_ID}',
-            name='sk_kzt_contracts',
-            struct=SkKztContracts,
-            user=SK_USER,
-            password=SK_PASSWORD
-        )
-
-
-class SkBadSuppliersForDate(luigi.WrapperTask):
-
-    after = luigi.Parameter(default=today_as_str(dt_format=DEFAULT_DATE_FORMAT))
-
-    def requires(self):
-        return GzipSkBadSuppliersForDateToCsv(
-            directory=TMP_DIR,
-            ftp_directory='samruk',
-            after=self.after,
-            sep=';',
-            uri='data/bad-supplier/badSupplierList',
-            name='sk_bad_suppliers',
-            struct=SkBadSuppliers,
-            user=SK_USER,
-            password=SK_PASSWORD
+            uri='proxy/planproxy/esb-api/plan-item',
+            name='samruk_kzt_plans_items',
+            struct=SamrukKztPlanItemRow
         )
 
 

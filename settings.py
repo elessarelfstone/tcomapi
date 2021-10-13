@@ -55,10 +55,11 @@ TELECOM_API_USER_NAME = os.getenv('TELECOM_API_USER_NAME')
 TELECOM_API_PASSWORD = os.getenv('TELECOM_API_PASSWORD')
 TELECOM_API_URL_PATTERN = f'https://{TELECOM_API_HOST}/api/v1/citizen/phone-verification-state/{{}}/{{}}'
 
-
-SK_USER = os.getenv('SK_USER')
-SK_PASSWORD = os.getenv('SK_PASSWORD')
-SK_TCOM_COMPANY_ID = os.getenv('SK_TCOM_COMPANY_ID')
+SAMRUK_API_HOST = os.getenv('SAMRUK_API_HOST')
+SAMRUK_API_USER = os.getenv('SAMRUK_API_USER')
+SAMRUK_API_PASSWORD = os.getenv('SAMRUK_API_PASSWORD')
+SAMRUK_API_TIMEOUT = os.getenv('SAMRUK_API_TIMEOUT')
+SAMRUK_API_TCOM_ID = os.getenv('SAMRUK_API_TCOM_ID')
 
 
 INFOBIP_API_URL = 'https://9rrrjd.api.infobip.com/ccaas/1/'
