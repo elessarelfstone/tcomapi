@@ -306,6 +306,7 @@ class SamrukSuppliers(SamrukBaseRunner):
 
         return SamrukSuppliersUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='data/suppliers/supplierList',
             name='samruk_suppliers',
@@ -328,6 +329,7 @@ class SamrukBadSuppliers(SamrukBaseRunner):
 
         return SamrukBadSuppliersUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='data/bad-supplier/badSupplierList',
             name='samruk_bad_suppliers',
@@ -354,6 +356,7 @@ class SamrukKztPurchases(SamrukBaseRunner):
     def requires(self):
         return SamrukKztPurchasesUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='data/purchases/purchaseList',
             name='samruk_kzt_purchases',
@@ -383,6 +386,7 @@ class SamrukKztContracts(SamrukBaseRunner):
     def requires(self):
         return SamrukKztContractsUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='data/contract/contractList',
             name='samruk_kzt_contracts',
@@ -420,6 +424,7 @@ class SamrukKztPlans(luigi.WrapperTask):
     def requires(self):
         return SamrukKztPlansUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='proxy/planproxy/esb-api/plan',
             name='samruk_kzt_plans',
@@ -534,6 +539,7 @@ class SamrukKztPlanItems(luigi.WrapperTask):
     def requires(self):
         return SamrukKztPlanItemsUpload(
             directory=TMP_DIR,
+            ftp_directory='samruk',
             sep=';',
             uri='proxy/planproxy/esb-api/plan-item',
             name='samruk_kzt_plans_items',
