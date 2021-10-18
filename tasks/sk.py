@@ -187,7 +187,7 @@ class SkKztContractSubjectsRow:
 @attr.s
 class SamrukKztPlanItemRow:
     id = attr.ib(converter=default_corrector, default='')
-    plan_id = attr.ib(converter=default_corrector, default='')
+    planid = attr.ib(converter=default_corrector, default='')
     tenderpriority = attr.ib(converter=default_corrector, default='')
     rownumber = attr.ib(converter=default_corrector, default='')
     extid = attr.ib(converter=default_corrector, default='')
@@ -506,7 +506,7 @@ class SamrukPlanItemsParsing(SamrukParsing):
             for rows in parser:
                 _rows = []
                 for d in rows:
-                    _rows.append({**d, **{'planId': p_id}})
+                    _rows.append({**d, **{'planid': p_id}})
 
                 data = [dict_to_csvrow(d, self.struct) for d in _rows]
                 save_csvrows(self.output().path, data)
@@ -542,7 +542,7 @@ class SamrukKztPlanItems(luigi.WrapperTask):
             ftp_directory='samruk',
             sep=';',
             uri='proxy/planproxy/esb-api/plan-item',
-            name='samruk_kzt_plans_items',
+            name='samruk_kzt_plan_items',
             struct=SamrukKztPlanItemRow
         )
 
