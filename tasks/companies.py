@@ -61,13 +61,14 @@ class RCutUrlFile(luigi.Task):
 
     name = luigi.Parameter()
     juridical_type = luigi.IntParameter()
+    statuses = luigi.ListParameter(default=[39354, 39355, 39356, 39358, 534829, 39359])
     kato_number = luigi.IntParameter(default=2153)
 
     def output(self):
         return luigi.LocalTarget(os.path.join(TMP_DIR, f'{self.name}.url'))
 
     def run(self):
-        rcutparser = SgovRCutParser()
+        rcutparser = SgovRCutParser(self.statuses)
         url = rcutparser.get_url(self.juridical_type)
         append_file(self.output().path, url)
 
@@ -242,6 +243,43 @@ class CompaniesLegalEntities(luigi.WrapperTask):
 class CompaniesEntrepreneurs(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesRCutToFtp(name=f'statgovkz_{rcut_entrepreneurs}', skiptop=2,
+                                     ftp_directory=rcut_entrepreneurs,
+                                     monthly=True)
+
+
+class CompaniesActiveForeignBranches(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_active_{rcut_foreign_branches}',
+                                     skiptop=2,
+                                     ftp_directory=rcut_foreign_branches,
+                                     monthly=True)
+
+
+class CompaniesActiveLegalBranches(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_active_{rcut_legal_branches}',
+                                     skiptop=2,
+                                     ftp_directory=rcut_legal_branches,
+                                     monthly=True)
+
+
+class CompaniesActiveJointVentures(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_active_{rcut_joint_ventures}', skiptop=2,
+                                     ftp_directory=rcut_joint_ventures,
+                                     monthly=True)
+
+
+class CompaniesActiveLegalEntities(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_active_{rcut_legal_entities}', skiptop=2,
+                                     ftp_directory=rcut_legal_entities,
+                                     monthly=True)
+
+
+class CompaniesActiveEntrepreneurs(luigi.WrapperTask):
+    def requires(self):
+        yield GzipCompaniesRCutToFtp(name=f'statgovkz_active_{rcut_entrepreneurs}', skiptop=2,
                                      ftp_directory=rcut_entrepreneurs,
                                      monthly=True)
 

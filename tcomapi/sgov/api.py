@@ -79,9 +79,10 @@ class SgovRCutParser:
     status_class_version_id = 1989
 
     # could be changed
-    statuses = [39354, 39355, 39356, 39358, 534829, 39359]
+    # statuses = [39354, 39355, 39356, 39358, 534829, 39359]
 
-    def __init__(self, timeout=620):
+    def __init__(self, statuses, timeout=620):
+        self.statuses = statuses
         self.timeout = timeout
         try:
             r = requests.get(self.rcuts_url, verify=False)
