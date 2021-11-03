@@ -373,5 +373,5 @@ class ParseWebExcelFileFromArchive(luigi.Task):
 
 class BaseRunner(luigi.WrapperTask):
 
-    last_period = luigi.EnumParameter(enum=LastPeriod)
+    last_period = luigi.EnumParameter(enum=LastPeriod, default=LastPeriod.a)
 
