@@ -396,6 +396,37 @@ class SamrukKztContracts(SamrukBaseRunner):
         )
 
 
+class SamrukKztContractSubjectsParsingToCsv(SamrukParsing):
+
+    company_id = luigi.Parameter(visibility=ParameterVisibility.HIDDEN)
+
+    @property
+    def params(self):
+        params = super().params
+        params.login = self.user
+        params.companyIdentifier = self.company_id
+        return params
+
+
+@requires(SamrukKztContractSubjectsParsingToCsv)
+class SamrukKztContractSubjectsUpload(GzipToFtp):
+    pass
+
+
+class SamrukKztContractSubjects(SamrukBaseRunner):
+    def requires(self):
+        return SamrukKztContractSubjectsUpload(
+            directory=TMP_DIR,
+            ftp_directory='samruk',
+            sep=';',
+            uri='data/contract/contractSubjectList',
+            name='samruk_kzt_contract_subjects',
+            struct=SkKztContractSubjectsRow,
+            company_id=SAMRUK_API_TCOM_ID,
+            after=self.get_after
+        )
+
+
 class SamrukPlansParsing(SamrukParsing):
     def run(self):
         params = self.params
