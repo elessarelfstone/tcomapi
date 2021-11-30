@@ -17,11 +17,16 @@ class LastPeriod(enum.Enum):
 
     @classmethod
     def get_period(cls, val):
+
+        t = datetime.today()
+        yt = datetime.today() - timedelta(days=1)
+
         if val == cls.t:
             # t = today_as_str(DEFAULT_DATE_FORMAT)
-            t = datetime.today()
+
             return t, t
-        # TODO implement other periods
+        elif val == cls.ld:
+            return yt, yt
         else:
             return None
 

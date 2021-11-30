@@ -29,8 +29,6 @@ from settings import (BIGDATA_TMP_DIR, TMP_DIR, ARCH_DIR, FTP_PATH,
 
 
 
-
-
 @attr.s
 class DataList(object):
     data = attr.ib()
