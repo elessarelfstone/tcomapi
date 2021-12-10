@@ -15,6 +15,7 @@ from tcomapi.gosreestr import gosreestr_parse_new_uids
 from tasks.base import BaseTask, LoadingDataIntoFile
 from settings import FTP_HOST, FTP_PASS, FTP_USER, FTP_PATH, FTP_IN_PATH, BIGDATA_TMP_DIR
 
+
 class NoUidsToParseTaxPayments(Exception):
     pass
 

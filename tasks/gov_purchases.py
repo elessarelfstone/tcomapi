@@ -143,6 +143,35 @@ class GoszakupUntrustedSupplierRow:
     system_id = attr.ib(default='')
 
 
+@attr.s
+class GoszakupContractTypeRow:
+    id = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+
+
+@attr.s
+class GoszakupContractStatusRow:
+    id = attr.ib(default='')
+    code = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+
+
+@attr.s
+class GoszakupTenderMethodRow:
+    code = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    is_active = attr.ib(default='')
+    type = attr.ib(default='')
+    symbol_code = attr.ib(default='')
+    f1 = attr.ib(default='')
+    ord = attr.ib(default='')
+    f2 = attr.ib(default='')
+    id = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -255,6 +284,66 @@ class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
                                                              name='goszakup_untrusted',
                                                              monthly=True,
                                                              struct=GoszakupUntrustedSupplierRow)
+
+
+class GoszakupContractTypesParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupContractTypesParsingToCsv)
+class GzipGoszakupContractTypesParsingToCsv(GzipToFtp):
+    pass
+
+
+class GzipGoszakupContractTypes(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupContractTypesParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                     ftp_directory='goszakup',
+                                                     sep=';',
+                                                     url='https://ows.goszakup.gov.kz/v2/refs/ref_contract_type',
+                                                     name='goszakup_contract_type',
+                                                     monthly=True,
+                                                     struct=GoszakupContractTypeRow)
+
+
+class GoszakupContractStatusesParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupContractStatusesParsingToCsv)
+class GzipGoszakupContractStatusesParsingToCsv(GzipToFtp):
+    pass
+
+
+class GzipGoszakupContractStatuses(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupContractStatusesParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                        ftp_directory='goszakup',
+                                                        sep=';',
+                                                        url='https://ows.goszakup.gov.kz/v2/refs/ref_contract_status',
+                                                        name='goszakup_contract_status',
+                                                        monthly=True,
+                                                        struct=GoszakupContractStatusRow)
+
+
+class GoszakupTradeMethodsParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupTradeMethodsParsingToCsv)
+class GzipGoszakupTradeMethodsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupTradeMethods(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupContractStatusesParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                        ftp_directory='goszakup',
+                                                        sep=';',
+                                                        url='https://ows.goszakup.gov.kz/v2/refs/ref_trade_methods',
+                                                        name='goszakup_trade_methods',
+                                                        monthly=True,
+                                                        struct=GoszakupTenderMethodRow)
 
 
 class GoszakupCompaniesParsingToCsv(GraphQlParsing):

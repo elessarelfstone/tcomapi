@@ -1,22 +1,34 @@
+import fnmatch
 from datetime import datetime, timedelta
+from os.path import basename, exists, join
+
+import attr
 
 import luigi
-import attr
 from cassandra.cluster import Cluster, SimpleStatement
 from cassandra.auth import PlainTextAuthProvider
 from cassandra.query import tuple_factory, named_tuple_factory
 from luigi.util import requires
+from luigi.contrib.ftp import RemoteTarget, RemoteFileSystem
 
 from settings import (_3BEEP_CLUSTER_HOST, _3BEEP_CLUSTER_USER,
-                      _3BEEP_CLUSTER_PASS, _3BEEP_CLUSTER_KEYSPACE, TMP_DIR)
+                      _3BEEP_CLUSTER_PASS, _3BEEP_CLUSTER_KEYSPACE, TMP_DIR,
+                      FTP_IN_PATH, FTP_HOST, FTP_PATH,
+                      FTP_PASS, FTP_USER, BIGDATA_TMP_DIR)
 
 from tasks.base import LoadingDataIntoCsvFile, BaseRunner, GzipToFtp
 from tcomapi.common.dates import LastPeriod
-from tcomapi.common.utils import dict_to_csvrow, save_csvrows
+from tcomapi.common.dataflow import last_file_with_bins
+from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, build_fpath,
+                                  read_file, fname_noext)
 
 chat_table = 'prod_3beep.chat_rooms_messages'
 session = None
 cluster_hosts = []
+
+
+class NoLastMessageIdToParseTaxPayments(Exception):
+    pass
 
 
 @attr.s
@@ -29,26 +41,65 @@ class ChatMessageRow:
     message_updated_date_time = attr.ib(default='')
 
 
+def last_file_with_message_id(flist):
+    dates = []
+    for f in flist:
+        fname = fname_noext(f)
+        _dt = fname.split('.')[0].split('_')[6]
+        dt = datetime.strptime(_dt, '%Y-%m-%d')
+        dates.append((dt, f))
+
+    dates.sort(key=lambda x: x[1])
+
+    return dates[-1][1]
+
+
 def prepare_session(host, user, password, keyspace):
     auth_provider = PlainTextAuthProvider(username=user,
                                           password=password)
     global session
     # cluster = Cluster(cluster_hosts.append(host), auth_provider=auth_provider)
-    cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
+    cluster = Cluster(['10.8.158.8', '10.8.158.9', '10.8.158.10'], auth_provider=auth_provider)
+    # cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
     session = cluster.connect(keyspace)
     session.row_factory = named_tuple_factory
 
 
-def load(dates_range):
+def load(last_message_id):
     sql = """select  chat_room_id,
               message_id,
               message_author_id,
               message_created_date_time,
               message_text,
               message_updated_date_time """
-    sql += f"from {chat_table} where message_created_date_time > '{dates_range[0]}' and message_created_date_time < '{dates_range[1]}' ALLOW FILTERING"
+    sql += f"from {chat_table} where message_id > {last_message_id} ALLOW FILTERING"
     print(sql)
     return session.execute(SimpleStatement(sql, fetch_size=500))
+
+
+class LastMessageID(luigi.ExternalTask):
+
+    last_message_fname_patt = 'export_cassandra_3beep_last_message_id_*.csv'
+
+    def output(self):
+        rmfs = RemoteFileSystem(FTP_HOST, username=FTP_USER, password=FTP_PASS)
+
+        files = None
+
+        if rmfs.exists(FTP_IN_PATH):
+            lst = rmfs.listdir(FTP_IN_PATH)
+            files = fnmatch.filter([basename(l) for l in lst], self.last_message_fname_patt)
+        else:
+            NoLastMessageIdToParseTaxPayments('Could not find directory with bins')
+
+        if not files:
+            raise NoLastMessageIdToParseTaxPayments('Could not find any file with bins')
+
+        # bins_fpath = join(FTP_IN_PATH, last_file_with_bins(files))
+        print(files)
+        bins_fpath = FTP_IN_PATH + '/' + last_file_with_message_id(files)
+        return RemoteTarget(bins_fpath, FTP_HOST,
+                            username=FTP_USER, password=FTP_PASS)
 
 
 class ChatMessagesPeriodDataLoading(LoadingDataIntoCsvFile):
@@ -60,9 +111,22 @@ class ChatMessagesPeriodDataLoading(LoadingDataIntoCsvFile):
     password = luigi.Parameter(default=_3BEEP_CLUSTER_PASS)
     keyspace = luigi.Parameter(default=_3BEEP_CLUSTER_KEYSPACE)
 
+    @property
+    def last_message_id(self):
+        bids_fpath = build_fpath(self.directory, self.name, 'lmsgid')
+
+        if not exists(bids_fpath):
+            self.input().get(bids_fpath)
+
+        return read_file(bids_fpath)
+
+    def requires(self):
+        return LastMessageID()
+
     def run(self):
+
         prepare_session(self.host, self.user, self.password, self.keyspace)
-        rows = load(self.dates_range)
+        rows = load(self.last_message_id)
         data = [dict_to_csvrow(dict(d._asdict()), self.struct) for d in rows]
         save_csvrows(self.output().path, data)
 
@@ -90,8 +154,7 @@ class ChatMessagesForYesterday(BaseRunner):
     def dates_range(self):
         yt = datetime.today() - timedelta(days=1)
         d_before = yt - timedelta(days=1)
-
-        return d_before.strftime('%d-%m-%Y %H:%M:%S'), datetime.today().strftime('%d-%m-%Y %H:%M:%S')
+        return d_before.strftime('%Y-%m-%d %H:%M:%S'), datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     def requires(self):
         print(self.dates_range)
@@ -102,6 +165,7 @@ class ChatMessagesForYesterday(BaseRunner):
             struct=ChatMessageRow,
             dates_range=self.dates_range
             )
+
 
 if __name__ == '__main__':
     luigi.run()

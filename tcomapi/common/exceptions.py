@@ -16,3 +16,4 @@ class ServerError(Exception):
 
 class FtpDirectoryNotExists(Exception):
     pass
+
