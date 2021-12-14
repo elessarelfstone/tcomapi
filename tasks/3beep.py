@@ -25,6 +25,7 @@ from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, build_fpath,
 chat_table = 'prod_3beep.chat_rooms_messages'
 session = None
 cluster_hosts = []
+fetch_size = 2000
 
 
 class NoLastMessageIdToParseTaxPayments(Exception):
@@ -37,7 +38,7 @@ class ChatMessageRow:
     message_id = attr.ib(default='')
     message_author_id = attr.ib(default='')
     message_created_date_time = attr.ib(default='')
-    message_text = attr.ib(default='')
+    message_text = attr.ib(default= lambda x: f'"{x}"')
     message_updated_date_time = attr.ib(default='')
 
 
@@ -65,6 +66,18 @@ def prepare_session(host, user, password, keyspace):
     session.row_factory = named_tuple_factory
 
 
+
+def load_all():
+    sql = """select  chat_room_id,
+              message_id,
+              message_author_id,
+              message_created_date_time,
+              message_text,
+              message_updated_date_time """
+    sql += f"from {chat_table} "
+    return session.execute(SimpleStatement(sql, fetch_size=fetch_size))
+
+
 def load(last_message_id):
     sql = """select  chat_room_id,
               message_id,
@@ -73,7 +86,6 @@ def load(last_message_id):
               message_text,
               message_updated_date_time """
     sql += f"from {chat_table} where message_id > {last_message_id} ALLOW FILTERING"
-    print(sql)
     return session.execute(SimpleStatement(sql, fetch_size=500))
 
 
@@ -96,10 +108,52 @@ class LastMessageID(luigi.ExternalTask):
             raise NoLastMessageIdToParseTaxPayments('Could not find any file with bins')
 
         # bins_fpath = join(FTP_IN_PATH, last_file_with_bins(files))
-        print(files)
         bins_fpath = FTP_IN_PATH + '/' + last_file_with_message_id(files)
         return RemoteTarget(bins_fpath, FTP_HOST,
                             username=FTP_USER, password=FTP_PASS)
+
+
+class ChatMessagesPeriodDataLoadingAll(LoadingDataIntoCsvFile):
+
+    host = luigi.Parameter(default=_3BEEP_CLUSTER_HOST)
+    user = luigi.Parameter(default=_3BEEP_CLUSTER_USER)
+    password = luigi.Parameter(default=_3BEEP_CLUSTER_PASS)
+    keyspace = luigi.Parameter(default=_3BEEP_CLUSTER_KEYSPACE)
+
+    def run(self):
+
+        prepare_session(self.host, self.user, self.password, self.keyspace)
+        data, rows = [], []
+        all_count = 0
+        count = 0
+        # ows = load_all()
+        for row in load_all():
+            rows.append(row)
+            count += 1
+            if count == fetch_size:
+                data = [dict_to_csvrow(dict(d._asdict()), ChatMessageRow) for d in rows]
+                save_csvrows(self.output().path, data)
+                all_count += count
+                count = 0
+                self.set_status(f'Parsed: {all_count}', 0)
+                rows = []
+
+
+@requires(ChatMessagesPeriodDataLoadingAll)
+class GzipChatMessagesPeriodDataAll(GzipToFtp):
+    pass
+
+
+class ChatMessagesAll(BaseRunner):
+
+    def requires(self):
+        # return ChatMessagesPeriodDataLoadingAll(
+        return GzipChatMessagesPeriodDataAll(
+            ftp_directory='cassandra_3beep',
+            name='3beep_chat_messages_all',
+            directory=TMP_DIR,
+            struct=ChatMessageRow
+            )
 
 
 class ChatMessagesPeriodDataLoading(LoadingDataIntoCsvFile):
@@ -157,7 +211,6 @@ class ChatMessagesForYesterday(BaseRunner):
         return d_before.strftime('%Y-%m-%d %H:%M:%S'), datetime.today().strftime('%Y-%m-%d %H:%M:%S')
 
     def requires(self):
-        print(self.dates_range)
         return GzipChatMessagesPeriodData(
             name='3beep_chat_messages',
             directory=TMP_DIR,
