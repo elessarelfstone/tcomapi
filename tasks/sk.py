@@ -623,8 +623,8 @@ class SamrukCerts(SamrukBaseRunner):
             sep=';',
             uri='data/stkz-certificate/stkzCertificateList',
             name='samruk_certs',
-            struct=SamrukCertRow
-            # after=self.get_after
+            struct=SamrukCertRow,
+            after=self.get_after
         )
 
 
