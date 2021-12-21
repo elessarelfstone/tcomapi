@@ -233,6 +233,34 @@ class SamrukKztPlanItemRow:
     checkedskb = attr.ib(converter=default_corrector, default='')
 
 
+@attr.s
+class SamrukCertRow:
+    id = attr.ib(converter=default_corrector, default='')
+    bin = attr.ib(converter=default_corrector, default='')
+    certificate_id = attr.ib(converter=default_corrector, default='')
+    description_kk = attr.ib(converter=default_corrector, default='')
+    description_ru = attr.ib(converter=default_corrector, default='')
+    director_name_kk = attr.ib(converter=default_corrector, default='')
+    director_name_ru = attr.ib(converter=default_corrector, default='')
+    expiration_date = attr.ib(converter=default_corrector, default='')
+    issue_date = attr.ib(converter=default_corrector, default='')
+    kato_code = attr.ib(converter=default_corrector, default='')
+    modified_date = attr.ib(converter=default_corrector, default='')
+    name_kk = attr.ib(converter=default_corrector, default='')
+    name_ru = attr.ib(converter=default_corrector, default='')
+    jhi_number = attr.ib(converter=default_corrector, default='')
+    organization_code = attr.ib(converter=default_corrector, default='')
+    series = attr.ib(converter=default_corrector, default='')
+    id_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
+    box_type = attr.ib(converter=default_corrector, default='')
+    count = attr.ib(converter=default_corrector, default='')
+    percent = attr.ib(converter=default_corrector, default='')
+    tnved = attr.ib(converter=default_corrector, default='')
+    unit_code = attr.ib(converter=default_corrector, default='')
+    description_kk_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
+    description_ru_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
+
+
 class SamrukBaseRunner(BaseRunner):
     @property
     def get_after(self):
@@ -575,6 +603,28 @@ class SamrukKztPlanItems(luigi.WrapperTask):
             uri='proxy/planproxy/esb-api/plan-item',
             name='samruk_kzt_plan_items',
             struct=SamrukKztPlanItemRow
+        )
+
+
+class SamrukCertsParsingToCsv(SamrukParsing):
+    pass
+
+
+@requires(SamrukCertsParsingToCsv)
+class SamrukCertsUpload(GzipToFtp):
+    pass
+
+
+class SamrukCerts(SamrukBaseRunner):
+    def requires(self):
+        return SamrukCertsUpload(
+            directory=TMP_DIR,
+            ftp_directory='samruk',
+            sep=';',
+            uri='data/stkz-certificate/stkzCertificateList',
+            name='samruk_certs',
+            struct=SamrukCertRow
+            # after=self.get_after
         )
 
 
