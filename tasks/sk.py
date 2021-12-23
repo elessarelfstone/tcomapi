@@ -25,6 +25,7 @@ SK_BASE_URL = 'https://integr.skc.kz/'
 def default_corrector(value):
     if value is None:
         return ''
+
     return value
 
 
@@ -235,30 +236,30 @@ class SamrukKztPlanItemRow:
 
 @attr.s
 class SamrukCertRow:
-    id = attr.ib(converter=default_corrector, default='')
-    bin = attr.ib(converter=default_corrector, default='')
-    certificate_id = attr.ib(converter=default_corrector, default='')
-    description_kk = attr.ib(converter=default_corrector, default='')
-    description_ru = attr.ib(converter=default_corrector, default='')
-    director_name_kk = attr.ib(converter=default_corrector, default='')
-    director_name_ru = attr.ib(converter=default_corrector, default='')
-    expiration_date = attr.ib(converter=default_corrector, default='')
-    issue_date = attr.ib(converter=default_corrector, default='')
-    kato_code = attr.ib(converter=default_corrector, default='')
-    modified_date = attr.ib(converter=default_corrector, default='')
-    name_kk = attr.ib(converter=default_corrector, default='')
-    name_ru = attr.ib(converter=default_corrector, default='')
-    jhi_number = attr.ib(converter=default_corrector, default='')
-    organization_code = attr.ib(converter=default_corrector, default='')
-    series = attr.ib(converter=default_corrector, default='')
-    id_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
-    box_type = attr.ib(converter=default_corrector, default='')
-    count = attr.ib(converter=default_corrector, default='')
-    percent = attr.ib(converter=default_corrector, default='')
-    tnved = attr.ib(converter=default_corrector, default='')
-    unit_code = attr.ib(converter=default_corrector, default='')
-    description_kk_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
-    description_ru_stkz_certificate_position = attr.ib(converter=default_corrector, default='')
+    id = attr.ib(converter=basic_corrector, default='')
+    bin = attr.ib(converter=basic_corrector, default='')
+    certificate_id = attr.ib(converter=basic_corrector, default='')
+    description_kk = attr.ib(converter=basic_corrector, default='')
+    description_ru = attr.ib(converter=basic_corrector, default='')
+    director_name_kk = attr.ib(converter=basic_corrector, default='')
+    director_name_ru = attr.ib(converter=basic_corrector, default='')
+    expiration_date = attr.ib(converter=basic_corrector, default='')
+    issue_date = attr.ib(converter=basic_corrector, default='')
+    kato_code = attr.ib(converter=basic_corrector, default='')
+    modified_date = attr.ib(converter=basic_corrector, default='')
+    name_kk = attr.ib(converter=basic_corrector, default='')
+    name_ru = attr.ib(converter=basic_corrector, default='')
+    jhi_number = attr.ib(converter=basic_corrector, default='')
+    organization_code = attr.ib(converter=basic_corrector, default='')
+    series = attr.ib(converter=basic_corrector, default='')
+    id_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
+    box_type = attr.ib(converter=basic_corrector, default='')
+    count = attr.ib(converter=basic_corrector, default='')
+    percent = attr.ib(converter=basic_corrector, default='')
+    tnved = attr.ib(converter=basic_corrector, default='')
+    unit_code = attr.ib(converter=basic_corrector, default='')
+    description_kk_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
+    description_ru_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
 
 
 class SamrukBaseRunner(BaseRunner):
@@ -624,7 +625,8 @@ class SamrukCerts(SamrukBaseRunner):
             uri='data/stkz-certificate/stkzCertificateList',
             name='samruk_certs',
             struct=SamrukCertRow,
-            after=self.get_after
+            after=self.get_after,
+            timeout=1,
         )
 
 
