@@ -236,9 +236,9 @@ class SamrukKztPlanItemRow:
 
 @attr.s
 class SamrukCertRow:
-    id = attr.ib(converter=basic_corrector, default='')
+    id = attr.ib(default='')
     bin = attr.ib(converter=basic_corrector, default='')
-    certificate_id = attr.ib(converter=basic_corrector, default='')
+    certificate_id = attr.ib(default='')
     description_kk = attr.ib(converter=basic_corrector, default='')
     description_ru = attr.ib(converter=basic_corrector, default='')
     director_name_kk = attr.ib(converter=basic_corrector, default='')
