@@ -252,7 +252,7 @@ class SamrukCertRow:
     jhi_number = attr.ib(converter=basic_corrector, default='')
     organization_code = attr.ib(converter=basic_corrector, default='')
     series = attr.ib(converter=basic_corrector, default='')
-    id_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
+    id_stkz_certificate_position = attr.ib(default='')
     box_type = attr.ib(converter=basic_corrector, default='')
     count = attr.ib(converter=basic_corrector, default='')
     percent = attr.ib(converter=basic_corrector, default='')
