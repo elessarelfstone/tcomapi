@@ -1,4 +1,5 @@
 import os
+import re
 from math import floor
 
 
@@ -27,6 +28,14 @@ def default_corrector(value):
         return ''
 
     return value
+
+
+def cert_corrector(value):
+    if value is None:
+        return ''
+
+    v = basic_corrector(value)
+    return re.sub(r'(?<!\.)\n', " ", v)
 
 
 @attr.s
@@ -237,29 +246,40 @@ class SamrukKztPlanItemRow:
 @attr.s
 class SamrukCertRow:
     id = attr.ib(default='')
-    bin = attr.ib(converter=basic_corrector, default='')
+    bin = attr.ib(converter=cert_corrector, default='')
     certificate_id = attr.ib(default='')
-    description_kk = attr.ib(converter=basic_corrector, default='')
-    description_ru = attr.ib(converter=basic_corrector, default='')
-    director_name_kk = attr.ib(converter=basic_corrector, default='')
-    director_name_ru = attr.ib(converter=basic_corrector, default='')
-    expiration_date = attr.ib(converter=basic_corrector, default='')
-    issue_date = attr.ib(converter=basic_corrector, default='')
-    kato_code = attr.ib(converter=basic_corrector, default='')
-    modified_date = attr.ib(converter=basic_corrector, default='')
-    name_kk = attr.ib(converter=basic_corrector, default='')
-    name_ru = attr.ib(converter=basic_corrector, default='')
-    jhi_number = attr.ib(converter=basic_corrector, default='')
-    organization_code = attr.ib(converter=basic_corrector, default='')
-    series = attr.ib(converter=basic_corrector, default='')
+    description_kk = attr.ib(converter=cert_corrector, default='')
+    description_ru = attr.ib(converter=cert_corrector, default='')
+    director_name_kk = attr.ib(converter=cert_corrector, default='')
+    director_name_ru = attr.ib(converter=cert_corrector, default='')
+    expiration_date = attr.ib(converter=cert_corrector, default='')
+    issue_date = attr.ib(converter=cert_corrector, default='')
+    kato_code = attr.ib(converter=cert_corrector, default='')
+    modified_date = attr.ib(converter=cert_corrector, default='')
+    name_kk = attr.ib(converter=cert_corrector, default='')
+    name_ru = attr.ib(converter=cert_corrector, default='')
+    jhi_number = attr.ib(converter=cert_corrector, default='')
+    organization_code = attr.ib(converter=cert_corrector, default='')
+    series = attr.ib(converter=cert_corrector, default='')
     id_stkz_certificate_position = attr.ib(default='')
-    box_type = attr.ib(converter=basic_corrector, default='')
+    box_type = attr.ib(converter=cert_corrector, default='')
     count = attr.ib(default='')
     percent = attr.ib(default='')
-    tnved = attr.ib(converter=basic_corrector, default='')
-    unit_code = attr.ib(converter=basic_corrector, default='')
-    description_kk_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
-    description_ru_stkz_certificate_position = attr.ib(converter=basic_corrector, default='')
+    tnved = attr.ib(converter=cert_corrector, default='')
+    unit_code = attr.ib(converter=cert_corrector, default='')
+    description_kk_stkz_certificate_position = attr.ib(converter=cert_corrector, default='')
+    description_ru_stkz_certificate_position = attr.ib(converter=cert_corrector, default='')
+
+
+@attr.s
+class SamrukDictRow:
+    id = attr.ib(default='')
+    created_date = attr.ib(converter=basic_corrector, default='')
+    code = attr.ib(converter=basic_corrector, default='')
+    en = attr.ib(converter=basic_corrector, default='')
+    ru = attr.ib(converter=basic_corrector, default='')
+    kk = attr.ib(converter=basic_corrector, default='')
+    version = attr.ib(default='')
 
 
 class SamrukBaseRunner(BaseRunner):
@@ -627,6 +647,27 @@ class SamrukCerts(SamrukBaseRunner):
             struct=SamrukCertRow,
             after=self.get_after,
             timeout=1,
+        )
+
+
+class SamrukDictsParsingToCsv(SamrukParsing):
+    pass
+
+
+@requires(SamrukDictsParsingToCsv)
+class SamrukDictsUpload(GzipToFtp):
+    pass
+
+
+class SamrukDicts(SamrukBaseRunner):
+    def requires(self):
+        return SamrukDictsUpload(
+            directory=TMP_DIR,
+            ftp_directory='samruk',
+            sep=';',
+            uri='data/dictionary/dictionaryList',
+            name='samruk_dicts',
+            struct=SamrukDictRow
         )
 
 
