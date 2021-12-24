@@ -639,14 +639,13 @@ class SamrukCertsUpload(GzipToFtp):
 class SamrukCerts(SamrukBaseRunner):
     def requires(self):
         return SamrukCertsUpload(
-            directory=TMP_DIR,
+            directory=BIGDATA_TMP_DIR,
             ftp_directory='samruk',
             sep=';',
             uri='data/stkz-certificate/stkzCertificateList',
             name='samruk_certs',
             struct=SamrukCertRow,
-            after=self.get_after,
-            timeout=1,
+            after=self.get_after
         )
 
 
