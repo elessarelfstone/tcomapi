@@ -1,3 +1,4 @@
+import datetime
 import os
 import re
 from math import floor
@@ -35,7 +36,14 @@ def cert_corrector(value):
         return ''
 
     v = basic_corrector(value)
-    return re.sub(r'(?<!\.)\n', " ", v)
+    return value.replace('\r', '').replace('\n', '')
+
+
+def cert_corrector2(value):
+    if value is None:
+        return ''
+
+    return value.replace('\r', '').replace('\n', '')
 
 
 @attr.s
@@ -643,9 +651,9 @@ class SamrukCerts(SamrukBaseRunner):
             ftp_directory='samruk',
             sep=';',
             uri='data/stkz-certificate/stkzCertificateList',
-            name='samruk_certs',
+            name='samruk_certs_test',
             struct=SamrukCertRow,
-            after=self.get_after
+            after=datetime.date(year=2021, month=12, day=1)
         )
 
 

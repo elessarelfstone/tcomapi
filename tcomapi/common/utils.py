@@ -1,4 +1,5 @@
 import os
+import re
 import gzip
 import hashlib
 import json
@@ -464,3 +465,43 @@ def flatten_json(nested_json):
 
     flatten(nested_json)
     return out
+
+
+def scan_wrong_csv_rows(fpath):
+    with open(fpath, 'r', encoding="utf8") as f:
+        for i, line in enumerate(f):
+            l = line.split(';')
+            if len(l) != 24:
+                print(i, len(l))
+
+
+def fix_wrong_csv_rows(fpath_in, fpath_out, cols):
+
+    with open(fpath_in, 'r', encoding='utf8') as fin, open(fpath_out, 'w', encoding='utf8') as fout:
+
+        s = ''
+        for line in fin:
+            l = line.split(';')
+            if l[0].isdigit():
+                if len(l) == 24 and (not s):
+                    fout.write(re.sub(r'(?<!\.)\n', " ", line) + "\n")
+                    s = ''
+                elif len(l) == 24 and s:
+                    fout.write(re.sub(r'(?<!\.)\n', " ", s) + "\n")
+                    s = line
+                elif len(l) < 24 and (not s):
+                    s = line
+                elif len(l) < 24 and s:
+                    fout.write(re.sub(r'(?<!\.)\n', " ", s) + "\n")
+                    s = line
+            else:
+                s += line
+
+        if s:
+            fout.write(re.sub(r'(?<!\.)\n', " ", s) + "\n")
+
+
+# scan_wrong_csv_rows("C:\\Users\\elessar\\data\\samruk_certs_new_1.csv")
+
+# fix_wrong_csv_rows("C:\\Users\\elessar\\data\\samruk_certs_new.csv", "C:\\Users\\elessar\\data\\samruk_certs_new_1.csv", 24)
+# scan_wrong_csv_rows("C:\\Users\\elessar\\data\\test3.csv", "C:\\Users\\elessar\\data\\test3_new.csv", 24)
