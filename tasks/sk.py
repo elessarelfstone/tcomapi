@@ -653,7 +653,7 @@ class SamrukCerts(SamrukBaseRunner):
             uri='data/stkz-certificate/stkzCertificateList',
             name='samruk_certs_test',
             struct=SamrukCertRow,
-            after=datetime.date(year=2021, month=12, day=1)
+            after=self.get_after
         )
 
 
