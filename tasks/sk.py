@@ -651,7 +651,7 @@ class SamrukCerts(SamrukBaseRunner):
             ftp_directory='samruk',
             sep=';',
             uri='data/stkz-certificate/stkzCertificateList',
-            name='samruk_certs_test',
+            name='samruk_certs',
             struct=SamrukCertRow,
             after=self.get_after
         )
