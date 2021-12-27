@@ -295,7 +295,10 @@ class SamrukBaseRunner(BaseRunner):
     def get_after(self):
         p = LastPeriod.get_period(self.last_period)
         if p:
+            print(p[0])
             return p[0]
+
+        print(p)
         return p
 
 
@@ -647,7 +650,7 @@ class SamrukCertsUpload(GzipToFtp):
 class SamrukCerts(SamrukBaseRunner):
     def requires(self):
         return SamrukCertsUpload(
-            directory=BIGDATA_TMP_DIR,
+            directory=TMP_DIR,
             ftp_directory='samruk',
             sep=';',
             uri='data/stkz-certificate/stkzCertificateList',
