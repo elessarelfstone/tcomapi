@@ -19,9 +19,11 @@ class AuthSession:
     def get(self, url, params, headers):
         if hasattr(self.parser, 'user'):
             auth = HTTPBasicAuth(self.parser.user, self.parser.password)
-            return self.session.get(url, params=params, headers=headers, auth=auth)
+            return self.session.get(url, params=params, headers=headers,
+                                    auth=auth, verify=False)
         else:
-            return self.session.get(url, params=params, headers=headers)
+            return self.session.get(url, params=params,
+                                    headers=headers, verify=False)
 
 
 class BaseApiParser(ABC):
