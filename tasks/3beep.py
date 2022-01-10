@@ -22,6 +22,8 @@ from tcomapi.common.dataflow import last_file_with_bins
 from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, build_fpath,
                                   read_file, fname_noext)
 
+from tcomapi.common.correctors import basic_corrector
+
 chat_table = 'prod_3beep.chat_rooms_messages'
 session = None
 cluster_hosts = []
@@ -37,9 +39,9 @@ class ChatMessageRow:
     chat_room_id = attr.ib(default='')
     message_id = attr.ib(default='')
     message_author_id = attr.ib(default='')
-    message_created_date_time = attr.ib(default='')
-    message_text = attr.ib(default= lambda x: f'"{x}"')
-    message_updated_date_time = attr.ib(default='')
+    message_created_date_time = attr.ib(converter=basic_corrector, default='')
+    message_text = attr.ib(converter=basic_corrector, default=lambda x: f'"{x}"')
+    message_updated_date_time = attr.ib(converter=basic_corrector, default='')
 
 
 def last_file_with_message_id(flist):
@@ -64,7 +66,6 @@ def prepare_session(host, user, password, keyspace):
     # cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
     session = cluster.connect(keyspace)
     session.row_factory = named_tuple_factory
-
 
 
 def load_all():
