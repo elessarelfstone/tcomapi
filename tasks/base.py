@@ -68,7 +68,7 @@ class LoadingDataIntoFile(BaseTask):
 class LoadingDataIntoCsvFile(LoadingDataIntoFile):
 
     ext = luigi.Parameter(default='csv', visibility=ParameterVisibility.HIDDEN)
-    sep = luigi.Parameter(default=';', visibility=ParameterVisibility.HIDDEN )
+    sep = luigi.Parameter(default=';', visibility=ParameterVisibility.HIDDEN)
 
     def output(self):
         directory = str(self.directory)

@@ -24,6 +24,7 @@ from tcomapi.common.utils import (dict_to_csvrow, save_csvrows, build_fpath,
 
 from tcomapi.common.correctors import basic_corrector
 
+
 chat_table = 'prod_3beep.chat_rooms_messages'
 session = None
 cluster_hosts = []
