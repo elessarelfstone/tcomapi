@@ -31,6 +31,12 @@ cluster_hosts = []
 fetch_size = 2000
 
 
+def beep_corrector(value):
+    if value is None:
+        return ''
+    return value.replace('\r', '').replace('\n', '')
+
+
 class NoLastMessageIdToParseTaxPayments(Exception):
     pass
 
@@ -40,9 +46,9 @@ class ChatMessageRow:
     chat_room_id = attr.ib(default='')
     message_id = attr.ib(default='')
     message_author_id = attr.ib(default='')
-    message_created_date_time = attr.ib(converter=basic_corrector, default='')
-    message_text = attr.ib(converter=basic_corrector, default=lambda x: f'"{x}"')
-    message_updated_date_time = attr.ib(converter=basic_corrector, default='')
+    message_created_date_time = attr.ib( default='')
+    message_text = attr.ib(converter=beep_corrector, default=lambda x: f'"{x}"')
+    message_updated_date_time = attr.ib( default='')
 
 
 def last_file_with_message_id(flist):
@@ -63,8 +69,8 @@ def prepare_session(host, user, password, keyspace):
                                           password=password)
     global session
     # cluster = Cluster(cluster_hosts.append(host), auth_provider=auth_provider)
-    cluster = Cluster(['10.8.158.8', '10.8.158.9', '10.8.158.10'], auth_provider=auth_provider)
-    # cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
+    # cluster = Cluster(['10.8.158.8', '10.8.158.9', '10.8.158.10'], auth_provider=auth_provider)
+    cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
     session = cluster.connect(keyspace)
     session.row_factory = named_tuple_factory
 
