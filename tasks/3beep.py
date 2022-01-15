@@ -69,8 +69,8 @@ def prepare_session(host, user, password, keyspace):
                                           password=password)
     global session
     # cluster = Cluster(cluster_hosts.append(host), auth_provider=auth_provider)
-    # cluster = Cluster(['10.8.158.8', '10.8.158.9', '10.8.158.10'], auth_provider=auth_provider)
-    cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
+    cluster = Cluster(['10.8.158.8', '10.8.158.9', '10.8.158.10'], auth_provider=auth_provider)
+    # cluster = Cluster(['178.88.68.39'], auth_provider=auth_provider)
     session = cluster.connect(keyspace)
     session.row_factory = named_tuple_factory
 
