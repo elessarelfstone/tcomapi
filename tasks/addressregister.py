@@ -104,7 +104,7 @@ class SGroundsRow:
 
 @attr.s
 class SBuildingsRow:
-    s_geonims_id = attr.ib(default='')
+    s_geonim_id = attr.ib(default='')
     d_buildings_pointer_id = attr.ib(default='')
     number = attr.ib(default='')
     modified = attr.ib(default='')
@@ -234,8 +234,8 @@ class AddrRegSGrounds(luigi.WrapperTask):
         return GzipElasticApiParsingToCsv(name='dgov_addrregsgrounds',
                                           struct=SGroundsRow,
                                           monthly=True,
-                                          versions=('data',),
-                                          report_name='s_grounds',
+                                          versions=('v3',),
+                                          report_name='s_grounds_new',
                                           updates_dates_range=month_range)
 
 
