@@ -172,6 +172,22 @@ class GoszakupTenderMethodRow:
     id = attr.ib(default='')
 
 
+@attr.s
+class GoszakupLotsStatusRow:
+    id = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    code = attr.ib(default='')
+
+
+@attr.s
+class GoszakupBuyStatusRow:
+    id = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    code = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -337,13 +353,53 @@ class GzipGoszakupTradeMethodsParsingToCsv(GzipToFtp):
 
 class GoszakupTradeMethods(luigi.WrapperTask):
     def requires(self):
-        return GzipGoszakupContractStatusesParsingToCsv(directory=BIGDATA_TMP_DIR,
-                                                        ftp_directory='goszakup',
-                                                        sep=';',
-                                                        url='https://ows.goszakup.gov.kz/v2/refs/ref_trade_methods',
-                                                        name='goszakup_trade_methods',
-                                                        monthly=True,
-                                                        struct=GoszakupTenderMethodRow)
+        return GzipGoszakupTradeMethodsParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                    ftp_directory='goszakup',
+                                                    sep=';',
+                                                    url='https://ows.goszakup.gov.kz/v2/refs/ref_trade_methods',
+                                                    name='goszakup_trade_methods',
+                                                    monthly=True,
+                                                    struct=GoszakupTenderMethodRow)
+
+
+class GoszakupLotsStatusParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupLotsStatusParsingToCsv)
+class GzipGoszakupLotsStatusParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupLotsStatus(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupLotsStatusParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                  ftp_directory='goszakup',
+                                                  sep=';',
+                                                  url='https://ows.goszakup.gov.kz/v3/refs/ref_lots_status',
+                                                  name='goszakup_lots_status',
+                                                  monthly=True,
+                                                  struct=GoszakupLotsStatusRow)
+
+
+class GoszakupBuyStatusParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupBuyStatusParsingToCsv)
+class GzipGoszakupBuyStatusParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupBuyStatus(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupBuyStatusParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                 ftp_directory='goszakup',
+                                                 sep=';',
+                                                 url='https://ows.goszakup.gov.kz/v3/refs/ref_buy_status',
+                                                 name='goszakup_buy_status',
+                                                 monthly=True,
+                                                 struct=GoszakupBuyStatusRow)
 
 
 class GoszakupCompaniesParsingToCsv(GraphQlParsing):
