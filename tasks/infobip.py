@@ -190,6 +190,7 @@ class GzipInfobipConversationsToCsv(GzipToFtp):
 class InfobipConversations(luigi.WrapperTask):
 
     date = luigi.Parameter(default=yesterday_as_str(dt_format=DEFAULT_DATE_FORMAT))
+    start_date = luigi.Parameter(default=date)
 
     def requires(self):
 
@@ -197,8 +198,8 @@ class InfobipConversations(luigi.WrapperTask):
             entity='conversations',
             directory=TMP_DIR,
             ftp_directory='infobip',
-            dates_range=(self.date, self.date),
-            # dates_range=('2022-01-03', '2022-01-16'),
+            # dates_range=(self.date, self.date),
+            dates_range=('2022-01-03', '2022-01-26'),
             limit=999,
             name='infobip_conversations',
             struct=InfobipConversationRow
