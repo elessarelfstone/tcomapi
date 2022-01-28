@@ -198,8 +198,8 @@ class InfobipConversations(luigi.WrapperTask):
             entity='conversations',
             directory=TMP_DIR,
             ftp_directory='infobip',
-            # dates_range=(self.date, self.date),
-            dates_range=('2022-01-03', '2022-01-26'),
+            dates_range=(self.date, self.date),
+            # dates_range=('2022-01-03', '2022-01-26'),
             limit=999,
             name='infobip_conversations',
             struct=InfobipConversationRow
