@@ -203,8 +203,8 @@ class AddrRegSAts(luigi.WrapperTask):
                                           struct=SAtsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_ats')
-                                          # updates_dates_range=month_range)
+                                          report_name='s_ats',
+                                          updates_dates_range=month_range)
 
 
 class AddrRegSGeonims(luigi.WrapperTask):
