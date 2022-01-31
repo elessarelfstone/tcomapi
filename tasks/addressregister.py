@@ -203,8 +203,8 @@ class AddrRegSAts(luigi.WrapperTask):
                                           struct=SAtsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_ats',
-                                          updates_dates_range=month_range)
+                                          report_name='s_ats')
+                                          # updates_dates_range=month_range)
 
 
 class AddrRegSGeonims(luigi.WrapperTask):
@@ -219,8 +219,8 @@ class AddrRegSGeonims(luigi.WrapperTask):
                                           struct=SGeonimsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_geonims',
-                                          updates_dates_range=month_range)
+                                          report_name='s_geonims')
+                                          # updates_dates_range=month_range)
 
 
 class AddrRegSGrounds(luigi.WrapperTask):
@@ -235,8 +235,8 @@ class AddrRegSGrounds(luigi.WrapperTask):
                                           struct=SGroundsRow,
                                           monthly=True,
                                           versions=('v3',),
-                                          report_name='s_grounds_new',
-                                          updates_dates_range=month_range)
+                                          report_name='s_grounds_new')
+                                          # updates_dates_range=month_range)
 
 
 class AddrRegSBuildings(luigi.WrapperTask):
@@ -251,8 +251,8 @@ class AddrRegSBuildings(luigi.WrapperTask):
                                           struct=SBuildingsRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_buildings',
-                                          updates_dates_range=month_range)
+                                          report_name='s_buildings')
+                                          # updates_dates_range=month_range)
 
 
 class AddrRegSpb(luigi.WrapperTask):
@@ -267,8 +267,8 @@ class AddrRegSpb(luigi.WrapperTask):
                                           struct=SPbRow,
                                           monthly=True,
                                           versions=('data',),
-                                          report_name='s_pb',
-                                          updates_dates_range=month_range)
+                                          report_name='s_pb')
+                                          # updates_dates_range=month_range)
 
 
 if __name__ == '__main__':
