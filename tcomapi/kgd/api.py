@@ -18,13 +18,11 @@ from tcomapi.common.constants import CSV_SEP
 from tcomapi.common.bids import BidsHandler
 from tcomapi.common.utils import is_server_up, append_file, read_file, dict_to_csvrow, build_fpath
 
-from settings import KGD_API_TIMEOUT
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 KGD_TIMEOUT_FACTOR = 10
-KGD_TIMEOUT_DEFAULT = KGD_API_TIMEOUT
 
 
 class KgdServerNotAvailableError(Exception):

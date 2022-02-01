@@ -23,12 +23,16 @@ from tcomapi.common.exceptions import NoBinsToParseTaxPayments
 from tcomapi.common.dataflow import last_file_with_bins
 from tcomapi.common.utils import (build_fpath, append_file, gziped_fname,
                                   date_for_fname, gzip_file)
+from settings import KGD_API_TIMEOUT
+
 
 IN_FILENAME = 'kgd.bins'
 IN_FILENAME_TMPL = 'export_kgdgovkz_bins'
 
 
 BINS_REMOTE_DIR = 'export'
+
+
 
 
 @attr.s
@@ -207,7 +211,7 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
         yield GzipKgdTaxPaymentsToFtp(start_date=start_date.strftime('%Y-%m-%d'),
                                       end_date=end_date.strftime('%Y-%m-%d'),
                                       name='kgd_taxpayments',
-                                      timeout=2,
+                                      timeout=KGD_API_TIMEOUT,
                                       struct=TaxPaymentsRow,
                                       directory=BIGDATA_TMP_DIR)
 
