@@ -9,7 +9,7 @@ from urllib3.exceptions import ProtocolError
 import requests
 from http.client import RemoteDisconnected
 from requests import HTTPError, ConnectionError, ReadTimeout
-from box import Box
+from box import Box, BoxKeyError
 from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
@@ -150,7 +150,7 @@ class KgdTaxPaymentParser(BidsHandler):
                 append_file(self.notaxes_fpath, bid)
             sleep(self._timeout)
 
-        except KgdResponseError:
+        except (KgdResponseError, BoxKeyError):
             # just mark _bin as failed and sleep
             self.failed_bids.append(bid)
             self._stat['rse'] += 1
