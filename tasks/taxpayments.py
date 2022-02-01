@@ -214,7 +214,7 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
                                       start_date='2021-01-01',
                                       end_date='2022-01-31',
                                       name='kgd_taxpayments',
-                                      timeout=KGD_API_TIMEOUT,
+                                      timeout=int(KGD_API_TIMEOUT),
                                       struct=TaxPaymentsRow,
                                       directory=BIGDATA_TMP_DIR)
 
