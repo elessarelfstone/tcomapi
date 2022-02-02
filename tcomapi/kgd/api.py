@@ -10,6 +10,7 @@ import requests
 from http.client import RemoteDisconnected
 from requests import HTTPError, ConnectionError, ReadTimeout
 from box import Box, BoxKeyError
+from box.exceptions import BoxKeyError
 from xmltodict import parse
 from xml.parsers.expat import ExpatError
 
