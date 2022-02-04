@@ -188,6 +188,39 @@ class GoszakupBuyStatusRow:
     code = attr.ib(default='')
 
 
+@attr.s
+class GoszakupLotsRow:
+    id = attr.ib(default='')
+    lot_number = attr.ib(default='')
+    ref_lot_status_id = attr.ib(default='')
+    last_update_date = attr.ib(default='')
+    union_lots = attr.ib(default='')
+    count = attr.ib(default='')
+    amount = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    description_ru = attr.ib(default='')
+    description_kz = attr.ib(default='')
+    customer_id = attr.ib(default='')
+    customer_bin = attr.ib(default='')
+    trd_buy_number_anno = attr.ib(default='')
+    trd_buy_id = attr.ib(default='')
+    dumping = attr.ib(default='')
+    dumping_lot_price = attr.ib(default='')
+    psd_sign = attr.ib(default='')
+    consulting_services = attr.ib(default='')
+    point_list = attr.ib(default='')
+    singl_org_sign = attr.ib(default='')
+    is_light_industry = attr.ib(default='')
+    is_construction_work = attr.ib(default='')
+    disable_person_id = attr.ib(default='')
+    customer_name_kz = attr.ib(default='')
+    customer_name_ru = attr.ib(default='')
+    ref_trade_methods_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+    system_id = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -197,7 +230,7 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
     token = luigi.Parameter(default=GOSZAKUP_REST_TOKEN)
-    timeout = luigi.IntParameter(default=10)
+    timeout = luigi.IntParameter(default=1)
     limit = luigi.IntParameter(default=500)
 
     def run(self):
@@ -282,6 +315,24 @@ class GoszakupContractsAll(luigi.WrapperTask):
                                                     struct=GoszakupContractRow)
 
 
+class GoszakupLotsAllParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupLotsAllParsingToCsv)
+class GzipGoszakupLotsAllParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupLotsAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupLotsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                               sep=';',
+                                               url='https://ows.goszakup.gov.kz/v3/lots',
+                                               name='goszakup_all_lots',
+                                               struct=GoszakupLotsRow)
+
+
 class GoszakupUntrustedSuppliersAllParsingToCsv(GoszakupAllRowsParsing):
     pass
 
@@ -300,6 +351,9 @@ class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
                                                              name='goszakup_untrusted',
                                                              monthly=True,
                                                              struct=GoszakupUntrustedSupplierRow)
+
+
+
 
 
 class GoszakupContractTypesParsingToCsv(GoszakupAllRowsParsing):
@@ -402,12 +456,16 @@ class GoszakupBuyStatus(luigi.WrapperTask):
                                                  struct=GoszakupBuyStatusRow)
 
 
-class GoszakupCompaniesParsingToCsv(GraphQlParsing):
+
+
+class GoszakupGqlParsingToCsv(GraphQlParsing):
+    entity = luigi.Parameter()
     start_date = luigi.Parameter(default=previous_date_as_str(1))
     # start_date = luigi.Parameter(default='2021-09-23')
     # end_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = luigi.IntParameter(default=200)
+    anchor_field = luigi.Parameter(default='id')
 
     def run(self):
         client = self.get_client()
@@ -415,8 +473,6 @@ class GoszakupCompaniesParsingToCsv(GraphQlParsing):
         start_from = None
         params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
 
-        # header = tuple(f.name for f in attr.fields(GoszakupCompanyRow))
-        # save_csvrows(self.output().path, [header], sep=self.sep)
         super().run()
         while True:
             p = params
@@ -424,13 +480,17 @@ class GoszakupCompaniesParsingToCsv(GraphQlParsing):
                 p["after"] = start_from
 
             data = client.execute(query, variable_values=p)
-            if data.get('Subjects') is None or len(data.get('Subjects', [])) == 0:
+            if data.get(self.entity) is None or len(data.get(self.entity, [])) == 0:
                 break
 
-            last_id = data.get('Subjects', [])[-1]['pid']
+            last_id = data.get(self.entity, [])[-1][self.anchor_field]
             start_from = last_id
-            data = [dict_to_csvrow(d, self.struct) for d in data.get('Subjects')]
+            data = [dict_to_csvrow(d, self.struct) for d in data.get(self.entity)]
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+
+
+class GoszakupCompaniesParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
 
 
 @requires(GoszakupCompaniesParsingToCsv)
@@ -486,6 +546,8 @@ class GoszakupCompanies(luigi.WrapperTask):
         }
 """
         return GzipGoszakupCompaniesParsingToCsv(
+            entity='Subjects',
+            anchor_field='pid',
             directory=TMP_DIR,
             ftp_directory='goszakup',
             sep=';',
@@ -496,35 +558,8 @@ class GoszakupCompanies(luigi.WrapperTask):
         )
 
 
-class GoszakupContractsParsingToCsv(GraphQlParsing):
-
-    start_date = luigi.Parameter(default=previous_date_as_str(1))
-    # start_date = luigi.Parameter(default='2021-09-23')
-    end_date = luigi.Parameter(default=previous_date_as_str(1))
-    # end_date = luigi.Parameter(default='2021-09-23')
-    limit = luigi.IntParameter(default=200)
-
-    def run(self):
-        client = self.get_client()
-        query = gql(self.query)
-        start_from = None
-        params = {'from': str(self.start_date), 'to': str(self.end_date), 'limit': self.limit}
-
-        super().run()
-        while True:
-            p = params
-            if start_from:
-                p["after"] = start_from
-
-            data = client.execute(query, variable_values=p)
-            if data.get('Contract') is None or len(data.get('Contract', [])) == 0:
-                break
-
-            last_id = data.get('Contract', [])[-1]['id']
-            start_from = last_id
-            data = [dict_to_csvrow(d, self.struct) for d in data.get('Contract')]
-            save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
-            # sleep(self.timeout)
+class GoszakupContractsParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
 
 
 @requires(GoszakupContractsParsingToCsv)
@@ -608,13 +643,76 @@ class GoszakupContracts(luigi.WrapperTask):
         }
         """
         return GzipGoszakupContractsParsingToCsv(
+            start_date='2022-01-19',
+            end_date='2022-01-19',
+            entity='Contract',
             directory=TMP_DIR,
-            ftp_directory='goszakup',
+            # ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
             name='goszakup_contracts',
             struct=GoszakupContractRow
+        )
+
+
+class GoszakupLotsParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupLotsParsingToCsv)
+class GzipGoszakupLotsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupLots(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getLots($from: String, $to: String, $limit: Int, $after: Int){
+          Lots(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+            id
+            lot_number: lotNumber
+            ref_lot_status_id: refLotStatusId
+            last_update_date: lastUpdateDate
+            point_list: pointList
+            count
+            amount
+            name_ru: nameRu
+            name_kz: nameKz
+            description_ru: descriptionRu
+            description_kz: descriptionKz
+            customer_id: customerId
+            customer_bin: customerBin
+            trd_buy_number_anno: trdBuyNumberAnno
+            trd_buy_id: trdBuyId
+            dumping
+            ref_trade_methods_id: refTradeMethodsId
+            psd_sign: psdSign
+            consulting_services: consultingServices
+            point_list: pointList
+            is_light_industry: isLightIndustry
+            is_construction_work: isConstructionWork
+            disable_person_id: disablePersonId
+            customer_name_kz: customerNameKz
+            customer_name_ru: customerNameRu
+            ref_buy_trade_methods_id: refBuyTradeMethodsId
+            index_date: indexDate
+            system_id: systemId
+          }
+        }
+        """
+        return GzipGoszakupLotsParsingToCsv(
+            start_date='2021-11-24 23:35:16',
+            end_date='2022-02-03 23:59:59',
+            entity='Lots',
+            directory=TMP_DIR,
+            # ftp_directory='goszakup',
+            sep=',',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_lots',
+            struct=GoszakupLotsRow
         )
 
 

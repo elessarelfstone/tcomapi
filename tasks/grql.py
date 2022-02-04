@@ -14,7 +14,7 @@ class GraphQlParsing(LoadingDataIntoCsvFile):
     # headers = luigi.DictParameter(default=dict())
     query = luigi.Parameter()
     token = luigi.Parameter(default=GOSZAKUP_GQL_TOKEN)
-    timeout = luigi.IntParameter(default=60)
+    timeout = luigi.IntParameter(default=1)
 
     def get_client(self):
         headers = dict()
