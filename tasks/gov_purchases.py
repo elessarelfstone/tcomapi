@@ -643,11 +643,9 @@ class GoszakupContracts(luigi.WrapperTask):
         }
         """
         return GzipGoszakupContractsParsingToCsv(
-            start_date='2022-01-19',
-            end_date='2022-01-19',
             entity='Contract',
             directory=TMP_DIR,
-            # ftp_directory='goszakup',
+            ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
@@ -675,6 +673,7 @@ class GoszakupLots(luigi.WrapperTask):
             lot_number: lotNumber
             ref_lot_status_id: refLotStatusId
             last_update_date: lastUpdateDate
+            union_lots: unionLots
             point_list: pointList
             count
             amount
@@ -691,6 +690,7 @@ class GoszakupLots(luigi.WrapperTask):
             psd_sign: psdSign
             consulting_services: consultingServices
             point_list: pointList
+            singl_org_sign: singlOrgSign
             is_light_industry: isLightIndustry
             is_construction_work: isConstructionWork
             disable_person_id: disablePersonId
@@ -703,12 +703,10 @@ class GoszakupLots(luigi.WrapperTask):
         }
         """
         return GzipGoszakupLotsParsingToCsv(
-            start_date='2021-11-24 23:35:16',
-            end_date='2022-02-03 23:59:59',
             entity='Lots',
             directory=TMP_DIR,
-            # ftp_directory='goszakup',
-            sep=',',
+            ftp_directory='goszakup',
+            sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
             name='goszakup_lots',
