@@ -482,7 +482,7 @@ class GzipGoszakupTradeBuysParsingToCsv(GzipToFtp):
     pass
 
 
-class GoszakupTradeBuys(luigi.WrapperTask):
+class GoszakupTradeBuysAll(luigi.WrapperTask):
     def requires(self):
         return GzipGoszakupTradeBuysParsingToCsv(directory=BIGDATA_TMP_DIR,
                                                  ftp_directory='goszakup',
