@@ -221,6 +221,45 @@ class GoszakupLotsRow:
     system_id = attr.ib(default='')
 
 
+@attr.s
+class GoszakupTradeBuyRow:
+    id = attr.ib(default='')
+    number_anno = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    total_sum  = attr.ib(default='')
+    count_lots = attr.ib(default='')
+    ref_trade_methods_id = attr.ib(default='')
+    ref_subject_type_id = attr.ib(default='')
+    customer_bin = attr.ib(default='')
+    customer_pid = attr.ib(default='')
+    org_bin = attr.ib(default='')
+    org_pid = attr.ib(default='')
+    ref_buy_status_id = attr.ib(default='')
+    start_date = attr.ib(default='')
+    repeat_start_date = attr.ib(default='')
+    repeat_end_date = attr.ib(default='')
+    end_date = attr.ib(default='')
+    publish_date = attr.ib(default='')
+    itogi_date_public = attr.ib(default='')
+    ref_type_trade_id = attr.ib(default='')
+    disable_person_id = attr.ib(default='')
+    discus_start_date = attr.ib(default='')
+    discus_end_date = attr.ib(default='')
+    id_supplier = attr.ib(default='')
+    biin_supplier = attr.ib(default='')
+    parent_id = attr.ib(default='')
+    singl_org_sign = attr.ib(default='')
+    is_light_industry = attr.ib(default='')
+    is_construction_work = attr.ib(default='')
+    customer_name_kz = attr.ib(default='')
+    customer_name_ru = attr.ib(default='')
+    org_name_kz = attr.ib(default='')
+    org_name_ru = attr.ib(default='')
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -353,9 +392,6 @@ class GoszakupUntrustedSuppliersAll(luigi.WrapperTask):
                                                              struct=GoszakupUntrustedSupplierRow)
 
 
-
-
-
 class GoszakupContractTypesParsingToCsv(GoszakupAllRowsParsing):
     pass
 
@@ -434,6 +470,27 @@ class GoszakupLotsStatus(luigi.WrapperTask):
                                                   name='goszakup_lots_status',
                                                   monthly=True,
                                                   struct=GoszakupLotsStatusRow)
+
+
+class GoszakupTradeBuysStatusParsingToCsv(GoszakupAllRowsParsing):
+    #
+    pass
+
+
+@requires(GoszakupTradeBuysStatusParsingToCsv)
+class GzipGoszakupTradeBuysParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupTradeBuys(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupTradeBuysParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                 ftp_directory='goszakup',
+                                                 sep=';',
+                                                 url='https://ows.goszakup.gov.kz/v3/trd-buy/all',
+                                                 name='goszakup_trdbuy',
+                                                 monthly=True,
+                                                 struct=GoszakupTradeBuyRow)
 
 
 class GoszakupBuyStatusParsingToCsv(GoszakupAllRowsParsing):
