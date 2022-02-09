@@ -771,5 +771,70 @@ class GoszakupLots(luigi.WrapperTask):
         )
 
 
+class GoszakupTradeBuyParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupTradeBuyParsingToCsv)
+class GzipGoszakupTradeBuyParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupTradeBuy(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getTradeBuys($from: String, $to: String, $limit: Int, $after: Int){
+          TrdBuy(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+            id
+            number_anno: numberAnno
+            name_ru: nameRu
+            name_kz: nameKz
+            total_sum: totalSum
+            count_lots: countLots
+            ref_trade_methods_id: refTradeMethodsId
+            ref_subject_type_id: refSubjectTypeId
+            customer_bin: customerBin
+            customer_pid: customerPid
+            customer_name_kz: customerNameKz
+            customer_name_ru: customerNameRu
+            org_bin: orgBin
+            org_pid: orgPid
+            org_name_kz: orgNameKz
+            org_name_ru: orgNameRu
+            ref_buy_status_id: refBuyStatusId
+            start_date: startDate
+            repeat_start_date: repeatStartDate
+            repeat_end_date: repeatEndDate
+            end_date: endDate
+            publish_date: publishDate
+            itogi_date_public: itogiDatePublic
+            ref_type_trade_id: refTypeTradeId
+            disable_person_id: disablePersonId
+            discus_start_date: discusStartDate
+            discus_end_date: discusEndDate
+            id_supplier: idSupplier
+            biin_supplier: biinSupplier
+            parent_id: parentId
+            singl_org_sign: singlOrgSign
+            is_light_industry: isLightIndustry
+            is_construction_work: isConstructionWork
+            system_id: systemId
+            index_date: indexDate
+          }
+        }
+        """
+        return GzipGoszakupTradeBuyParsingToCsv(
+            entity='TrdBuy',
+            directory=TMP_DIR,
+            # ftp_directory='goszakup',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_trdbuy',
+            struct=GoszakupTradeBuyRow
+        )
+
+
 if __name__ == '__main__':
     luigi.run()
