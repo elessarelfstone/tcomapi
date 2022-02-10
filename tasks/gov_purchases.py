@@ -827,7 +827,7 @@ class GoszakupTradeBuy(luigi.WrapperTask):
         return GzipGoszakupTradeBuyParsingToCsv(
             entity='TrdBuy',
             directory=TMP_DIR,
-            # ftp_directory='goszakup',
+            ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
