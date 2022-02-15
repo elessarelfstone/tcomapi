@@ -578,6 +578,7 @@ class GoszakupPlanPointsAll(luigi.WrapperTask):
                                                   url='https://ows.goszakup.gov.kz/v3/plans/all',
                                                   name='goszakup_plan_point',
                                                   monthly=True,
+                                                  timeout=0.5,
                                                   struct=GoszakupPlanPointRow)
 
 
