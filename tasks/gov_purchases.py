@@ -260,6 +260,73 @@ class GoszakupTradeBuyRow:
     index_date = attr.ib(default='')
 
 
+@attr.s
+class GoszakupPlanRow:
+    pid = attr.ib(default='')
+    bin = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    doc_count = attr.ib(default='')
+
+
+@attr.s
+class GoszakupPlanPointRow:
+    id = attr.ib(default='')
+    rootrecord_id = attr.ib(default='')
+    sys_subjects_id = attr.ib(default='')
+    sys_organizator_id = attr.ib(default='')
+    subject_biin = attr.ib(default='')
+    subject_name_ru = attr.ib(default='')
+    subject_name_kz = attr.ib(default='')
+    name_ru = attr.ib(default='')
+    name_kz = attr.ib(default='')
+    ref_trade_methods_id = attr.ib(default='')
+    ref_units_code = attr.ib(default='')
+    count = attr.ib(default='')
+    price = attr.ib(default='')
+    amount = attr.ib(default='')
+    ref_months_id = attr.ib(default='')
+    ref_pln_point_status_id = attr.ib(default='')
+    pln_point_year = attr.ib(default='')
+    ref_subject_type_id = attr.ib(default='')
+    ref_enstru_code = attr.ib(default='')
+    ref_finsource_id = attr.ib(default='')
+    ref_abp_code = attr.ib(default='')
+    is_qvazi = attr.ib(default='')
+    date_create = attr.ib(default='')
+    timestamp = attr.ib(default='')
+    ref_point_type_id = attr.ib(default='')
+    desc_ru = attr.ib(default='')
+    desc_kz = attr.ib(default='')
+    extra_desc_kz = attr.ib(default='')
+    extra_desc_ru = attr.ib(default='')
+    sum_1 = attr.ib(default='')
+    sum_2 = attr.ib(default='')
+    sum_3 = attr.ib(default='')
+    supply_date_ru = attr.ib(default='')
+    prepayment = attr.ib(default='')
+    ref_justification_id = attr.ib(default='')
+    ref_amendment_agreem_type_id = attr.ib(default='')
+    ref_amendm_agreem_justif_id = attr.ib(default='')
+    contract_prev_point_id = attr.ib(default='')
+    disable_person_id = attr.ib(default='')
+    transfer_sys_subjects_id = attr.ib(default='')
+    transfer_type = attr.ib(default='')
+    ref_budget_type_id = attr.ib(default='')
+    createdin_act_id = attr.ib(default='')
+    is_active = attr.ib(default='')
+    active_act_id = attr.ib(default='')
+    is_deleted = attr.ib(default='')
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+    plan_act_id = attr.ib(default='')
+    plan_act_number = attr.ib(default='')
+    ref_plan_status_id = attr.ib(default='')
+    plan_fin_year = attr.ib(default='')
+    plan_preliminary = attr.ib(default='')
+    date_approved = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -493,6 +560,48 @@ class GoszakupTradeBuysAll(luigi.WrapperTask):
                                                  struct=GoszakupTradeBuyRow)
 
 
+class GoszakupPlanPointsStatusParsingToCsv(GoszakupAllRowsParsing):
+    #
+    pass
+
+
+@requires(GoszakupPlanPointsStatusParsingToCsv)
+class GzipGoszakupPlanPointsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupPlanPointsAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupPlanPointsParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                  ftp_directory='goszakup',
+                                                  sep=';',
+                                                  url='https://ows.goszakup.gov.kz/v3/plans/all',
+                                                  name='goszakup_plan_point',
+                                                  monthly=True,
+                                                  struct=GoszakupPlanPointRow)
+
+
+class GoszakupPlansStatusParsingToCsv(GoszakupAllRowsParsing):
+    #
+    pass
+
+
+@requires(GoszakupPlansStatusParsingToCsv)
+class GzipGoszakupPlansParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupPlansAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupPlansParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                             # ftp_directory='goszakup',
+                                             sep=';',
+                                             url='https://ows.goszakup.gov.kz/v3/plans',
+                                             name='goszakup_plans',
+                                             monthly=True,
+                                             struct=GoszakupPlanRow)
+
+
 class GoszakupBuyStatusParsingToCsv(GoszakupAllRowsParsing):
     pass
 
@@ -511,8 +620,6 @@ class GoszakupBuyStatus(luigi.WrapperTask):
                                                  name='goszakup_buy_status',
                                                  monthly=True,
                                                  struct=GoszakupBuyStatusRow)
-
-
 
 
 class GoszakupGqlParsingToCsv(GraphQlParsing):
