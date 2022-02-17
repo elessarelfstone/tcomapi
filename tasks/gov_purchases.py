@@ -560,26 +560,26 @@ class GoszakupTradeBuysAll(luigi.WrapperTask):
                                                  struct=GoszakupTradeBuyRow)
 
 
-class GoszakupPlanPointsStatusParsingToCsv(GoszakupAllRowsParsing):
+class GoszakupPlanPointsAllParsingToCsv(GoszakupAllRowsParsing):
     #
     pass
 
 
-@requires(GoszakupPlanPointsStatusParsingToCsv)
-class GzipGoszakupPlanPointsParsingToCsv(GzipToFtp):
+@requires(GoszakupPlanPointsAllParsingToCsv)
+class GzipGoszakupPlanPointsAllParsingToCsv(GzipToFtp):
     pass
 
 
 class GoszakupPlanPointsAll(luigi.WrapperTask):
     def requires(self):
-        return GzipGoszakupPlanPointsParsingToCsv(directory=BIGDATA_TMP_DIR,
-                                                  ftp_directory='goszakup',
-                                                  sep=';',
-                                                  url='https://ows.goszakup.gov.kz/v3/plans/all',
-                                                  name='goszakup_plan_point',
-                                                  monthly=True,
-                                                  timeout=0.5,
-                                                  struct=GoszakupPlanPointRow)
+        return GzipGoszakupPlanPointsAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                     ftp_directory='goszakup',
+                                                     sep=';',
+                                                     url='https://ows.goszakup.gov.kz/v3/plans/all',
+                                                     name='goszakup_plan_point',
+                                                     monthly=True,
+                                                     timeout=0.5,
+                                                     struct=GoszakupPlanPointRow)
 
 
 class GoszakupPlansStatusParsingToCsv(GoszakupAllRowsParsing):
