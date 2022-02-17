@@ -16,7 +16,7 @@ from tasks.grql import GraphQlParsing
 from tcomapi.common.dates import previous_date_as_str
 from tcomapi.common.utils import (dict_to_csvrow, save_csvrows,
                                   get, read_lines,
-                                  append_file, get_file_lines_count)
+                                  append_file, get_file_lines_count2)
 
 
 @attr.s
@@ -354,7 +354,7 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
             url = f'{host}{uri}'
 
         total = 0
-        parsed_count = get_file_lines_count(self.output().path)
+        parsed_count = get_file_lines_count2(self.output().path)
         parsed_count = 0 if not parsed_count  else parsed_count
 
         while url:
@@ -929,6 +929,90 @@ class GoszakupTradeBuy(luigi.WrapperTask):
             is_construction_work: isConstructionWork
             system_id: systemId
             index_date: indexDate
+          }
+        }
+        """
+        return GzipGoszakupTradeBuyParsingToCsv(
+            entity='TrdBuy',
+            directory=TMP_DIR,
+            ftp_directory='goszakup',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_trdbuy',
+            struct=GoszakupTradeBuyRow
+        )
+
+
+class GoszakupPlanPointsParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupPlanPointsParsingToCsv)
+class GzipGoszakupPlanPointsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupPlanPoints(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getPlanPoints($from: String, $to: String, $limit: Int, $after: Int){
+          PlnPoint(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+            id
+            rootrecord_id: rootrecordId
+            sys_subjects_id: sysSubjectsId
+            sys_organizator_id: sysOrganizatorId
+            subject_biin: subjectBiin
+            subject_name_ru: subjectNameRu
+            subject_name_kz: subjectNameKz
+            name_ru: nameRu
+            name_kz: nameKz
+            ref_trade_methods_id: refTradeMethodsId
+            ref_units_code: refUnitsCode
+            count
+            price
+            amount
+            ref_months_id: refMonthsId
+            ref_pln_point_status_id: refPlnPointStatusId
+            pln_point_year: plnPointYear
+            ref_subject_type_id: refSubjectTypeId
+            ref_enstru_code: refEnstruCode
+            ref_finsource_id: refFinsourceId
+            ref_abp_code: refAbpCode
+            is_qvazi: isQvazi
+            date_create: dateCreate
+            timestamp: timestamp
+            ref_point_type_id: refPointTypeId
+            desc_ru: descRu
+            desc_kz: descKz
+            extra_desc_kz: extraDescKz
+            extra_desc_ru: extraDescRu
+            sum_1: sum1
+            sum_2: sum2
+            sum_3: sum3
+            supply_date_ru: supplyDateRu
+            prepayment: prepayment
+            ref_justification_id: refJustificationId
+            ref_amendment_agreem_type_id: refAmendmentAgreemTypeId
+            ref_amendm_agreem_justif_id: refAmendmAgreemJustifId
+            contract_prev_point_id: contractPrevPointId
+            disable_person_id: disablePersonId
+            transfer_sys_subjects_id: transferSysSubjectsId
+            transfer_type: transferType
+            ref_budget_type_id: refBudgetTypeId
+            createdin_act_id: createdinActId
+            is_active: isActive
+            active_act_id: activeActId
+            is_deleted: isDeleted
+            system_id: systemId
+            index_date: indexDate
+            plan_act_id: PlanActId
+            plan_act_number: PlanActNumber
+            ref_plan_status_id: refPlanStatusId
+            plan_fin_year: planFinYear
+            plan_preliminary: planPreliminary
+            date_approved: dateApproved
           }
         }
         """

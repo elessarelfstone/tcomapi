@@ -441,6 +441,18 @@ def get_file_lines_count(fpath: int):
     return None
 
 
+def get_file_lines_count2(fpath):
+    def blocks(fd, size=65536):
+        while True:
+            b = fd.read(size)
+            if not b:
+                break
+            yield b
+
+    with open(fpath, "r", encoding="utf-8", errors='ignore') as f:
+        return sum(bl.count("\n") for bl in blocks(f))
+
+
 def flatten_json(nested_json):
     """
         Flatten json object with nested keys into a single level.
