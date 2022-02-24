@@ -1,5 +1,6 @@
 import json
 import os
+import pandas as pd
 from urllib.parse import urlparse
 
 
@@ -332,6 +333,12 @@ def get_total(url: str, headers: str):
     return Box(json.loads(r)).total
 
 
+def norm(d):
+    df = pd.json_normalize(d, sep='')
+    _norm = df.to_dict(orient='records')[0]
+    return {k.lstrip('_'): v for k, v in _norm.items()}
+
+
 class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
     url = luigi.Parameter()
@@ -355,7 +362,7 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
 
         total = 0
         parsed_count = get_file_lines_count2(self.output().path)
-        parsed_count = 0 if not parsed_count  else parsed_count
+        parsed_count = 0 if not parsed_count else parsed_count
 
         while url:
             try:
@@ -632,6 +639,8 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
     limit = luigi.IntParameter(default=200)
     anchor_field = luigi.Parameter(default='id')
 
+
+
     def run(self):
         client = self.get_client()
         query = gql(self.query)
@@ -650,7 +659,7 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
 
             last_id = data.get(self.entity, [])[-1][self.anchor_field]
             start_from = last_id
-            data = [dict_to_csvrow(d, self.struct) for d in data.get(self.entity)]
+            data = [dict_to_csvrow(norm(d), self.struct) for d in data.get(self.entity)]
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
 
 
@@ -958,7 +967,7 @@ class GoszakupPlanPoints(luigi.WrapperTask):
     def requires(self):
         query = """
         query getPlanPoints($from: String, $to: String, $limit: Int, $after: Int){
-          PlnPoint(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+          Plans(filter: {timestamp: [$from, $to]}, limit: $limit, after: $after) {
             id
             rootrecord_id: rootrecordId
             sys_subjects_id: sysSubjectsId
@@ -1007,24 +1016,26 @@ class GoszakupPlanPoints(luigi.WrapperTask):
             is_deleted: isDeleted
             system_id: systemId
             index_date: indexDate
-            plan_act_id: PlanActId
-            plan_act_number: PlanActNumber
-            ref_plan_status_id: refPlanStatusId
-            plan_fin_year: planFinYear
-            plan_preliminary: planPreliminary
-            date_approved: dateApproved
+            _: PlanActs{
+                plan_act_id: id
+                number: planActNumber
+                ref_plan_status_id: refPlanStatusId
+                plan_fin_year: planFinYear
+                plan_preliminary: planPreliminary
+                date_approved: dateApproved
+            }
           }
         }
         """
-        return GzipGoszakupTradeBuyParsingToCsv(
-            entity='TrdBuy',
+        return GzipGoszakupPlanPointsParsingToCsv(
+            entity='Plans',
             directory=TMP_DIR,
             ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
-            name='goszakup_trdbuy',
-            struct=GoszakupTradeBuyRow
+            name='goszakup_plan_point',
+            struct=GoszakupPlanPointRow
         )
 
 
