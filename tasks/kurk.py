@@ -20,7 +20,7 @@ class Row:
         self.namekz, self.nameru = self.nameru, self.namekz
 
 
-url = 'http://old.stat.gov.kz/getImg?id=WC16200004875'
+url = 'https://stat.gov.kz/api/getFile/?docId=ESTAT249322'
 
 
 @requires(WebExcelFileParsingToCsv)
