@@ -513,7 +513,15 @@ def fix_wrong_csv_rows(fpath_in, fpath_out, cols):
             fout.write(re.sub(r'(?<!\.)\n', " ", s) + "\n")
 
 
-# scan_wrong_csv_rows("C:\\Users\\elessar\\data\\samruk_certs_new_1.csv")
-
-# fix_wrong_csv_rows("C:\\Users\\elessar\\data\\samruk_certs_new.csv", "C:\\Users\\elessar\\data\\samruk_certs_new_1.csv", 24)
-# scan_wrong_csv_rows("C:\\Users\\elessar\\data\\test3.csv", "C:\\Users\\elessar\\data\\test3_new.csv", 24)
+def rebuild_dict(d: dict, entity: str, container: list):
+    keys = d.keys()
+    if not keys:
+        exit()
+    for k in keys:
+        if k == entity:
+            items = d[k]
+            for i in items:
+                container.append(i)
+            exit()
+        else:
+            rebuild_dict(d, entity, container)

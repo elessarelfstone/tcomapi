@@ -2,6 +2,7 @@ import json
 import os
 import pandas as pd
 from urllib.parse import urlparse
+from math import floor
 
 
 import attr
@@ -328,6 +329,52 @@ class GoszakupPlanPointRow:
     date_approved = attr.ib(default='')
 
 
+@attr.s
+class GoszakupPlanKatoRow:
+    id = attr.ib(default='')
+    pln_points_id = attr.ib(default='')
+    ref_kato_code = attr.ib(default='')
+    ref_countries_code = attr.ib(default='')
+    full_delivery_place_name_ru = attr.ib(default='')
+    full_delivery_place_name_kz = attr.ib(default='')
+    count = attr.ib(default='')
+    is_active = attr.ib(default='')
+    is_deleted = attr.ib(default='')
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+
+
+@attr.s
+class GoszakupContractUnitsRow:
+    id = attr.ib(default='')
+    lotId = attr.ib(default='')
+    plnPointId = attr.ib(default='')
+    itemPrice = attr.ib(default='')
+    itemPriceWnds = attr.ib(default='')
+    quantity = attr.ib(default='')
+    totalSum = attr.ib(default='')
+    totalSumWnds = attr.ib(default='')
+    factSum = attr.ib(default='')
+    factSumWnds = attr.ib(default='')
+    ksProc = attr.ib(default='')
+    ksSum = attr.ib(default='')
+    deleted = attr.ib(default='')
+    trdBuyId = attr.ib(default='')
+    contractRegistryId = attr.ib(default='')
+    crdate = attr.ib(default='')
+    execFaktDate = attr.ib(default='')
+    execPlanDate = attr.ib(default='')
+    executed = attr.ib(default='')
+    parentId = attr.ib(default='')
+    rootId = attr.ib(default='')
+    refContractStatusId = attr.ib(default='')
+    crDeleted = attr.ib(default='')
+    refAmendmAgreemJustifId = attr.ib(default='')
+    isDeleted = attr.ib(default='')
+    systemId = attr.ib(default='')
+    indexDate = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -337,6 +384,17 @@ def norm(d):
     df = pd.json_normalize(d, sep='')
     _norm = df.to_dict(orient='records')[0]
     return {k.lstrip('_'): v for k, v in _norm.items()}
+
+
+def transform_nested_gql_response(entity, items):
+
+    flatten = []
+    for wrapper in items:
+        d = wrapper[entity]
+        if d:
+            flatten.extend(d)
+
+    return flatten
 
 
 class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
@@ -633,15 +691,12 @@ class GoszakupBuyStatus(luigi.WrapperTask):
 class GoszakupGqlParsingToCsv(GraphQlParsing):
     entity = luigi.Parameter()
     start_date = luigi.Parameter(default=previous_date_as_str(1))
-    # start_date = luigi.Parameter(default='2021-09-23')
-    # end_date = luigi.Parameter(default=previous_date_as_str(1))
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = luigi.IntParameter(default=200)
     anchor_field = luigi.Parameter(default='id')
 
-
-
     def run(self):
+        parsed_count = 0
         client = self.get_client()
         query = gql(self.query)
         start_from = None
@@ -653,14 +708,33 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             if start_from:
                 p["after"] = start_from
 
-            data = client.execute(query, variable_values=p)
-            if data.get(self.entity) is None or len(data.get(self.entity, [])) == 0:
+            data = client.execute(query, variable_values=p, get_execution_result=True)
+            extensions = data.extensions
+            data = data.data
+            entity, wrapper = self.entity, None
+            if '_' in self.entity:
+                entity, wrapper = self.entity.split('_')
+
+            if not extensions['pageInfo']['hasNextPage']:
                 break
 
-            last_id = data.get(self.entity, [])[-1][self.anchor_field]
-            start_from = last_id
-            data = [dict_to_csvrow(norm(d), self.struct) for d in data.get(self.entity)]
+            data = data.get(entity, [])
+
+            start_from = extensions['pageInfo']['lastId']
+            total = extensions['pageInfo']['totalCount']
+
+            if not wrapper:
+                data = [dict_to_csvrow(norm(d), self.struct) for d in data]
+            else:
+                data = transform_nested_gql_response(wrapper, data)
+                data = [dict_to_csvrow(norm(d), self.struct) for d in data]
+
+            # print(len(data))
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
+            parsed_count += len(data)
+            percent = floor((100 * parsed_count) / total)
+            s = f'Total: {total}. Parsed: {parsed_count}.'
+            self.set_status(s, percent)
 
 
 class GoszakupCompaniesParsingToCsv(GoszakupGqlParsingToCsv):
@@ -723,7 +797,7 @@ class GoszakupCompanies(luigi.WrapperTask):
             entity='Subjects',
             anchor_field='pid',
             directory=TMP_DIR,
-            ftp_directory='goszakup',
+            # ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
@@ -1036,6 +1110,52 @@ class GoszakupPlanPoints(luigi.WrapperTask):
             query=query,
             name='goszakup_plan_point',
             struct=GoszakupPlanPointRow
+        )
+
+
+class GoszakupPlanKatoParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupPlanKatoParsingToCsv)
+class GzipGoszakupPlanKatoParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupPlanKato(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getPlansKato($from: String, $to: String, $limit: Int, $after: Int){
+                  Plans(filter: {timestamp: [$from, $to]}, limit: $limit, after: $after) {
+                    Kato: PlansKato {
+                        id
+                        pln_points_id: plnPointsId
+                        ref_kato_code: refKatoCode
+                        ref_countries_code: refCountriesCode
+                        full_delivery_place_name_ru: fullDeliveryPlaceNameRu
+                        full_delivery_place_name_kz: fullDeliveryPlaceNameKz
+                        count
+                        is_active: isActive
+                        is_deleted: isDeleted
+                        system_id: systemId
+                        index_date: indexDate
+                    }
+                }
+            }
+        """
+        return GzipGoszakupPlanKatoParsingToCsv(
+            entity='Plans_Kato',
+            directory=TMP_DIR,
+            start_date='2016-01-04',
+            end_date='2022-03-20',
+            # ftp_directory='goszakup',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_plan_kato',
+            struct=GoszakupPlanKatoRow,
+            anchor_field='pln_points_id'
         )
 
 
