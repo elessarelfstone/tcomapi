@@ -1146,10 +1146,10 @@ class GoszakupPlanKato(luigi.WrapperTask):
         """
         return GzipGoszakupPlanKatoParsingToCsv(
             entity='Plans_Kato',
-            directory=TMP_DIR,
+            directory=BIGDATA_TMP_DIR,
             start_date='2016-01-04',
             end_date='2022-03-20',
-            # ftp_directory='goszakup',
+            ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
