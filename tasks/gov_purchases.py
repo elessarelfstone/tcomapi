@@ -346,33 +346,35 @@ class GoszakupPlanKatoRow:
 
 @attr.s
 class GoszakupContractUnitsRow:
-    id = attr.ib(default='')
-    lotId = attr.ib(default='')
-    plnPointId = attr.ib(default='')
-    itemPrice = attr.ib(default='')
-    itemPriceWnds = attr.ib(default='')
+    contract_id = attr.ib(default='')
+    lot_id = attr.ib(default='')
+    pln_point_id = attr.ib(default='')
+    item_price = attr.ib(default='')
+    item_price_wnds = attr.ib(default='')
     quantity = attr.ib(default='')
-    totalSum = attr.ib(default='')
-    totalSumWnds = attr.ib(default='')
-    factSum = attr.ib(default='')
-    factSumWnds = attr.ib(default='')
-    ksProc = attr.ib(default='')
-    ksSum = attr.ib(default='')
+    total_sum = attr.ib(default='')
+    total_sum_wnds = attr.ib(default='')
+    fact_sum = attr.ib(default='')
+    fact_sum_wnds = attr.ib(default='')
+    ks_proc = attr.ib(default='')
+    ks_sum = attr.ib(default='')
     deleted = attr.ib(default='')
-    trdBuyId = attr.ib(default='')
-    contractRegistryId = attr.ib(default='')
+    trd_buy_id = attr.ib(default='')
+    contract_registry_id = attr.ib(default='')
     crdate = attr.ib(default='')
-    execFaktDate = attr.ib(default='')
-    execPlanDate = attr.ib(default='')
+    exec_fakt_date = attr.ib(default='')
+    exec_plan_date = attr.ib(default='')
     executed = attr.ib(default='')
-    parentId = attr.ib(default='')
-    rootId = attr.ib(default='')
-    refContractStatusId = attr.ib(default='')
-    crDeleted = attr.ib(default='')
-    refAmendmAgreemJustifId = attr.ib(default='')
-    isDeleted = attr.ib(default='')
+    parent_id = attr.ib(default='')
+    root_id = attr.ib(default='')
+    ref_contract_status_id = attr.ib(default='')
+    cr_deleted = attr.ib(default='')
+    ref_amendm_agreem_justif_id = attr.ib(default='')
     systemId = attr.ib(default='')
     indexDate = attr.ib(default='')
+
+
+
 
 
 def get_total(url: str, headers: str):
@@ -1156,6 +1158,68 @@ class GoszakupPlanKato(luigi.WrapperTask):
             name='goszakup_plan_kato',
             struct=GoszakupPlanKatoRow,
             anchor_field='pln_points_id'
+        )
+
+
+class GoszakupContractUnitsParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupContractUnitsParsingToCsv)
+class GzipGoszakupContractUnitsParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupContractUnits(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+            query getContractUnits($from: String, $to: String, $limit: Int, $after: Int){
+                  Contract(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+                    contract_id: id
+                    Units: ContractUnits{
+                        id
+                        lot_id: lotId
+                        pln_point_id: plnPointId
+                        item_price: itemPrice
+                        item_price_wnds: itemPriceWnds
+                        quantity
+                        total_sum: totalSum
+                        total_sum_wnds: totalSumWnds
+                        fact_sum: factSum
+                        fact_sum_wnds: factSumWnds
+                        ks_proc: ksProc
+                        ks_sum: ksSum
+                        deleted
+                        trd_buy_id: trdBuyId
+                        contract_registry_id: contractRegistryId
+                        crdate
+                        exec_fakt_date: execFaktDate
+                        exec_plan_date: execPlanDate
+                        executed
+                        parent_id: parentId
+                        root_id: rootId
+                        ref_contract_status_id: refContractStatusId
+                        cr_deleted: crDeleted
+                        ref_amendm_agreem_justif_id: refAmendmAgreemJustifId
+                        systemId
+                        indexDate
+                    }
+                }
+            }
+        """
+        return GzipGoszakupContractUnitsParsingToCsv(
+            entity='Contract_Units',
+            directory=BIGDATA_TMP_DIR,
+            start_date='2016-01-04',
+            end_date='2022-03-20',
+            # ftp_directory='goszakup',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_contract_units',
+            struct=GoszakupContractUnitsRow,
+            anchor_field='contract_id'
         )
 
 
