@@ -370,11 +370,8 @@ class GoszakupContractUnitsRow:
     ref_contract_status_id = attr.ib(default='')
     cr_deleted = attr.ib(default='')
     ref_amendm_agreem_justif_id = attr.ib(default='')
-    systemId = attr.ib(default='')
-    indexDate = attr.ib(default='')
-
-
-
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
 
 
 def get_total(url: str, headers: str):
@@ -386,6 +383,32 @@ def norm(d):
     df = pd.json_normalize(d, sep='')
     _norm = df.to_dict(orient='records')[0]
     return {k.lstrip('_'): v for k, v in _norm.items()}
+
+
+def flatten_data(y):
+    out = {}
+
+    def flatten(x, name=''):
+        if type(x) is dict:
+            for a in x:
+                flatten(x[a], name + a + '_')
+        elif type(x) is list:
+            i = 0
+            for a in x:
+                flatten(a, name + str(i) + '_')
+                i += 1
+        else:
+            out[name[:-1]] = x
+
+    flatten(y)
+
+    pat = '_0123456789'
+    return out
+
+
+def clean(d):
+    pat = '_0123456789'
+    return {k.lstrip(pat): v for k, v in d.items()}
 
 
 def transform_nested_gql_response(entity, items):
@@ -725,13 +748,17 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             start_from = extensions['pageInfo']['lastId']
             total = extensions['pageInfo']['totalCount']
 
-            if not wrapper:
-                data = [dict_to_csvrow(norm(d), self.struct) for d in data]
-            else:
-                data = transform_nested_gql_response(wrapper, data)
-                data = [dict_to_csvrow(norm(d), self.struct) for d in data]
+            # if not wrapper:
+            #     data = [dict_to_csvrow(norm(d), self.struct) for d in data]
+            # else:
+            #     data = transform_nested_gql_response(wrapper, data)
+            #     data = [dict_to_csvrow(norm(d), self.struct) for d in data]
 
-            # print(len(data))
+            # print(data)
+
+            data = [flatten_data(d) for d in data]
+            data = [dict_to_csvrow(clean(d), self.struct) for d in data]
+
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
             parsed_count += len(data)
             percent = floor((100 * parsed_count) / total)
@@ -1148,9 +1175,7 @@ class GoszakupPlanKato(luigi.WrapperTask):
         """
         return GzipGoszakupPlanKatoParsingToCsv(
             entity='Plans_Kato',
-            directory=BIGDATA_TMP_DIR,
-            start_date='2016-01-04',
-            end_date='2022-03-20',
+            directory=TMP_DIR,
             ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
@@ -1177,7 +1202,7 @@ class GoszakupContractUnits(luigi.WrapperTask):
             query getContractUnits($from: String, $to: String, $limit: Int, $after: Int){
                   Contract(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
                     contract_id: id
-                    Units: ContractUnits{
+                    _: ContractUnits{
                         id
                         lot_id: lotId
                         pln_point_id: plnPointId
@@ -1202,8 +1227,8 @@ class GoszakupContractUnits(luigi.WrapperTask):
                         ref_contract_status_id: refContractStatusId
                         cr_deleted: crDeleted
                         ref_amendm_agreem_justif_id: refAmendmAgreemJustifId
-                        systemId
-                        indexDate
+                        system_id: systemId
+                        index_date: indexDate
                     }
                 }
             }
@@ -1211,9 +1236,9 @@ class GoszakupContractUnits(luigi.WrapperTask):
         return GzipGoszakupContractUnitsParsingToCsv(
             entity='Contract_Units',
             directory=BIGDATA_TMP_DIR,
+            ftp_directory='goszakup',
             start_date='2016-01-04',
             end_date='2022-03-20',
-            # ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
