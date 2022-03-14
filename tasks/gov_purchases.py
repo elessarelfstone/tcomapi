@@ -347,6 +347,7 @@ class GoszakupPlanKatoRow:
 @attr.s
 class GoszakupContractUnitsRow:
     contract_id = attr.ib(default='')
+    id = attr.ib(default='')
     lot_id = attr.ib(default='')
     pln_point_id = attr.ib(default='')
     item_price = attr.ib(default='')
@@ -719,8 +720,6 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
     end_date = luigi.Parameter(default=previous_date_as_str(1))
     limit = luigi.IntParameter(default=200)
     anchor_field = luigi.Parameter(default='id')
-
-
 
     def run(self):
         parsed_count = 0
