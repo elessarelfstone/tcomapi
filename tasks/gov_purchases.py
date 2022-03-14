@@ -757,8 +757,9 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             # print(data)
 
             data = [flatten_data(d) for d in data]
+            # print(data)
             data = [dict_to_csvrow(clean(d), self.struct) for d in data]
-
+            # print(data)
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
             parsed_count += len(data)
             percent = floor((100 * parsed_count) / total)
@@ -826,7 +827,7 @@ class GoszakupCompanies(luigi.WrapperTask):
             entity='Subjects',
             anchor_field='pid',
             directory=TMP_DIR,
-            # ftp_directory='goszakup',
+            ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
@@ -1157,7 +1158,7 @@ class GoszakupPlanKato(luigi.WrapperTask):
         query = """
         query getPlansKato($from: String, $to: String, $limit: Int, $after: Int){
                   Plans(filter: {timestamp: [$from, $to]}, limit: $limit, after: $after) {
-                    Kato: PlansKato {
+                    _: PlansKato {
                         id
                         pln_points_id: plnPointsId
                         ref_kato_code: refKatoCode
