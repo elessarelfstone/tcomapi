@@ -720,6 +720,8 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
     limit = luigi.IntParameter(default=200)
     anchor_field = luigi.Parameter(default='id')
 
+
+
     def run(self):
         parsed_count = 0
         client = self.get_client()
@@ -757,9 +759,9 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             # print(data)
 
             data = [flatten_data(d) for d in data]
-            # print(data)
-            data = [dict_to_csvrow(clean(d), self.struct) for d in data]
-            # print(data)
+            data = [clean(d) for d in data if len(d.keys()) != 1]
+            data = [dict_to_csvrow(d, self.struct) for d in data]
+
             save_csvrows(self.output().path, data, sep=self.sep, quoter="\"")
             parsed_count += len(data)
             percent = floor((100 * parsed_count) / total)
