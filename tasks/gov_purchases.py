@@ -445,8 +445,10 @@ class GoszakupAllRowsParsing(BigDataToCsv, LoadingDataIntoCsvFile):
             url = f'{host}{uri}'
 
         total = 0
-        parsed_count = get_file_lines_count2(self.output().path)
-        parsed_count = 0 if not parsed_count else parsed_count
+        parsed_count = 0
+        if os.path.exists(self.output().path):
+            parsed_count = get_file_lines_count2(self.output().path)
+        # parsed_count = 0 if not parsed_count else parsed_count
 
         while url:
             try:
@@ -712,6 +714,26 @@ class GoszakupBuyStatus(luigi.WrapperTask):
                                                  name='goszakup_buy_status',
                                                  monthly=True,
                                                  struct=GoszakupBuyStatusRow)
+
+
+class GoszakupPlanKatoAllParsingToCsv(GoszakupAllRowsParsing):
+    pass
+
+
+@requires(GoszakupPlanKatoAllParsingToCsv)
+class GzipGoszakupPlanKatoAllParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupPlanKatoAll(luigi.WrapperTask):
+    def requires(self):
+        return GzipGoszakupPlanKatoAllParsingToCsv(directory=BIGDATA_TMP_DIR,
+                                                   ftp_directory='goszakup',
+                                                   sep=';',
+                                                   url='https://ows.goszakup.gov.kz/v3/plans/kato',
+                                                   name='goszakup_plan_kato',
+                                                   monthly=True,
+                                                   struct=GoszakupPlanKatoRow)
 
 
 class GoszakupGqlParsingToCsv(GraphQlParsing):
