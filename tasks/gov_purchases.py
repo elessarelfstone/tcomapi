@@ -1260,8 +1260,6 @@ class GoszakupContractUnits(luigi.WrapperTask):
         return GzipGoszakupContractUnitsParsingToCsv(
             entity='Contract_Units',
             directory=TMP_DIR,
-            start_date='2016-01-01',
-            end_date='2022-03-20',
             ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
