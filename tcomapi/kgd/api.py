@@ -131,7 +131,14 @@ class KgdTaxPaymentParser(BidsHandler):
         for p in payments:
             p.bin = bid
 
-        return [dict_to_csvrow(p, self.struct) for p in payments]
+        # TCOMEXT-3
+        # field Summa can be empty
+        data = []
+        for p in payments:
+            if p.to_dict().get('Summa') is not None:
+                data.append(dict_to_csvrow(p, self.struct))
+
+        return data
 
     def process_bin(self, bid):
         """
