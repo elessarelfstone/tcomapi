@@ -74,6 +74,7 @@ class KgdTaxPaymentParser(BidsHandler):
         # TODO rid off BidsBigDataToCsvHandler inheritance
         self.output_fpath = output_fpath
         self.parsed_fpath = parsed_fpath
+        self.failed_fpath = os.path.splitext(self.output_fpath)[0]+'.failed'
         self.notaxes_fpath = notaxes_fpath
         self._token = token
         self.struct = struct
@@ -159,8 +160,10 @@ class KgdTaxPaymentParser(BidsHandler):
             sleep(self._timeout)
 
         except (KgdResponseError, BoxKeyError):
+        # except KgdResponseError:
             # just mark _bin as failed and sleep
             # self.failed_bids.append(bid)
+            append_file(self.failed_fpath, bid)
             self._stat['rse'] += 1
             sleep(self._timeout)
 
