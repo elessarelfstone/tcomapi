@@ -209,10 +209,8 @@ class KgdTaxPaymentsForMonth(luigi.WrapperTask):
         start_date, end_date = month_as_range(self.month)
 
         yield GzipKgdTaxPaymentsToFtp(
-                                      # start_date=start_date.strftime('%Y-%m-%d'),
-                                      # end_date=end_date.strftime('%Y-%m-%d'),
-                                      start_date='2021-12-01',
-                                      end_date='2022-03-31',
+                                      start_date=start_date.strftime('%Y-%m-%d'),
+                                      end_date=end_date.strftime('%Y-%m-%d'),
                                       name='kgd_taxpayments',
                                       timeout=int(KGD_API_TIMEOUT),
                                       struct=TaxPaymentsRow,
