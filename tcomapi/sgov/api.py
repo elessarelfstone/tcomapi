@@ -73,7 +73,7 @@ class SgovRCutParser:
     rcuts_url = 'https://{}/api/rcut/ru'.format(host)
     request_url = 'https://{}/api/sbr/request'.format(host)
     result_url_tmpl = 'https://{}/api/sbr/requestResult/{}/ru'
-    rcut_download_url_tmpl = 'https://{}/api/sbr/download?bucket=SBR&guid={}'
+    rcut_download_url_tmpl = 'https://{}/api/sbr/download?bucket=SBR_UREQUEST&guid={}'
 
     juridical_type_class_version_id = 2153
     status_class_version_id = 1989
@@ -112,6 +112,14 @@ class SgovRCutParser:
 
         print(r.text)
         return r.json()['obj']
+
+    @staticmethod
+    def is_ready_status(url):
+        r = requests.head(url)
+        if r.status_code == 200:
+            return True
+        else:
+            return False
 
     def get_file_guid(self, order_no):
         url = self.result_url_tmpl.format(self.host, order_no)
