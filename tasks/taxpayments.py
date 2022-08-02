@@ -56,7 +56,8 @@ class TaxPaymentsRow:
 
 class KgdBins(luigi.ExternalTask):
 
-    bins_fname_tmp = 'export_kgdgovkz_bins_*.csv'
+    # bins_fname_tmp = 'export_kgdgovkz_bins_*.csv'
+    bins_fname_tmp = 'export_kgdgovkz_bins_statgovkz_companies_bins_for_export_*.csv'
 
     def output(self):
         rmfs = RemoteFileSystem(FTP_HOST, username=FTP_USER, password=FTP_PASS)
