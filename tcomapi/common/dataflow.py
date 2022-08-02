@@ -7,7 +7,7 @@ def last_file_with_bins(flist):
     dates = []
     for f in flist:
         fname = fname_noext(f)
-        _dt = fname.split('.')[0].split('_')[3]
+        _dt = fname.split('.')[0].split('_')[-2]
         dt = datetime.strptime(_dt, '%Y-%m-%d')
         dates.append((dt, f))
 
