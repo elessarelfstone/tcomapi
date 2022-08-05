@@ -237,7 +237,7 @@ class ChatMessagesForYesterday(BaseRunner):
     def requires(self):
         return GzipChatMessagesPeriodData(
             name='3beep_chat_messages',
-            directory=BIGDATA_TMP_DIR,
+            directory=TMP_DIR,
             ftp_directory='cassandra_3beep',
             struct=ChatMessageRow,
             dates_range=self.dates_range
