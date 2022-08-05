@@ -99,7 +99,7 @@ def load(last_message_id):
 
 class LastMessageID(luigi.ExternalTask):
 
-    last_message_fname_patt = 'export_cassandra_3beep_last_message_id_*.csv'
+    last_message_fname_patt = 'export_cassandra_3beep_last_message_id_cassandra_3beep_last_message_id_*.csv'
 
     def output(self):
         rmfs = RemoteFileSystem(FTP_HOST, username=FTP_USER, password=FTP_PASS)
