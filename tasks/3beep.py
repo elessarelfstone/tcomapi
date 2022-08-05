@@ -187,10 +187,26 @@ class ChatMessagesPeriodDataLoading(LoadingDataIntoCsvFile):
 
     def run(self):
 
+        # prepare_session(self.host, self.user, self.password, self.keyspace)
+        # rows = load(self.last_message_id)
+        # data = [dict_to_csvrow(dict(d._asdict()), self.struct) for d in rows]
+        # save_csvrows(self.output().path, data)
+
         prepare_session(self.host, self.user, self.password, self.keyspace)
-        rows = load(self.last_message_id)
-        data = [dict_to_csvrow(dict(d._asdict()), self.struct) for d in rows]
-        save_csvrows(self.output().path, data)
+        data, rows = [], []
+        all_count = 0
+        count = 0
+        # ows = load_all()
+        for row in load(self.last_message_id):
+            rows.append(row)
+            count += 1
+            if count == fetch_size:
+                data = [dict_to_csvrow(dict(d._asdict()), ChatMessageRow) for d in rows]
+                save_csvrows(self.output().path, data)
+                all_count += count
+                count = 0
+                self.set_status(f'Parsed: {all_count}', 0)
+                rows = []
 
 
 @requires(ChatMessagesPeriodDataLoading)
