@@ -375,6 +375,37 @@ class GoszakupContractUnitsRow:
     index_date = attr.ib(default='')
 
 
+@attr.s
+class GoszakupTrdAppOffersRow:
+    id = attr.ib(default='')
+    buy_id = attr.ib(default='')
+    lot_id = attr.ib(default='')
+    app_lot_id = attr.ib(default='')
+    price = attr.ib(default='')
+    amount = attr.ib(default='')
+    system_id = attr.ib(default='')
+    index_date = attr.ib(default='')
+    app_lot_point_list = attr.ib(default='')
+    app_lot_status_id = attr.ib(default='')
+    app_lot_price = attr.ib(default='')
+    app_lot_amount = attr.ib(default='')
+    app_lot_discount_value = attr.ib(default='')
+    app_lot_discount_price = attr.ib(default='')
+    app_lot_system_id = attr.ib(default='')
+    app_lot_index_date = attr.ib(default='')
+    app_id = attr.ib(default='')
+    app_buy_id = attr.ib(default='')
+    app_supplier_id = attr.ib(default='')
+    app_cr_fio = attr.ib(default='')
+    app_mod_fio = attr.ib(default='')
+    app_supplier_bin_iin = attr.ib(default='')
+    app_prot_id = attr.ib(default='')
+    app_prot_number = attr.ib(default='')
+    app_date_apply = attr.ib(default='')
+    app_system_id = attr.ib(default='')
+    app_index_date = attr.ib(default='')
+
+
 def get_total(url: str, headers: str):
     r = get(url, headers=headers)
     return Box(json.loads(r)).total
@@ -1024,6 +1055,28 @@ class GzipGoszakupTradeBuyParsingToCsv(GzipToFtp):
     pass
 
 
+class GoszakupLot(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+        query getTrdAppLots($from: String, $to: String, $limit: Int, $after: Int){
+          TrdAppLots(filter: {lastUpdateDate: [$from, $to]}, limit: $limit, after: $after) {
+            
+          }
+        }
+        """
+        return GzipGoszakupLotsParsingToCsv(
+            entity='Lots',
+            directory=TMP_DIR,
+            ftp_directory='goszakup',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_lots',
+            struct=GoszakupLotsRow
+        )
+
+
 class GoszakupTradeBuy(luigi.WrapperTask):
 
     def requires(self):
@@ -1267,6 +1320,69 @@ class GoszakupContractUnits(luigi.WrapperTask):
             name='goszakup_contract_units',
             struct=GoszakupContractUnitsRow,
             anchor_field='contract_id'
+        )
+
+
+class GoszakupTrdAppOffersParsingToCsv(GoszakupGqlParsingToCsv):
+    pass
+
+
+@requires(GoszakupTrdAppOffersParsingToCsv)
+class GzipGoszakupTrdAppOffersParsingToCsv(GzipToFtp):
+    pass
+
+
+class GoszakupTrdAppOffers(luigi.WrapperTask):
+
+    def requires(self):
+        query = """
+            query getTrd($from: String, $to: String, $limit: Int, $after: Int){
+                TrdApp(filter: {dateApply: [$from, $to]}, limit: $limit, after: $after){
+                    _ : AppLots {
+                        _: Offers {
+                            id: id
+                            lot_id: lotId
+                            app_lot_id: appLotId
+                            price: price
+                            amount: amount
+                            system_id: systemId
+                            index_date: indexDate
+                        }
+                        app_lot_point_list: pointList
+                        app_lot_status_id: statusId
+                        app_lot_price: price
+                        app_lot_amount: amount
+                        app_lot_discount_value: discountValue
+                        app_lot_discount_price: discountPrice
+                        app_lot_system_id: systemId
+                        app_lot_index_date: indexDate
+                    }
+                    app_id: id
+                    app_buy_id: buyId
+                    app_supplier_id: supplierId
+                    app_cr_fio: crFio
+                    app_mod_fio: modFio
+                    app_supplier_bin_iin: supplierBinIin
+                    app_prot_id: protId
+                    app_prot_number: protNumber
+                    app_date_apply: dateApply
+                    app_system_id: systemId
+                    app_index_date: indexDate
+                }
+            }
+        """
+        return GzipGoszakupTrdAppOffersParsingToCsv(
+            entity='TrdApp',
+            directory=TMP_DIR,
+            ftp_directory='goszakup',
+            start_date='2022-01-01 00:00:00.000000',
+            end_date='2022-11-04 23:59:59.000000',
+            sep=';',
+            url='https://ows.goszakup.gov.kz/v3/graphql',
+            query=query,
+            name='goszakup_trd_app_offers',
+            struct=GoszakupTrdAppOffersRow,
+            anchor_field='app_id'
         )
 
 
