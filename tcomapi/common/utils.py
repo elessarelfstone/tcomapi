@@ -115,7 +115,7 @@ def is_server_up(address, port=443):
 def dict_to_csvrow(raw_dict, struct):
     """ Convert given dict into tuple using
     given structure(attr class)."""
-
+    # print(raw_dict)
     reserved_fields_names = ['from']
 
     # cast each keys's name of dict to lower case

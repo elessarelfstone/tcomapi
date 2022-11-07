@@ -818,6 +818,7 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             percent = floor((100 * parsed_count) / total)
             s = f'Total: {total}. Parsed: {parsed_count}.'
             self.set_status(s, percent)
+            sleep(self.timeout)
 
 
 class GoszakupCompaniesParsingToCsv(GoszakupGqlParsingToCsv):
