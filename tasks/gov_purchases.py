@@ -378,14 +378,13 @@ class GoszakupContractUnitsRow:
 @attr.s
 class GoszakupTrdAppOffersRow:
     id = attr.ib(default='')
-    buy_id = attr.ib(default='')
     lot_id = attr.ib(default='')
     app_lot_id = attr.ib(default='')
     price = attr.ib(default='')
     amount = attr.ib(default='')
     system_id = attr.ib(default='')
     index_date = attr.ib(default='')
-    app_lot_point_list = attr.ib(default='')
+    # app_lot_point_list = attr.ib(default='')
     app_lot_status_id = attr.ib(default='')
     app_lot_price = attr.ib(default='')
     app_lot_amount = attr.ib(default='')
@@ -440,7 +439,7 @@ def flatten_data(y):
 
 def clean(d):
     pat = '_0123456789'
-    return {k.lstrip(pat): v for k, v in d.items()}
+    return {k.lstrip(pat).rstrip(pat): v for k, v in d.items()}
 
 
 def transform_nested_gql_response(entity, items):
@@ -1376,7 +1375,7 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
             directory=TMP_DIR,
             ftp_directory='goszakup',
             start_date='2022-01-01 00:00:00.000000',
-            end_date='2022-11-04 23:59:59.000000',
+            end_date='2022-11-06 23:59:59.000000',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
