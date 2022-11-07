@@ -1382,7 +1382,8 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
             query=query,
             name='goszakup_trd_app_offers',
             struct=GoszakupTrdAppOffersRow,
-            anchor_field='app_id'
+            anchor_field='app_id',
+            timeout=4
         )
 
 
