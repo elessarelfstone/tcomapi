@@ -1376,7 +1376,7 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
             directory=TMP_DIR,
             ftp_directory='goszakup',
             start_date='2022-01-01 00:00:00.000000',
-            end_date='2022-11-06 23:59:59.000000',
+            end_date='2022-05-06 23:59:59.000000',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
