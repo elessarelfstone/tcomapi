@@ -1307,6 +1307,7 @@ class GoszakupContractUnits(luigi.WrapperTask):
                         system_id: systemId
                         index_date: indexDate
                     }
+                    
                 }
             }
         """
@@ -1375,8 +1376,8 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
             entity='TrdApp',
             directory=TMP_DIR,
             ftp_directory='goszakup',
-            start_date='2022-01-01 00:00:00.000000',
-            end_date='2022-02-28 23:59:59.000000',
+            start_date='2022-03-01 00:00:00.000000',
+            end_date='2022-11-09 23:59:59.000000',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
