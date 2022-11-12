@@ -35,6 +35,31 @@ rcut_foreign_branches = 'foreign_branches'
 rcut_entrepreneurs = 'entrepreneurs'
 
 
+rcut_entr = [
+    (77208141, 'abai'),
+    (247783, 'akmola'),
+    (248875, 'aktobe'),
+    (250502, 'almatyobl'),
+    (252311, 'atyrau'),
+    (253160, 'oral'),
+    (255577, 'taraz'),
+    (77208139, 'jetisy'),
+    (256619, 'karaganda'),
+    (258742, 'kostanai'),
+    (261475, 'ygobl'),
+    (260099, 'kzilorda'),
+    (260907, 'aktau'),
+    (263009, 'pavlodar'),
+    (264023, 'petropavl'),
+    (20243032, 'turkestan'),
+    (77208140, 'ulitau'),
+    (264990, 'oskemen'),
+    (268012, 'astana'),
+    (268020, 'almaty'),
+    (20242100, 'shimkent')
+]
+
+
 @attr.s
 class Row:
     bin = attr.ib(default='')
@@ -61,6 +86,7 @@ class RCutUrlFile(luigi.Task):
 
     name = luigi.Parameter()
     juridical_type = luigi.IntParameter()
+    cities = luigi.ListParameter(default=[])
     statuses = luigi.ListParameter(default=[39354, 39355, 39356, 39358, 534829, 39359])
     kato_number = luigi.IntParameter(default=2153)
 
@@ -117,6 +143,10 @@ class ParseCompaniesRCut(luigi.Task):
         # TODO finish
         parse_excel_rect_area_to_csv(self.input().path, self.output().path,
                                      Row, skiptopnum=self.skiptop)
+
+
+# class CompaniesEntrepreneursByRegionsRCutToFtp(ParseCompaniesRCut):
+#     pass
 
 
 @requires(ParseCompaniesRCut)
@@ -208,6 +238,12 @@ class Companies(luigi.WrapperTask):
     def requires(self):
         yield GzipCompaniesToFtp(name='sgov_companies',
                                  skiptop=3)
+
+
+class CompaniesEntrepreneursByRegions(luigi.WrapperTask):
+    def requires(self):
+        for r in rcut_entr:
+            yield ParseCompaniesRCut(name=f'statgovkz_rcut_enterpr_{r[1]}', skiptop=2)
 
 
 class CompaniesForeignBranches(luigi.WrapperTask):

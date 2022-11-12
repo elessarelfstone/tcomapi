@@ -108,7 +108,7 @@ class SgovRCutParser:
         print(request)
         print(self.request_url)
         # return order number
-        r = requests.post(self.request_url, headers=headers, data=request)
+        r = requests.post(self.request_url, headers=headers, data=request, verify=False)
 
         print(r.text)
         return r.json()['obj']
@@ -123,7 +123,7 @@ class SgovRCutParser:
 
     def get_file_guid(self, order_no):
         url = self.result_url_tmpl.format(self.host, order_no)
-        r = requests.get(url, headers=headers)
+        r = requests.get(url, headers=headers, verify=False)
         response = r.json()
         _guid = None
         if response.get('success') is True:
