@@ -1258,6 +1258,8 @@ class GoszakupPlanKato(luigi.WrapperTask):
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
             name='goszakup_plan_kato',
+            start_date='2022-06-01',
+            end_date='2022-11-17',
             struct=GoszakupPlanKatoRow,
             anchor_field='pln_points_id'
         )
