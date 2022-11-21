@@ -1258,8 +1258,6 @@ class GoszakupPlanKato(luigi.WrapperTask):
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
             name='goszakup_plan_kato',
-            start_date='2022-06-01',
-            end_date='2022-11-17',
             struct=GoszakupPlanKatoRow,
             anchor_field='pln_points_id'
         )
@@ -1376,10 +1374,8 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
         """
         return GzipGoszakupTrdAppOffersParsingToCsv(
             entity='TrdApp',
-            directory=BIGDATA_TMP_DIR,
+            directory=TMP_DIR,
             ftp_directory='goszakup',
-            start_date='2022-08-01 00:00:00.000000',
-            end_date='2022-11-17 23:59:59.000000',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
             query=query,
