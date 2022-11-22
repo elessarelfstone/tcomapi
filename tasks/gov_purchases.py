@@ -1,6 +1,7 @@
 import json
 import os
 import pandas as pd
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 from math import floor
 
@@ -1336,6 +1337,13 @@ class GzipGoszakupTrdAppOffersParsingToCsv(GzipToFtp):
 class GoszakupTrdAppOffers(luigi.WrapperTask):
 
     def requires(self):
+
+        t = datetime.today() - timedelta(1)
+        d = t.replace(hour=0, minute=0, second=0, microsecond=0)
+        start_date = d.strftime('%Y-%m-%d %H:%M:%S.%f')
+        d = d.replace(hour=23, minute=59, second=59, microsecond=0)
+        end_date = d.strftime('%Y-%m-%d %H:%M:%S.%f')
+
         query = """
             query getTrd($from: String, $to: String, $limit: Int, $after: Int){
                 TrdApp(filter: {dateApply: [$from, $to]}, limit: $limit, after: $after){
@@ -1375,6 +1383,8 @@ class GoszakupTrdAppOffers(luigi.WrapperTask):
         return GzipGoszakupTrdAppOffersParsingToCsv(
             entity='TrdApp',
             directory=TMP_DIR,
+            start_date=start_date,
+            end_date=end_date,
             ftp_directory='goszakup',
             sep=';',
             url='https://ows.goszakup.gov.kz/v3/graphql',
