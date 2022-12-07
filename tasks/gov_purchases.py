@@ -794,13 +794,13 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             if '_' in self.entity:
                 entity, wrapper = self.entity.split('_')
 
-            if not extensions['pageInfo']['hasNextPage']:
-                break
+
 
             data = data.get(entity, [])
 
             start_from = extensions['pageInfo']['lastId']
             total = extensions['pageInfo']['totalCount']
+            print(total)
 
             # if not wrapper:
             #     data = [dict_to_csvrow(norm(d), self.struct) for d in data]
@@ -819,6 +819,8 @@ class GoszakupGqlParsingToCsv(GraphQlParsing):
             percent = floor((100 * parsed_count) / total)
             s = f'Total: {total}. Parsed: {parsed_count}.'
             self.set_status(s, percent)
+            if not extensions['pageInfo']['hasNextPage']:
+                break
             sleep(self.timeout)
 
 
